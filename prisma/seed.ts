@@ -98,19 +98,32 @@ async function main() {
   }
 
   console.log("→ Seeding users (admin + master)...");
+  // Если уже есть пользователи — не трогаем. Пароли первого запуска показываем в консоль.
+  const existing = await prisma.user.count();
   const adminPass = await bcrypt.hash("admin123", 10);
   const masterPass = await bcrypt.hash("master123", 10);
   await prisma.user.upsert({
     where: { email: "admin@example.ru" },
     create: { email: "admin@example.ru", name: "Администратор", role: "ADMIN", password: adminPass, color: "#2563eb" },
-    update: { password: adminPass },
+    update: {},
   });
   await prisma.user.upsert({
     where: { email: "master@example.ru" },
     create: { email: "master@example.ru", name: "Иван (мастер)", role: "MASTER", password: masterPass, color: "#10b981" },
-    update: { password: masterPass },
+    update: {},
   });
 
+  if (existing === 0) {
+    console.log("");
+    console.log("┌──────────────────────────────────────────────────────────┐");
+    console.log("│  ДЕМО-ПОЛЬЗОВАТЕЛИ — поменяйте пароли через CRM (или БД) │");
+    console.log("│  Админ:  admin@example.ru  /  admin123                   │");
+    console.log("│  Мастер: master@example.ru /  master123                  │");
+    console.log("└──────────────────────────────────────────────────────────┘");
+    console.log("");
+  } else {
+    console.log("  (пользователи уже есть — пароли не трогаем)");
+  }
   console.log("✓ Done");
 }
 

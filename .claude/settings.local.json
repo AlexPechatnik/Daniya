@@ -9,7 +9,13 @@
       "Bash(mv layout.tsx page.tsx requests calendar clients price \"\\(app\\)/\")",
       "Bash(timeout 6 npm run bot:poll)",
       "Bash(git init *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git check-ignore *)",
+      "Bash(grep -E \"\\\\.env$|dev\\\\.db$|node_modules\")",
+      "Bash(git config *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git remote *)",
+      "Bash(git push *)"
     ]
   }
 }
