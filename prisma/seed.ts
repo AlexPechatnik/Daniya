@@ -1,0 +1,117 @@
+import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
+
+const prisma = new PrismaClient();
+
+// Цены в рублях, ориентир по СПб 2025–2026
+const services: { name: string; slug: string; kind: string; base?: number }[] = [
+  { name: "Заправка картриджа", slug: "zapravka", kind: "REFILL", base: 500 },
+  { name: "Замена картриджа (работа)", slug: "zamena", kind: "REPLACE", base: 900 },
+  { name: "Диагностика принтера", slug: "diagnostika", kind: "DIAGNOSTIC", base: 500 },
+  { name: "Ремонт принтера", slug: "remont", kind: "REPAIR", base: 1200 },
+];
+
+const cartridges: { brand: string; model: string; type: string; popular?: boolean; refill: number; compatible?: string }[] = [
+  // HP — самые ходовые
+  { brand: "HP", model: "CF283A", type: "лазерный", popular: true, refill: 500, compatible: "LaserJet M125, M127, M201, M225" },
+  { brand: "HP", model: "CF283X", type: "лазерный", popular: true, refill: 600, compatible: "LaserJet M201, M225" },
+  { brand: "HP", model: "CF217A", type: "лазерный", popular: true, refill: 550, compatible: "LaserJet M102, M130" },
+  { brand: "HP", model: "CF218A", type: "лазерный", refill: 550, compatible: "LaserJet M104, M132" },
+  { brand: "HP", model: "CF230A", type: "лазерный", popular: true, refill: 600, compatible: "LaserJet M203, M227" },
+  { brand: "HP", model: "CE285A", type: "лазерный", popular: true, refill: 500, compatible: "LaserJet P1102, M1132" },
+  { brand: "HP", model: "CB435A", type: "лазерный", refill: 500, compatible: "LaserJet P1005, P1006" },
+  { brand: "HP", model: "CB436A", type: "лазерный", refill: 500, compatible: "LaserJet P1505, M1120" },
+  { brand: "HP", model: "Q2612A", type: "лазерный", refill: 450, compatible: "LaserJet 1010, 1020, 3050" },
+  { brand: "HP", model: "Q7553A", type: "лазерный", refill: 500, compatible: "LaserJet P2014, P2015" },
+  { brand: "HP", model: "CF226A", type: "лазерный", refill: 700, compatible: "LaserJet M402, M426" },
+  // Canon
+  { brand: "Canon", model: "725", type: "лазерный", popular: true, refill: 500, compatible: "LBP6000, LBP6020, MF3010" },
+  { brand: "Canon", model: "728", type: "лазерный", popular: true, refill: 550, compatible: "MF4410, MF4570, MF4730" },
+  { brand: "Canon", model: "737", type: "лазерный", popular: true, refill: 600, compatible: "MF211, MF212, MF217, MF229" },
+  { brand: "Canon", model: "719", type: "лазерный", refill: 550, compatible: "LBP6300, MF5840" },
+  { brand: "Canon", model: "703", type: "лазерный", refill: 500, compatible: "LBP2900, LBP3000" },
+  { brand: "Canon", model: "712", type: "лазерный", refill: 500, compatible: "LBP3010, LBP3100" },
+  { brand: "Canon", model: "FX-10", type: "лазерный", refill: 500, compatible: "MF4018, MF4140, L100" },
+  // Samsung
+  { brand: "Samsung", model: "MLT-D101S", type: "лазерный", popular: true, refill: 550, compatible: "ML-2160, ML-2165, SCX-3400" },
+  { brand: "Samsung", model: "MLT-D104S", type: "лазерный", refill: 550, compatible: "ML-1660, ML-1860, SCX-3200" },
+  { brand: "Samsung", model: "MLT-D111S", type: "лазерный", popular: true, refill: 600, compatible: "M2020, M2070" },
+  { brand: "Samsung", model: "MLT-D108S", type: "лазерный", refill: 550, compatible: "ML-1640, ML-2240" },
+  { brand: "Samsung", model: "MLT-D205L", type: "лазерный", refill: 700, compatible: "ML-3310, ML-3710, SCX-4833" },
+  // Brother
+  { brand: "Brother", model: "TN-1075", type: "лазерный", popular: true, refill: 550, compatible: "HL-1110, DCP-1510, MFC-1815" },
+  { brand: "Brother", model: "TN-2080", type: "лазерный", refill: 600, compatible: "HL-2130, DCP-7055" },
+  { brand: "Brother", model: "TN-2275", type: "лазерный", refill: 600, compatible: "HL-2240, MFC-7860" },
+  // Xerox
+  { brand: "Xerox", model: "106R02773", type: "лазерный", refill: 600, compatible: "Phaser 3020, WC 3025" },
+  { brand: "Xerox", model: "106R01487", type: "лазерный", refill: 650, compatible: "WorkCentre 3210, 3220" },
+  // Kyocera
+  { brand: "Kyocera", model: "TK-1110", type: "лазерный", refill: 700, compatible: "FS-1040, FS-1020, FS-1120" },
+  { brand: "Kyocera", model: "TK-1120", type: "лазерный", refill: 750, compatible: "FS-1025, FS-1060, FS-1125" },
+  { brand: "Kyocera", model: "TK-1170", type: "лазерный", refill: 800, compatible: "M2040, M2540, M2640" },
+  // Ricoh
+  { brand: "Ricoh", model: "SP 150HE", type: "лазерный", refill: 650, compatible: "SP 150, SP 150SU" },
+  // Pantum
+  { brand: "Pantum", model: "PC-211EV", type: "лазерный", refill: 500, compatible: "P2200, P2207, M6500, M6550" },
+];
+
+async function main() {
+  console.log("→ Seeding services...");
+  for (const s of services) {
+    await prisma.service.upsert({
+      where: { slug: s.slug },
+      create: { name: s.name, slug: s.slug, kind: s.kind },
+      update: { name: s.name, kind: s.kind },
+    });
+  }
+
+  console.log("→ Seeding cartridges & refill prices...");
+  const refillService = await prisma.service.findUnique({ where: { slug: "zapravka" } });
+  for (const c of cartridges) {
+    const cart = await prisma.cartridge.upsert({
+      where: { brand_model: { brand: c.brand, model: c.model } },
+      create: {
+        brand: c.brand, model: c.model, type: c.type,
+        compatible: c.compatible, isPopular: c.popular || false,
+      },
+      update: { isPopular: c.popular || false, compatible: c.compatible },
+    });
+    if (refillService) {
+      const existing = await prisma.price.findFirst({ where: { serviceId: refillService.id, cartridgeId: cart.id } });
+      if (existing) {
+        await prisma.price.update({ where: { id: existing.id }, data: { amount: c.refill * 100 } });
+      } else {
+        await prisma.price.create({ data: { serviceId: refillService.id, cartridgeId: cart.id, amount: c.refill * 100 } });
+      }
+    }
+  }
+
+  console.log("→ Base service prices...");
+  for (const s of services) {
+    if (!s.base) continue;
+    const svc = await prisma.service.findUnique({ where: { slug: s.slug } });
+    if (!svc) continue;
+    const exists = await prisma.price.findFirst({ where: { serviceId: svc.id, cartridgeId: null } });
+    if (!exists) {
+      await prisma.price.create({ data: { serviceId: svc.id, amount: s.base * 100, note: "Базовая цена" } });
+    }
+  }
+
+  console.log("→ Seeding users (admin + master)...");
+  const adminPass = await bcrypt.hash("admin123", 10);
+  const masterPass = await bcrypt.hash("master123", 10);
+  await prisma.user.upsert({
+    where: { email: "admin@example.ru" },
+    create: { email: "admin@example.ru", name: "Администратор", role: "ADMIN", password: adminPass, color: "#2563eb" },
+    update: { password: adminPass },
+  });
+  await prisma.user.upsert({
+    where: { email: "master@example.ru" },
+    create: { email: "master@example.ru", name: "Иван (мастер)", role: "MASTER", password: masterPass, color: "#10b981" },
+    update: { password: masterPass },
+  });
+
+  console.log("✓ Done");
+}
+
+main().catch((e) => { console.error(e); process.exit(1); }).finally(() => prisma.$disconnect());

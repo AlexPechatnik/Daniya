@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm --version)",
+      "Bash(npm --version)",
+      "WebSearch",
+      "Bash(npx prisma *)",
+      "Bash(mkdir -p \"\\(app\\)\")",
+      "Bash(mv layout.tsx page.tsx requests calendar clients price \"\\(app\\)/\")",
+      "Bash(timeout 6 npm run bot:poll)",
+      "Bash(git init *)",
+      "Bash(git add *)"
+    ]
+  }
+}

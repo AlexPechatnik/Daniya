@@ -1,0 +1,203 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// SQLite не поддерживает enum — используем строковые константы.
+// Допустимые значения проверяет приложение (Zod / TS типы).
+
+model User {
+  id         String   @id @default(cuid())
+  email      String   @unique
+  password   String
+  name       String
+  role       String   @default("MASTER") // ADMIN | MASTER
+  phone      String?
+  color      String?  // для отображения в календаре
+  active     Boolean  @default(true)
+  telegramId String?  @unique // chat_id в Telegram (привязка сотрудника)
+  maxId      String?  @unique
+  createdAt  DateTime @default(now())
+  requests   Request[]
+}
+
+model ConversationState {
+  // Состояние диалога с конкретным пользователем мессенджера.
+  id         String   @id @default(cuid())
+  provider   String   // MAX | TELEGRAM
+  externalId String   // chat_id
+  flow       String?  // "new_request" | null
+  step       String?
+  data       String?  // JSON со собранными ответами
+  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now())
+  @@unique([provider, externalId])
+}
+
+model Client {
+  id          String   @id @default(cuid())
+  name        String
+  org         String?  // название организации (если юр.лицо)
+  phone       String   @unique
+  email       String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  addresses   Address[]
+  printers    Printer[]
+  requests    Request[]
+  channels    ClientChannel[] // привязки к мессенджерам
+  messages    Message[]
+  @@index([phone])
+}
+
+model ClientChannel {
+  id         String  @id @default(cuid())
+  clientId   String
+  provider   String  // MAX | TELEGRAM | WEB | PHONE
+  externalId String  // user_id в мессенджере
+  client     Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  @@unique([provider, externalId])
+}
+
+model Address {
+  id       String  @id @default(cuid())
+  clientId String
+  label    String? // "Офис", "Дом"
+  address  String
+  client   Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  requests Request[]
+}
+
+model Printer {
+  id       String   @id @default(cuid())
+  clientId String
+  brand    String
+  model    String
+  notes    String?
+  client   Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+model Cartridge {
+  id         String    @id @default(cuid())
+  brand      String
+  model      String    // "HP CF283A"
+  type       String    // "лазерный" / "струйный"
+  compatible String?
+  isOriginal Boolean   @default(false)
+  isPopular  Boolean   @default(false)
+  prices     Price[]
+  requests   Request[]
+  @@unique([brand, model])
+  @@index([brand])
+  @@index([model])
+}
+
+model Service {
+  id       String    @id @default(cuid())
+  kind     String    // REFILL | REPLACE | DIAGNOSTIC | REPAIR
+  name     String
+  slug     String    @unique
+  prices   Price[]
+  requests Request[]
+}
+
+model Price {
+  id          String   @id @default(cuid())
+  serviceId   String
+  cartridgeId String?
+  amount      Int      // в копейках
+  note        String?
+  updatedAt   DateTime @updatedAt
+  service     Service    @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  cartridge   Cartridge? @relation(fields: [cartridgeId], references: [id], onDelete: SetNull)
+  @@index([serviceId])
+  @@index([cartridgeId])
+}
+
+model Request {
+  id            String   @id @default(cuid())
+  number        Int      @unique // присваивается в коде при создании
+  clientId      String
+  addressId     String?
+  serviceId     String?
+  cartridgeId   String?
+  printerInfo   String?
+  quantity      Int      @default(1)
+  status        String   @default("NEW")    // NEW | SCHEDULED | IN_PROGRESS | DONE | CANCELLED | AWAITING_PAYMENT
+  paymentStatus String   @default("UNPAID") // UNPAID | PAID | PARTIAL
+  source        String   @default("WEB")    // MAX | TELEGRAM | WEB | PHONE
+  assignedToId  String?
+  scheduledAt   DateTime?
+  durationMin   Int      @default(60)
+  price         Int?     // копейки
+  comment       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  client        Client     @relation(fields: [clientId], references: [id])
+  address       Address?   @relation(fields: [addressId], references: [id])
+  assignedTo    User?      @relation(fields: [assignedToId], references: [id])
+  service       Service?   @relation(fields: [serviceId], references: [id])
+  cartridge     Cartridge? @relation(fields: [cartridgeId], references: [id])
+  messages      Message[]
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([assignedToId])
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  clientId   String
+  requestId  String?
+  provider   String   // MAX | TELEGRAM | WEB | PHONE
+  direction  String   // "in" | "out"
+  text       String
+  meta       String?  // JSON-строка с сырым payload от мессенджера
+  createdAt  DateTime @default(now())
+  client     Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  request    Request? @relation(fields: [requestId], references: [id], onDelete: SetNull)
+  @@index([clientId])
+  @@index([requestId])
+}
+
+model Holiday {
+  // Нерабочий день. Может быть привязан к конкретному мастеру или общий (userId = null).
+  id        String   @id @default(cuid())
+  date      DateTime // YYYY-MM-DD 00:00:00
+  reason    String?  // "Выходной", "Отпуск", "Праздник"
+  userId    String?  // null = общий для всех мастеров
+  createdAt DateTime @default(now())
+  @@unique([date, userId])
+  @@index([date])
+}
+
+model PairingToken {
+  // Одноразовый код для привязки сотрудника к боту через deep-link.
+  // Админ нажимает «Привязать» в CRM → выдаём token → сотрудник идёт в t.me/bot?start=PAIR-<token>
+  // Бот видит payload, ставит User.telegramId = chat_id, помечает токен использованным.
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  provider  String   // TELEGRAM | MAX
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  @@index([userId])
+}
+
+model RequestLead {
+  // Заявка с публичной формы, ещё не привязана к клиенту
+  id          String   @id @default(cuid())
+  name        String
+  phone       String
+  address     String?
+  serviceKind String?  // REFILL | REPLACE | DIAGNOSTIC | REPAIR
+  cartridge   String?
+  comment     String?
+  createdAt   DateTime @default(now())
+  processed   Boolean  @default(false)
+}
