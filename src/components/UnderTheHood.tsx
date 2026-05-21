@@ -19,14 +19,17 @@ export function UnderTheHood() {
         </div>
       </Reveal>
 
-      <RevealStagger className="grid gap-4 md:grid-cols-3 auto-rows-[280px] md:auto-rows-[300px]">
+      {/*
+        Mobile: одна колонка, высота карточек по контенту.
+          • Карточки с инфографикой (Анатомия, Тайминг) получат свою высоту,
+            ничего не обрезается, цена и подписи всегда видны.
+        md+: bento — 3 колонки, фиксированные ряды 300px, lg-карточки в 2 ряда.
+      */}
+      <RevealStagger className="grid gap-4 md:grid-cols-3 md:auto-rows-[300px]">
         {/* Card 1: Анатомия картриджа — LARGE */}
         <RevealItem className="md:row-span-2 md:col-span-1">
           <InfoCard label="01 · Анатомия картриджа" title="Что внутри лазерного картриджа">
             <CartridgeAnatomy />
-            <div className="mt-3 text-xs text-muted-fg leading-relaxed">
-              Каждый узел изнашивается со своей скоростью. Знаем какой именно дефект даёт каждый из них.
-            </div>
           </InfoCard>
         </RevealItem>
 
@@ -48,9 +51,6 @@ export function UnderTheHood() {
         <RevealItem className="md:row-span-2 md:col-span-1">
           <InfoCard label="04 · Скорость" title="Заправка на месте против подмены">
             <TimingComparison />
-            <div className="mt-3 text-xs text-muted-fg leading-relaxed">
-              Если каждая минута без печати дороже — выбирайте подмену. По цене одинаково.
-            </div>
           </InfoCard>
         </RevealItem>
 
@@ -67,6 +67,13 @@ export function UnderTheHood() {
             <BigStat value="30" unit="дней" sub="на работы и расходник" />
           </InfoCard>
         </RevealItem>
+
+        {/* Card 7: Экономия — заполняет пустой нижний правый угол bento-сетки */}
+        <RevealItem>
+          <InfoCard label="07 · Экономия" title="Заправка vs новый картридж">
+            <SavingsBars />
+          </InfoCard>
+        </RevealItem>
       </RevealStagger>
     </section>
   );
@@ -76,12 +83,12 @@ export function UnderTheHood() {
 
 function InfoCard({ label, title, children }: { label: string; title: string; children: React.ReactNode }) {
   return (
-    <div className="card h-full p-5 lg:p-6 flex flex-col relative overflow-hidden group">
+    <div className="card h-full min-h-[280px] p-5 lg:p-6 flex flex-col relative overflow-hidden group">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-      <div className="relative flex-1 flex flex-col">
+      <div className="relative flex-1 flex flex-col min-h-0">
         <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-fg">{label}</div>
         <div className="mt-1 font-semibold tracking-tight">{title}</div>
-        <div className="mt-4 flex-1">{children}</div>
+        <div className="mt-4 flex-1 min-h-0">{children}</div>
       </div>
     </div>
   );
@@ -99,8 +106,9 @@ function CartridgeAnatomy() {
     { id: "toner", label: "Бункер тонера", x: 175, color: "#a78bfa" },
   ];
   return (
-    <div className="relative h-full flex flex-col">
-      <svg viewBox="0 0 240 140" className="w-full" preserveAspectRatio="xMidYMid meet">
+    <div className="relative">
+      <div className="flex items-center justify-center">
+      <svg viewBox="0 0 240 140" className="w-full max-h-[180px]" preserveAspectRatio="xMidYMid meet">
         <defs>
           <linearGradient id="cart-body" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor="hsl(222 24% 22%)" />
@@ -138,8 +146,9 @@ function CartridgeAnatomy() {
           </g>
         ))}
       </svg>
+      </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-1.5 text-[10px]">
+      <div className="mt-4 grid grid-cols-2 gap-1.5 text-[10px]">
         <Legend dot="hsl(var(--primary))" label="Фотобарабан · 94 мм" />
         <Legend dot="hsl(var(--accent))" label="Ролик заряда (PCR)" />
         <Legend dot="#fbbf24" label="Магнитный вал" />
@@ -362,6 +371,57 @@ function StockGrid() {
       </div>
       <div className="mt-auto pt-3 text-[10px] text-muted-fg leading-relaxed">
         Самые ходовые — всегда в наличии для подмены.
+      </div>
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 7. Savings — заправка дешевле нового картриджа
+
+function SavingsBars() {
+  // Заправка vs новый — типичные цены по HP CF283A: заправка 500, новый ~2800
+  const bars = [
+    { label: "Новый картридж", price: "от 2 500 ₽", percent: 100, color: "hsl(var(--accent))" },
+    { label: "Заправка",       price: "от 500 ₽",   percent: 20,  color: "hsl(var(--primary))" },
+  ];
+  return (
+    <div className="space-y-4 mt-1">
+      {bars.map((b, i) => (
+        <div key={b.label}>
+          <div className="flex justify-between items-baseline text-xs mb-1.5">
+            <span className="font-medium">{b.label}</span>
+            <span className="text-muted-fg font-mono tabular-nums">{b.price}</span>
+          </div>
+          <div className="h-2.5 rounded-full bg-muted overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              whileInView={{ width: `${b.percent}%` }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ duration: 1.1, delay: 0.15 + i * 0.2, ease: [0.22, 1, 0.36, 1] }}
+              style={{ background: b.color }}
+              className="h-full rounded-full"
+            />
+          </div>
+        </div>
+      ))}
+
+      <div className="pt-3 border-t border-border mt-5 flex items-end justify-between">
+        <div>
+          <div className="text-[10px] text-muted-fg uppercase tracking-wider">Экономия</div>
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.7, duration: 0.5 }}
+            className="text-3xl font-semibold tracking-tightest text-gradient leading-none mt-1"
+          >
+            до&nbsp;80%
+          </motion.div>
+        </div>
+        <div className="text-[10px] text-muted-fg leading-relaxed max-w-[140px] text-right">
+          за один цикл,<br />а ресурс — 3–5 заправок
+        </div>
       </div>
     </div>
   );
