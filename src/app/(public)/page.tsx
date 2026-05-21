@@ -20,6 +20,7 @@ export default async function HomePage() {
   const cartridgesPlain = cartridges.map((c) => ({
     id: c.id, brand: c.brand, model: c.model, type: c.type,
     isPopular: c.isPopular, isOriginal: c.isOriginal,
+    hasChip: c.hasChip, chipPrice: c.chipPrice,
     price: c.prices[0]?.amount ?? null,
   }));
 

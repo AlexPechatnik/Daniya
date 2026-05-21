@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { Search, Sparkles, Check } from "lucide-react";
+import { Search, Sparkles, Check, Plus, X, Cpu, Info, Trash2 } from "lucide-react";
 import { formatRub } from "@/lib/utils";
 import Link from "next/link";
 import { Reveal } from "./Reveal";
@@ -13,18 +13,30 @@ type Cartridge = {
   type: string;
   isPopular: boolean;
   isOriginal: boolean;
-  price: number | null;
+  hasChip: boolean;
+  chipPrice: number | null; // копейки
+  price: number | null;     // копейки за заправку
 };
 
+interface CartItem {
+  // Уникальный ключ строки в корзине (несколько строк с одним картриджем разрешены)
+  key: string;
+  cartridge: Cartridge;
+  serviceId: string;
+  quantity: number;
+  withChip: boolean;
+}
+
+const DEFAULT_CHIP_PRICE = 15000; // копейки = 150 ₽
+
 export function Calculator({ services, cartridges }: { services: Service[]; cartridges: Cartridge[] }) {
-  const [serviceId, setServiceId] = useState(services[0]?.id || "");
+  const [activeServiceId, setActiveServiceId] = useState(
+    services.find((s) => s.slug === "zapravka")?.id || services[0]?.id || ""
+  );
   const [query, setQuery] = useState("");
   const [brand, setBrand] = useState<string>("all");
   const [sort, setSort] = useState<"popular" | "brand" | "price">("popular");
-  const [cartridgeId, setCartridgeId] = useState<string | null>(null);
-  const [qty, setQty] = useState(1);
-  const [pending, startTransition] = useTransition();
-  const [estimate, setEstimate] = useState<number | null>(null);
+  const [cart, setCart] = useState<CartItem[]>([]);
 
   const brands = useMemo(() => Array.from(new Set(cartridges.map((c) => c.brand))).sort(), [cartridges]);
   const filtered = useMemo(() => {
@@ -42,20 +54,39 @@ export function Calculator({ services, cartridges }: { services: Service[]; cart
     return list.slice(0, 30);
   }, [cartridges, query, brand, sort]);
 
-  useEffect(() => {
-    if (!serviceId) return;
-    startTransition(async () => {
-      const res = await fetch("/api/estimate", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ serviceId, cartridgeId, quantity: qty }),
-      });
-      const data = await res.json();
-      setEstimate(data.amount);
-    });
-  }, [serviceId, cartridgeId, qty]);
+  function addToCart(c: Cartridge) {
+    setCart((arr) => [
+      ...arr,
+      {
+        key: Math.random().toString(36).slice(2),
+        cartridge: c,
+        serviceId: activeServiceId,
+        quantity: 1,
+        withChip: c.hasChip, // если есть чип — по умолчанию включаем замену
+      },
+    ]);
+  }
 
-  const selected = cartridges.find((c) => c.id === cartridgeId);
+  function removeItem(key: string) {
+    setCart((arr) => arr.filter((i) => i.key !== key));
+  }
+
+  function updateItem(key: string, patch: Partial<CartItem>) {
+    setCart((arr) => arr.map((i) => (i.key === key ? { ...i, ...patch } : i)));
+  }
+
+  // Расчёт цены строки
+  function itemTotal(it: CartItem) {
+    const refill = it.cartridge.price ?? 0;
+    const chip = it.withChip ? (it.cartridge.chipPrice ?? DEFAULT_CHIP_PRICE) : 0;
+    return (refill + chip) * it.quantity;
+  }
+
+  const subtotal = cart.reduce((s, it) => s + itemTotal(it), 0);
+  const chipsTotal = cart.reduce(
+    (s, it) => s + (it.withChip ? (it.cartridge.chipPrice ?? DEFAULT_CHIP_PRICE) * it.quantity : 0),
+    0,
+  );
 
   return (
     <section id="calculator" className="container py-20 lg:py-28">
@@ -64,16 +95,18 @@ export function Calculator({ services, cartridges }: { services: Service[]; cart
           <div>
             <div className="chip mb-4"><span className="font-mono text-primary">04</span> Калькулятор</div>
             <h2 className="heading-display text-4xl md:text-5xl lg:text-6xl">
-              Узнайте цену <span className="text-gradient">за минуту</span>
+              Соберите расчёт <span className="text-gradient">за минуту</span>
             </h2>
           </div>
-          <p className="text-muted-fg max-w-md">Ориентир — точная сумма у мастера на месте. Зависит от модели и состояния картриджа.</p>
+          <p className="text-muted-fg max-w-md">
+            Добавьте все картриджи, которые нужно обслужить — увидите общую сумму. Точная сумма у мастера на месте.
+          </p>
         </div>
       </Reveal>
 
       <Reveal>
         <div className="card overflow-hidden relative">
-          <div className="grid lg:grid-cols-[1fr,400px]">
+          <div className="grid lg:grid-cols-[1fr,420px]">
             <div className="p-6 lg:p-8 space-y-7">
               <Step n={1} title="Услуга">
                 <div className="grid grid-cols-2 gap-2">
@@ -81,21 +114,21 @@ export function Calculator({ services, cartridges }: { services: Service[]; cart
                     <button
                       key={s.id}
                       type="button"
-                      onClick={() => setServiceId(s.id)}
+                      onClick={() => setActiveServiceId(s.id)}
                       className={`group relative rounded-xl border px-4 py-3 text-sm text-left transition-all ${
-                        serviceId === s.id
+                        activeServiceId === s.id
                           ? "border-primary bg-primary/10 text-fg"
-                          : "border-border bg-card/40 hover:bg-card hover:border-border"
+                          : "border-border bg-card/40 hover:bg-card"
                       }`}
                     >
-                      {serviceId === s.id && <Check className="absolute right-3 top-3 h-3.5 w-3.5 text-primary" />}
+                      {activeServiceId === s.id && <Check className="absolute right-3 top-3 h-3.5 w-3.5 text-primary" />}
                       {s.name}
                     </button>
                   ))}
                 </div>
               </Step>
 
-              <Step n={2} title="Картридж">
+              <Step n={2} title="Картриджи">
                 <div className="flex flex-wrap gap-2 mb-3">
                   <div className="relative flex-1 min-w-[220px]">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-fg" />
@@ -117,70 +150,208 @@ export function Calculator({ services, cartridges }: { services: Service[]; cart
                   </select>
                 </div>
 
-                <div className="max-h-72 overflow-auto rounded-xl border border-border divide-y divide-border bg-bg/40">
+                <div className="max-h-80 overflow-auto rounded-xl border border-border divide-y divide-border bg-bg/40">
                   {filtered.length === 0 && (
                     <div className="p-6 text-center text-sm text-muted-fg">Не нашли — впишите модель в комментарий к заявке.</div>
                   )}
-                  {filtered.map((c) => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => setCartridgeId(c.id === cartridgeId ? null : c.id)}
-                      className={`w-full flex items-center justify-between gap-3 px-4 py-3 text-left text-sm transition ${
-                        cartridgeId === c.id ? "bg-primary/10" : "hover:bg-muted/40"
-                      }`}
-                    >
-                      <div className="min-w-0">
-                        <div className="font-medium flex items-center gap-2 truncate">
-                          <span className="text-muted-fg font-mono text-xs">{c.brand}</span>
-                          {c.model}
+                  {filtered.map((c) => {
+                    const inCart = cart.some((it) => it.cartridge.id === c.id);
+                    return (
+                      <div key={c.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm hover:bg-muted/30 transition">
+                        <div className="min-w-0">
+                          <div className="font-medium flex items-center gap-2 truncate">
+                            <span className="text-muted-fg font-mono text-xs">{c.brand}</span>
+                            {c.model}
+                          </div>
+                          <div className="text-xs text-muted-fg mt-1 flex items-center gap-1.5 flex-wrap">
+                            {c.isPopular && <Badge tone="primary">Популярный</Badge>}
+                            {c.isOriginal ? <Badge tone="warning">Оригинал</Badge> : <Badge tone="muted">Совместимый</Badge>}
+                            {c.hasChip && (
+                              <Badge tone="chip">
+                                <Cpu className="h-2.5 w-2.5 mr-0.5 inline" />С чипом
+                              </Badge>
+                            )}
+                          </div>
                         </div>
-                        <div className="text-xs text-muted-fg mt-1 flex items-center gap-2">
-                          {c.isPopular && <Badge tone="primary">Популярный</Badge>}
-                          {c.isOriginal ? <Badge tone="warning">Оригинал</Badge> : <Badge tone="muted">Совместимый</Badge>}
+                        <div className="flex items-center gap-3 shrink-0">
+                          {c.price != null && <div className="text-sm tabular-nums text-fg">{formatRub(c.price)}</div>}
+                          <button
+                            type="button"
+                            onClick={() => addToCart(c)}
+                            className={`btn-outline h-9 px-3 ${inCart ? "border-primary/40 text-primary" : ""}`}
+                            title="Добавить в расчёт"
+                          >
+                            <Plus className="h-4 w-4" />
+                            <span className="hidden sm:inline">{inCart ? "Ещё" : "Добавить"}</span>
+                          </button>
                         </div>
                       </div>
-                      {c.price != null && <div className="text-sm tabular-nums text-fg shrink-0">{formatRub(c.price)}</div>}
-                    </button>
-                  ))}
+                    );
+                  })}
                 </div>
               </Step>
 
-              <Step n={3} title="Количество">
-                <div className="inline-flex items-center rounded-xl border border-border bg-card/40">
-                  <button type="button" className="px-4 py-2.5 hover:bg-muted transition rounded-l-xl" onClick={() => setQty((q) => Math.max(1, q - 1))}>−</button>
-                  <span className="w-12 text-center text-sm tabular-nums font-medium">{qty}</span>
-                  <button type="button" className="px-4 py-2.5 hover:bg-muted transition rounded-r-xl" onClick={() => setQty((q) => q + 1)}>+</button>
-                </div>
-              </Step>
+              <ChipInfo />
             </div>
 
-            <aside className="relative bg-gradient-to-br from-card-2 to-card border-l border-border p-6 lg:p-8">
-              <div className="absolute -top-px -left-px -right-px h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
-              <div className="chip"><Sparkles className="h-3 w-3 text-primary" /> Ваш расчёт</div>
-              <div className="mt-6 space-y-4 text-sm">
-                <Row label="Услуга" value={services.find((s) => s.id === serviceId)?.name || "—"} />
-                <Row label="Картридж" value={selected ? `${selected.brand} ${selected.model}` : "не выбран"} />
-                <Row label="Количество" value={`${qty} шт.`} />
-              </div>
-              <div className="mt-6 pt-6 border-t border-border">
-                <div className="text-xs uppercase tracking-wider text-muted-fg">Итого ориентировочно</div>
-                <div className="mt-2 text-4xl font-semibold tabular-nums tracking-tight">
-                  {pending ? <span className="text-muted-fg">…</span> : formatRub(estimate ?? 0)}
-                </div>
-              </div>
-              <Link href="#request" className="btn-primary btn-glow w-full mt-6 py-3">Оставить заявку</Link>
-              <div className="mt-5 rounded-lg border border-border bg-bg/40 p-3 text-xs text-muted-fg leading-relaxed">
-                <span className="text-fg font-medium">Если время важнее процесса</span> — можем привезти уже заправленный картридж, а ваш забрать в сервис. По той же цене, офис продолжает печатать через 5 минут.
-              </div>
-              <p className="mt-3 text-xs text-muted-fg leading-relaxed">
-                Оплата — после проверки печати. Не заработало — не платите.
-              </p>
-            </aside>
+            <CartAside
+              cart={cart}
+              services={services}
+              subtotal={subtotal}
+              chipsTotal={chipsTotal}
+              updateItem={updateItem}
+              removeItem={removeItem}
+              itemTotal={itemTotal}
+            />
           </div>
         </div>
       </Reveal>
     </section>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+
+function CartAside({
+  cart, services, subtotal, chipsTotal, updateItem, removeItem, itemTotal,
+}: {
+  cart: CartItem[];
+  services: Service[];
+  subtotal: number;
+  chipsTotal: number;
+  updateItem: (key: string, patch: Partial<CartItem>) => void;
+  removeItem: (key: string) => void;
+  itemTotal: (it: CartItem) => number;
+}) {
+  return (
+    <aside className="relative bg-gradient-to-br from-card-2 to-card border-l border-border p-6 lg:p-8 flex flex-col">
+      <div className="absolute -top-px -left-px -right-px h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+      <div className="chip"><Sparkles className="h-3 w-3 text-primary" /> Ваш расчёт</div>
+
+      {cart.length === 0 && (
+        <div className="mt-6 flex-1 flex flex-col items-center justify-center text-center py-12">
+          <div className="h-12 w-12 rounded-2xl bg-muted/50 flex items-center justify-center text-muted-fg mb-3">
+            <Plus className="h-5 w-5" />
+          </div>
+          <div className="text-sm font-medium">Корзина пуста</div>
+          <div className="mt-1.5 text-xs text-muted-fg max-w-[240px] leading-relaxed">
+            Добавьте картриджи из списка слева — увидите итоговую сумму
+          </div>
+        </div>
+      )}
+
+      {cart.length > 0 && (
+        <div className="mt-5 space-y-3 max-h-[420px] overflow-y-auto -mx-2 px-2">
+          {cart.map((it) => {
+            const service = services.find((s) => s.id === it.serviceId);
+            const chipPrice = it.cartridge.chipPrice ?? DEFAULT_CHIP_PRICE;
+            return (
+              <div key={it.key} className="rounded-xl border border-border bg-bg/40 p-3 space-y-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium truncate">
+                      <span className="text-muted-fg font-mono text-xs">{it.cartridge.brand}</span> {it.cartridge.model}
+                    </div>
+                    <div className="text-[10px] text-muted-fg mt-0.5">{service?.name}</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeItem(it.key)}
+                    className="text-muted-fg hover:text-danger transition shrink-0 p-1 -mr-1"
+                    title="Убрать из расчёта"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between gap-2">
+                  <div className="inline-flex items-center rounded-lg border border-border bg-card/40 h-8">
+                    <button onClick={() => updateItem(it.key, { quantity: Math.max(1, it.quantity - 1) })} className="px-2.5 hover:bg-muted transition rounded-l-lg text-sm">−</button>
+                    <span className="w-8 text-center text-xs tabular-nums">{it.quantity}</span>
+                    <button onClick={() => updateItem(it.key, { quantity: it.quantity + 1 })} className="px-2.5 hover:bg-muted transition rounded-r-lg text-sm">+</button>
+                  </div>
+                  <div className="text-sm tabular-nums font-medium">{formatRub(itemTotal(it))}</div>
+                </div>
+
+                {it.cartridge.hasChip && (
+                  <label className="flex items-center justify-between gap-2 rounded-lg border border-warning/30 bg-warning/[0.06] px-2.5 py-1.5 cursor-pointer">
+                    <span className="flex items-center gap-1.5 text-xs">
+                      <input
+                        type="checkbox"
+                        checked={it.withChip}
+                        onChange={(e) => updateItem(it.key, { withChip: e.target.checked })}
+                        className="accent-warning"
+                      />
+                      <Cpu className="h-3 w-3 text-warning" />
+                      <span>Замена чипа</span>
+                    </span>
+                    <span className="text-xs font-mono text-warning tabular-nums">+{formatRub(chipPrice)}</span>
+                  </label>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="mt-6 pt-5 border-t border-border space-y-2">
+        {chipsTotal > 0 && (
+          <div className="flex items-center justify-between text-xs text-muted-fg">
+            <span>в т.ч. замена чипов</span>
+            <span className="tabular-nums">{formatRub(chipsTotal)}</span>
+          </div>
+        )}
+        <div className="flex items-baseline justify-between">
+          <div className="text-xs uppercase tracking-wider text-muted-fg">Итого ориентировочно</div>
+        </div>
+        <div className="text-4xl font-semibold tabular-nums tracking-tight">{formatRub(subtotal)}</div>
+      </div>
+
+      <Link
+        href="#request"
+        className={`btn-primary btn-glow mt-5 py-3 ${cart.length === 0 ? "opacity-50 pointer-events-none" : ""}`}
+      >
+        Оставить заявку
+      </Link>
+
+      <div className="mt-4 rounded-lg border border-border bg-bg/40 p-3 text-xs text-muted-fg leading-relaxed">
+        <span className="text-fg font-medium">Подмена быстрее</span> — можем привезти уже заправленный, а ваш забрать в сервис. Та же цена, офис продолжает печатать через 5 минут.
+      </div>
+    </aside>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+
+function ChipInfo() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-xl border border-border bg-card/40">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left text-sm"
+      >
+        <span className="flex items-center gap-2">
+          <Cpu className="h-4 w-4 text-warning" />
+          <span className="font-medium">Что такое замена чипа?</span>
+        </span>
+        <Info className="h-4 w-4 text-muted-fg" />
+      </button>
+      {open && (
+        <div className="px-4 pb-4 text-xs text-muted-fg leading-relaxed space-y-2">
+          <p>
+            На большинстве современных лазерных картриджей <span className="text-fg">HP, Canon, Samsung, Xerox, Kyocera</span> стоит чип, который считает напечатанные страницы. После того как чип «увидел» 100% — принтер блокирует печать, даже если в картридже свежий тонер.
+          </p>
+          <p>
+            При заправке мы меняем чип на новый — это копеечная деталь, но без неё картридж не оживить. У старых HP (Q-серия) и Canon (719, 703) чипа нет — за них доплата не нужна.
+          </p>
+          <p>
+            <span className="text-fg">Стоимость замены чипа</span> — обычно 100–300 ₽, она автоматически добавляется в расчёт для моделей с чипом. Снять галочку можно, но без чипа картридж скорее всего не запустится.
+          </p>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -196,20 +367,12 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-baseline justify-between gap-3">
-      <div className="text-muted-fg">{label}</div>
-      <div className="font-medium text-right truncate">{value}</div>
-    </div>
-  );
-}
-
-function Badge({ children, tone = "primary" }: { children: React.ReactNode; tone?: "primary" | "warning" | "muted" }) {
+function Badge({ children, tone = "primary" }: { children: React.ReactNode; tone?: "primary" | "warning" | "muted" | "chip" }) {
   const cls = {
     primary: "bg-primary/15 text-primary border-primary/20",
     warning: "bg-warning/15 text-warning border-warning/20",
     muted: "bg-muted text-muted-fg border-border",
+    chip: "bg-orange-500/15 text-orange-400 border-orange-500/30",
   }[tone];
   return <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium ${cls}`}>{children}</span>;
 }

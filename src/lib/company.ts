@@ -25,11 +25,11 @@ export const company = {
  */
 export const team = [
   {
-    name: "Александр",
-    role: "Старший мастер",
-    speciality: "Лазерные принтеры HP, Canon, Samsung",
+    name: "Данил Котелевский",
+    role: "Руководитель",
+    speciality: "Лазерные принтеры HP, Canon, Samsung · 18+ лет в нише",
     years: yearsSince(2007),
-    photo: "/team/alexander.jpg",
+    photo: "/team/danil.jpg",
     quote:
       "Большинство «поломок» — это просто несвоевременная заправка или износ узла, который ещё можно поменять. Главное — вовремя посмотреть и не врать клиенту.",
   },

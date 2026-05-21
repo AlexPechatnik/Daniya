@@ -90,6 +90,10 @@ model Cartridge {
   compatible String?
   isOriginal Boolean   @default(false)
   isPopular  Boolean   @default(false)
+  // Антизаправочный чип: требует замены при каждой заправке.
+  // Доплата к цене заправки — берём `chipPrice` если задана, иначе глобальный дефолт 150 ₽.
+  hasChip    Boolean   @default(false)
+  chipPrice  Int?      // копейки; null = использовать дефолт
   prices     Price[]
   requests   Request[]
   @@unique([brand, model])
