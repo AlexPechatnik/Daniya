@@ -41,10 +41,26 @@ export function Services() {
         </div>
       </Reveal>
 
-      <RevealStagger className="mt-12 grid gap-4 md:grid-cols-3 auto-rows-[200px] md:auto-rows-[260px]">
+      {/*
+        Mobile:
+          • Одна колонка, высота по контенту.
+          • lg-карточки получают min-h, чтобы инфографика + текст уместились
+            без сжатия и обрезания.
+        md+:
+          • Bento — 3 колонки, фиксированная высота ряда 260px.
+          • lg-карточки занимают 2 ряда.
+      */}
+      <RevealStagger className="mt-12 grid gap-4 md:grid-cols-3 md:auto-rows-[260px]">
         {items.map((it, i) => (
-          <RevealItem key={it.href} className={it.size === "lg" ? "md:row-span-2 md:col-span-1" : ""}>
-            <Link href={it.href} className="group relative block h-full card-interactive p-6 overflow-hidden">
+          <RevealItem
+            key={it.href}
+            className={
+              it.size === "lg"
+                ? "min-h-[420px] md:min-h-0 md:row-span-2 md:col-span-1"
+                : ""
+            }
+          >
+            <Link href={it.href} className="group relative block h-full card-interactive p-5 sm:p-6 overflow-hidden">
               {it.accent && <div className={`absolute inset-0 bg-gradient-to-br ${it.accent} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />}
               <div className="relative h-full flex flex-col">
                 <div className="flex items-start justify-between">
@@ -54,9 +70,9 @@ export function Services() {
                   <ArrowUpRight className="h-5 w-5 text-muted-fg group-hover:text-primary group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition" />
                 </div>
 
-                {/* Infographic для крупных карточек */}
+                {/* Инфографика. Ограничена по высоте, чтобы не съедала место под текст. */}
                 {it.size === "lg" && (
-                  <div className="mt-5 mb-4 flex-1 flex items-center justify-center">
+                  <div className="mt-4 sm:mt-5 mb-3 sm:mb-4 flex-1 flex items-center justify-center min-h-[160px] max-h-[220px]">
                     {it.graphic === "refill" && <ServiceGraphicRefill />}
                     {it.graphic === "repair" && <ServiceGraphicRepair />}
                   </div>
