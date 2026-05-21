@@ -160,8 +160,15 @@ ok "standalone bundle собран"
 step "Step 6 — PM2"
 pm2 delete "$PM2_NAME" 2>/dev/null || true
 cd "$APP_DIR/.next/standalone"
+# КРИТИЧНО: PORT и HOSTNAME передаём явно через env префикс — Next.js standalone
+# не читает .env сам, а дефолт у него 0.0.0.0:3000, что может убить соседний сервис.
+# --node-args="--env-file=.env" — чтобы остальные переменные (DATABASE_URL и т.д.) подхватились.
 PORT=$PORT HOSTNAME=127.0.0.1 NODE_ENV=production \
-  pm2 start server.js --name "$PM2_NAME" --update-env --cwd "$APP_DIR/.next/standalone"
+  pm2 start server.js \
+    --name "$PM2_NAME" \
+    --node-args="--env-file=.env" \
+    --cwd "$APP_DIR/.next/standalone" \
+    --update-env
 cd "$APP_DIR"
 pm2 save
 
