@@ -10,7 +10,8 @@ export default async function BotSettingsPage() {
 
   // getMe() — сетевой запрос к Telegram. Если сеть/VPN недоступны или таймаут —
   // не должны валить всю страницу настроек.
-  let telegramInfo: Awaited<ReturnType<NonNullable<typeof telegram>["getMe"]>> | null = null;
+  type BotInfo = { id: number; username?: string; firstName?: string } | null;
+  let telegramInfo: BotInfo = null;
   if (telegram?.enabled && telegram.getMe) {
     try {
       telegramInfo = await telegram.getMe();
