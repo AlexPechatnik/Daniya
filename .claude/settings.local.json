@@ -15,7 +15,8 @@
       "Bash(git config *)",
       "Bash(git commit -m ' *)",
       "Bash(git remote *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(chmod +x /c/danya/deploy/install.sh /c/danya/deploy/update.sh)"
     ]
   }
 }
