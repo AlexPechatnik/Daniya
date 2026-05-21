@@ -16,7 +16,10 @@
       "Bash(git commit -m ' *)",
       "Bash(git remote *)",
       "Bash(git push *)",
-      "Bash(chmod +x /c/danya/deploy/install.sh /c/danya/deploy/update.sh)"
+      "Bash(chmod +x /c/danya/deploy/install.sh /c/danya/deploy/update.sh)",
+      "Bash(curl -sI https://raw.githubusercontent.com/AlexPechatnik/Daniya/main/deploy/install.sh)",
+      "Bash(curl -sI https://api.github.com/repos/AlexPechatnik/Daniya)",
+      "Bash(git commit *)"
     ]
   }
 }

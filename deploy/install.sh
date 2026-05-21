@@ -18,7 +18,12 @@ DOMAIN="service.kopik-system.online"
 EMAIL="${CERTBOT_EMAIL:-cg.alexander.kalugin@gmail.com}"
 REPO="https://github.com/AlexPechatnik/Daniya.git"
 BRANCH="main"
-TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-8608518444:AAH5kIll0etkWd6PUahLxBVvYLsiKw9yBZc}"
+TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-}"
+if [[ -z "$TELEGRAM_BOT_TOKEN" ]]; then
+  echo "TELEGRAM_BOT_TOKEN не задан. Запустите так:"
+  echo "  TELEGRAM_BOT_TOKEN='ваш:токен' sudo -E bash $0"
+  exit 1
+fi
 
 # Чужие пути (только для проверки, что не трогаем) — менять не нужно
 EXISTING_CRM_DIR="/var/www/crm"
