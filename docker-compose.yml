@@ -1,0 +1,60 @@
+# PrintCare — изолированный стек: web + (опционально) postgres
+# Слушаем на 127.0.0.1:3010 — никто извне не достанет напрямую,
+# наружу пускает только nginx с поддоменом (см. DEPLOY.md).
+
+services:
+  web:
+    build: .
+    container_name: printcare-web
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3010:3000"
+    env_file: .env.production
+    volumes:
+      - printcare-data:/app/data
+    depends_on:
+      - db
+    networks:
+      - printcare
+
+  # Если хотите SQLite — закомментируйте секцию db и поменяйте
+  # DATABASE_URL в .env.production на file:/app/data/prod.db
+  db:
+    image: postgres:16-alpine
+    container_name: printcare-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: printcare
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-printcare}
+      POSTGRES_DB: printcare
+    volumes:
+      - printcare-pg:/var/lib/postgresql/data
+    networks:
+      - printcare
+    # БД не светим наружу — только в сети контейнеров
+    expose:
+      - "5432"
+
+  # Бот в polling-режиме (если не хотите webhook).
+  # Закомментируйте, если используете webhook (PUBLIC_BASE_URL + HTTPS).
+  bot:
+    build: .
+    container_name: printcare-bot
+    restart: unless-stopped
+    env_file: .env.production
+    command: ["npx", "tsx", "scripts/bot-poll.ts"]
+    volumes:
+      - printcare-data:/app/data
+    depends_on:
+      - db
+      - web
+    networks:
+      - printcare
+
+volumes:
+  printcare-data:
+  printcare-pg:
+
+networks:
+  printcare:
+    driver: bridge

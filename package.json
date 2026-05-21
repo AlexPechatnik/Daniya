@@ -11,7 +11,8 @@
     "db:generate": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "bot:poll": "tsx --env-file=.env scripts/bot-poll.ts"
+    "bot:poll": "tsx --env-file=.env scripts/bot-poll.ts",
+    "bot:poll:prod": "tsx scripts/bot-poll.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.1.0",
