@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { detectDistrict } from "../src/lib/districts";
 
 const prisma = new PrismaClient();
 
@@ -112,6 +113,19 @@ async function main() {
       await prisma.price.create({ data: { serviceId: svc.id, amount: s.base * 100, note: "Базовая цена" } });
     }
   }
+
+  // Backfill: проставить район у адресов, где он ещё пустой (после миграции)
+  console.log("→ Backfilling districts for existing addresses...");
+  const addresses = await prisma.address.findMany({ where: { district: null } });
+  let backfilled = 0;
+  for (const a of addresses) {
+    const d = detectDistrict(a.address);
+    if (d) {
+      await prisma.address.update({ where: { id: a.id }, data: { district: d } });
+      backfilled++;
+    }
+  }
+  if (backfilled) console.log(`  → проставили район у ${backfilled} адресов`);
 
   console.log("→ Seeding users (admin + master)...");
   // Если уже есть пользователи — не трогаем. Пароли первого запуска показываем в консоль.

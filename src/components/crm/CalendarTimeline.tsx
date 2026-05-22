@@ -5,6 +5,7 @@ import { Calendar as CalIcon, ChevronLeft, ChevronRight, Clock, MapPin, Plus, Us
 import { addDays, format, isSameDay, isToday, parseISO } from "date-fns";
 import { ru } from "date-fns/locale";
 import { statusMeta } from "@/lib/status";
+import { districtMeta } from "@/lib/districts";
 
 interface ReqLite {
   id: string;
@@ -12,6 +13,7 @@ interface ReqLite {
   clientName: string;
   serviceName: string;
   address: string;
+  district?: string | null;
   scheduledAt: string;
   duration: number;
   status: string;
@@ -181,18 +183,19 @@ function DayAgenda({
   return (
     <section className="card overflow-hidden">
       <div className="px-4 py-3 border-b border-border flex items-center justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <div className="font-semibold">{compact ? format(day, "d MMMM, EEEE", { locale: ru }) : "Расписание дня"}</div>
           <div className="text-xs text-muted-fg mt-0.5">
             {items.length ? daySummary(items.length) : "Свободный день"}
             {freeSlots.length > 0 && <span className="text-emerald-400"> · {freeSlotsLabel(freeSlots.length)}</span>}
             {holiday && <span className="text-warning"> · {holiday.reason}</span>}
           </div>
+          <DistrictBreakdown requests={items} />
         </div>
         <button
           type="button"
           onClick={() => openQuickAdd()}
-          className="btn-outline px-3 py-2 text-xs gap-1.5"
+          className="btn-outline px-3 py-2 text-xs gap-1.5 shrink-0"
         >
           <Plus className="h-3.5 w-3.5" /> Заявка
         </button>
@@ -242,6 +245,36 @@ function openQuickAdd(scheduledAt?: string) {
   window.dispatchEvent(new CustomEvent("printcare:quickadd", { detail: { scheduledAt } }));
 }
 
+/** Разбивка дня по районам — компактные чипы для планирования маршрута */
+function DistrictBreakdown({ requests }: { requests: ReqLite[] }) {
+  if (requests.length === 0) return null;
+  const counts = new Map<string, number>();
+  for (const r of requests) {
+    if (!r.district) continue;
+    counts.set(r.district, (counts.get(r.district) || 0) + 1);
+  }
+  if (counts.size === 0) return null;
+  const ordered = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  return (
+    <div className="mt-2 flex flex-wrap gap-1.5">
+      {ordered.map(([name, n]) => {
+        const d = districtMeta(name);
+        if (!d) return null;
+        return (
+          <span
+            key={name}
+            className="text-[10px] font-medium rounded-full px-2 py-0.5 inline-flex items-center gap-1.5"
+            style={{ background: `${d.color}22`, color: d.color, border: `1px solid ${d.color}40` }}
+          >
+            <span className="h-1.5 w-1.5 rounded-full" style={{ background: d.color }} />
+            {name} · {n}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 function freeSlotsLabel(n: number) {
   if (n === 1) return "1 свободный слот";
   if (n > 1 && n < 5) return `${n} свободных слота`;
@@ -251,6 +284,7 @@ function freeSlotsLabel(n: number) {
 function AgendaCard({ request }: { request: ReqLite }) {
   const dt = parseISO(request.scheduledAt);
   const meta = statusMeta(request.status);
+  const district = districtMeta(request.district);
   return (
     <Link href={`/crm/requests/${request.id}`} className="block px-4 py-3 hover:bg-muted/20 transition">
       <div className="flex gap-3">
@@ -264,7 +298,18 @@ function AgendaCard({ request }: { request: ReqLite }) {
               <div className="font-medium truncate">#{request.number} · {request.clientName}</div>
               <div className="text-sm text-muted-fg truncate">{request.serviceName}</div>
             </div>
-            <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] ${meta.cls.bg} ${meta.cls.text}`}>{meta.shortLabel}</span>
+            <div className="shrink-0 flex items-center gap-1.5">
+              {district && (
+                <span
+                  className="rounded-full px-2 py-0.5 text-[10px] font-medium"
+                  style={{ background: `${district.color}22`, color: district.color, border: `1px solid ${district.color}55` }}
+                  title={`Район: ${district.name}`}
+                >
+                  {district.name}
+                </span>
+              )}
+              <span className={`rounded-full px-2 py-0.5 text-[10px] ${meta.cls.bg} ${meta.cls.text}`}>{meta.shortLabel}</span>
+            </div>
           </div>
           <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-fg">
             {request.masterName && (

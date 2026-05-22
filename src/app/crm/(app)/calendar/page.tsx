@@ -49,6 +49,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
           clientName: r.client.name,
           serviceName: r.service?.name || "—",
           address: r.address?.address || "",
+          district: r.address?.district || null,
           scheduledAt: r.scheduledAt!.toISOString(),
           duration: r.durationMin,
           status: r.status,

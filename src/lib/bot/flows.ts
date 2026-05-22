@@ -6,6 +6,7 @@ import { format, addDays, setHours, setMinutes } from "date-fns";
 import { ru } from "date-fns/locale";
 import { notifyAdminsNewRequest } from "./notify";
 import { proposeNextSlots, formatSlotLabel } from "../scheduling";
+import { withDistrict } from "../districts";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Главные обработчики
@@ -737,7 +738,7 @@ async function finalizeRequest(ctx: BotContext, data: any) {
   // Адрес
   let addressId: string | null = null;
   if (data.address) {
-    const addr = await prisma.address.create({ data: { clientId: client.id, address: data.address } });
+    const addr = await prisma.address.create({ data: { clientId: client.id, ...withDistrict(data.address) } });
     addressId = addr.id;
   }
 
@@ -1138,7 +1139,7 @@ async function createAdminRequest(ctx: BotContext) {
 
   let addressId: string | null = null;
   if (data.address) {
-    const addr = await prisma.address.create({ data: { clientId: client.id, address: data.address } });
+    const addr = await prisma.address.create({ data: { clientId: client.id, ...withDistrict(data.address) } });
     addressId = addr.id;
   }
 

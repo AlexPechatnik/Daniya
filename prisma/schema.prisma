@@ -69,8 +69,10 @@ model Address {
   clientId String
   label    String? // "Офис", "Дом"
   address  String
+  district String? // авто-определяемый район СПб/ЛО для группировки маршрута
   client   Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
   requests Request[]
+  @@index([district])
 }
 
 model Printer {
