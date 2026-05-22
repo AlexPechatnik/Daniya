@@ -20,7 +20,8 @@
       "Bash(curl -sI https://raw.githubusercontent.com/AlexPechatnik/Daniya/main/deploy/install.sh)",
       "Bash(curl -sI https://api.github.com/repos/AlexPechatnik/Daniya)",
       "Bash(git commit *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(npx tsc *)"
     ]
   }
 }

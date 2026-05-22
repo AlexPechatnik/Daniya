@@ -60,6 +60,14 @@ export async function handleMessage(ctx: BotContext) {
   if (ctx.state?.flow === "admin_request") {
     return continueAdminRequest(ctx);
   }
+  if (ctx.state?.flow === "contact_master") {
+    // Сообщение для мастера — уже залогировано в runner. Подтверждаем и возвращаем в меню.
+    await ctx.clearState();
+    return ctx.send(
+      "✅ Сообщение передано мастеру. Он ответит в этот чат.\n\nЧтобы вернуться в меню — /start",
+      { inlineKeyboard: [backToMenuRow()] },
+    );
+  }
 
   if (isAdmin(ctx) && ctx.text) {
     return startAdminRequest(ctx, ctx.text);
@@ -69,7 +77,8 @@ export async function handleMessage(ctx: BotContext) {
   if (ctx.client && ctx.text) {
     // Уже залогировано в runner. Просто подтвердим, что мы получили.
     await ctx.send(
-      "Сообщение записано — мастер увидит его в CRM.\n\nНужно создать новую заявку? — /start",
+      "Сообщение записано — мастер увидит его в CRM.",
+      { inlineKeyboard: [backToMenuRow()] },
     );
     return;
   }
@@ -82,6 +91,17 @@ export async function handleCallback(ctx: BotContext) {
   const data = ctx.callbackData;
   if (!data) return;
 
+  // Главное меню клиента — универсальная кнопка "Назад"
+  if (data === "client:menu") {
+    await ctx.clearState();
+    if (isAdmin(ctx)) return adminMenu(ctx);
+    if (ctx.user) return masterMenu(ctx);
+    return clientWelcome(ctx);
+  }
+  if (data === "client:about") return clientAbout(ctx);
+  if (data === "client:contact") return clientContactMaster(ctx);
+  if (data === "client:prices") return clientPrices(ctx);
+
   if (data === "new_request") return startNewRequest(ctx);
   if (data === "admin:new") return startAdminRequest(ctx);
   if (data === "admin:confirm") return createAdminRequest(ctx);
@@ -93,22 +113,36 @@ export async function handleCallback(ctx: BotContext) {
   if (data === "my_requests") return clientStatus(ctx);
   if (data === "cancel_flow") {
     await ctx.clearState();
-    return ctx.send("Отменил.");
+    return ctx.send("Отменил.", { inlineKeyboard: [backToMenuRow()] });
   }
 
-  // Шаги wizard'а
-  if (data.startsWith("svc:")) {
-    return newRequestServicePicked(ctx, data.slice(4));
+  // Шаги клиентского wizard'а
+  if (data.startsWith("svc:")) return newRequestServicePicked(ctx, data.slice(4));
+  if (data.startsWith("when:")) return newRequestWhenPicked(ctx, data.slice(5));
+
+  // Корзина — выбор картриджа
+  if (data === "cart:more") {
+    const cur = ctx.state?.data || { items: [] };
+    await ctx.setState("new_request", "cartridge_pick", cur);
+    return sendCartridgePicker(ctx, cur);
   }
-  if (data.startsWith("when:")) {
-    return newRequestWhenPicked(ctx, data.slice(5));
-  }
+  if (data === "cart:view") return cartView(ctx);
+  if (data === "cart:custom") return cartCustomPrompt(ctx);
+  if (data === "cart:search") return cartSearchPrompt(ctx);
+  if (data === "cart:checkout") return cartCheckout(ctx);
+  if (data === "cart:custom_save") return cartCustomFromSearch(ctx);
+  if (data.startsWith("cart:add:")) return cartAddCartridge(ctx, data.slice("cart:add:".length));
+  if (data.startsWith("cart:remove:")) return cartRemoveItem(ctx, data.slice("cart:remove:".length));
 
   if (data.startsWith("admin:svc:")) return adminServicePicked(ctx, data.slice("admin:svc:".length));
   if (data.startsWith("admin:when:")) return adminWhenPicked(ctx, data.slice("admin:when:".length));
   if (data.startsWith("admin:edit:")) return adminEditField(ctx, data.slice("admin:edit:".length));
   if (data.startsWith("admin:skip:")) return adminSkipField(ctx, data.slice("admin:skip:".length));
   if (data.startsWith("admin:master:")) return adminMasterPicked(ctx, data.slice("admin:master:".length));
+
+  // Мастерское меню (кнопки)
+  if (data === "master:today") return masterToday(ctx);
+  if (data === "master:next") return masterNext(ctx);
 
   // Мастерские действия по заявке (включая req:<id>:claim)
   if (data.startsWith("req:")) {
@@ -119,19 +153,40 @@ export async function handleCallback(ctx: BotContext) {
 // ─────────────────────────────────────────────────────────────────────────────
 // КЛИЕНТ — главное меню и приветствие
 
+const CHIP_PRICE_DEFAULT = 15000; // копейки = 150 ₽
+
+// Унифицированная кнопка возврата — добавляется в конец inline-клавиатуры на
+// большинстве экранов, чтобы клиент всегда мог вернуться в главное меню.
+function backToMenuRow() {
+  return [{ text: "🏠 Главное меню", callbackData: "client:menu" }];
+}
+
 async function clientWelcome(ctx: BotContext) {
   const name = ctx.displayName ? `, ${ctx.displayName.split(" ")[0]}` : "";
+  // Подгружаем счётчик активных заявок чтобы показать в кнопке «Мои заявки (N)»
+  let activeCount = 0;
+  if (ctx.client) {
+    activeCount = await prisma.request.count({
+      where: {
+        clientId: ctx.client.id,
+        status: { in: ["NEW", "SCHEDULED", "EN_ROUTE", "IN_PROGRESS", "AWAITING_PAYMENT"] },
+      },
+    });
+  }
+
   await ctx.send(
     `<b>${company.name}</b> — выездной сервис принтеров в ${company.city}\n\n` +
-      `Здравствуйте${name}! Я помогу:\n` +
-      `• оставить заявку на заправку, замену, диагностику или ремонт\n` +
-      `• посмотреть статус ваших заявок\n` +
-      `• связаться с мастером\n\n` +
-      `С чего начнём?`,
+      `Здравствуйте${name}! Чем помочь?`,
     {
       inlineKeyboard: [
-        [{ text: "📝 Оставить заявку", callbackData: "new_request" }],
-        [{ text: "📋 Мои заявки", callbackData: "my_requests" }],
+        [{ text: "📝 Новая заявка", callbackData: "new_request" }],
+        [{
+          text: activeCount > 0 ? `📋 Мои заявки (${activeCount})` : "📋 Мои заявки",
+          callbackData: "my_requests",
+        }],
+        [{ text: "💰 Узнать цену", callbackData: "client:prices" }],
+        [{ text: "📞 Связаться с мастером", callbackData: "client:contact" }],
+        [{ text: "ℹ️ О компании", callbackData: "client:about" }],
       ],
     },
   );
@@ -145,6 +200,64 @@ async function helpMenu(ctx: BotContext) {
       `/cancel — отменить текущее действие\n\n` +
       `Телефон офиса: ${company.phone}\n` +
       `Адрес: ${company.address}`,
+    { inlineKeyboard: [backToMenuRow()] },
+  );
+}
+
+async function clientAbout(ctx: BotContext) {
+  await ctx.send(
+    `<b>${company.name}</b>\n` +
+      `Выездной сервис принтеров в ${company.city}.\n\n` +
+      `Работаем с 2007 года. Помогаем компаниям и частным клиентам поддерживать печатную технику в рабочем состоянии.\n\n` +
+      `<b>Что делаем:</b>\n` +
+      `• 💧 Заправка картриджей\n` +
+      `• 🔄 Замена картриджей\n` +
+      `• 🩺 Диагностика\n` +
+      `• 🔧 Ремонт принтеров\n\n` +
+      `<b>Контакты:</b>\n` +
+      `📞 ${company.phone}\n` +
+      `📍 ${company.address}\n` +
+      `🕐 Пн–Пт 9:00–20:00, Сб 10:00–18:00`,
+    { inlineKeyboard: [backToMenuRow()] },
+  );
+}
+
+async function clientContactMaster(ctx: BotContext) {
+  // Простой режим: оставляем сообщение, мастер ответит из CRM
+  await ctx.setState("contact_master", "input", {});
+  await ctx.send(
+    `💬 Напишите сообщение мастеру — оно появится в CRM, мастер ответит в этот чат.\n\n` +
+      `<i>Например: «У меня HP M125, печатает с полосами. Когда удобнее приехать?»</i>`,
+    { inlineKeyboard: [backToMenuRow()] },
+  );
+}
+
+async function clientPrices(ctx: BotContext) {
+  // Топ-6 популярных моделей с ценой заправки
+  const items = await prisma.cartridge.findMany({
+    where: { isPopular: true },
+    include: { prices: { where: { service: { slug: "zapravka" } }, take: 1 } },
+    orderBy: [{ brand: "asc" }, { model: "asc" }],
+    take: 8,
+  });
+  const lines = items
+    .map((c) => {
+      const p = c.prices[0]?.amount;
+      const chip = c.hasChip ? " · с чипом" : "";
+      return p ? `• <b>${c.brand} ${c.model}</b> — ${formatRub(p)}${chip}` : null;
+    })
+    .filter(Boolean)
+    .join("\n");
+
+  await ctx.send(
+    `💰 <b>Заправка популярных моделей</b>\n\n${lines}\n\n` +
+      `<i>На моделях с чипом — +150 ₽ за замену. Точная цена зависит от состояния картриджа.</i>`,
+    {
+      inlineKeyboard: [
+        [{ text: "📝 Заказать заправку", callbackData: "new_request" }],
+        backToMenuRow(),
+      ],
+    },
   );
 }
 
@@ -153,7 +266,10 @@ async function helpMenu(ctx: BotContext) {
 
 async function clientStatus(ctx: BotContext) {
   if (!ctx.client) {
-    return ctx.send("У вас пока нет заявок. Создать первую? — /start");
+    return ctx.send(
+      "У вас пока нет заявок. Создать первую?",
+      { inlineKeyboard: [[{ text: "📝 Новая заявка", callbackData: "new_request" }], backToMenuRow()] },
+    );
   }
   const requests = await prisma.request.findMany({
     where: { clientId: ctx.client.id },
@@ -162,29 +278,33 @@ async function clientStatus(ctx: BotContext) {
     take: 10,
   });
   if (requests.length === 0) {
-    return ctx.send("Заявок пока нет. Создать первую — /start");
+    return ctx.send(
+      "Заявок пока нет. Создать первую?",
+      { inlineKeyboard: [[{ text: "📝 Новая заявка", callbackData: "new_request" }], backToMenuRow()] },
+    );
   }
   const lines = requests.map((r) => {
     const time = r.scheduledAt ? format(r.scheduledAt, "d MMM, HH:mm", { locale: ru }) : "без даты";
     return `• <b>#${r.number}</b> · ${statusEmoji(r.status)} ${statusLabel(r.status)}\n  ${r.service?.name || "услуга"} · ${time}`;
   });
   await ctx.send(`<b>Ваши заявки:</b>\n\n${lines.join("\n\n")}`, {
-    inlineKeyboard: [[{ text: "📝 Новая заявка", callbackData: "new_request" }]],
+    inlineKeyboard: [[{ text: "📝 Новая заявка", callbackData: "new_request" }], backToMenuRow()],
   });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// КЛИЕНТ — wizard новой заявки
+// КЛИЕНТ — wizard новой заявки с CART (несколько картриджей)
 
 async function startNewRequest(ctx: BotContext) {
   const services = await prisma.service.findMany({ orderBy: { name: "asc" } });
-  await ctx.setState("new_request", "service", {});
+  // Сбрасываем cart при старте нового сценария
+  await ctx.setState("new_request", "service", { items: [] });
   await ctx.send(
-    "<b>Шаг 1 из 5</b> — какая услуга нужна?",
+    "<b>Шаг 1 из 4</b> — какая услуга нужна?",
     {
       inlineKeyboard: [
         ...services.map((s) => [{ text: serviceEmoji(s.slug) + " " + s.name, callbackData: `svc:${s.id}` }]),
-        [{ text: "✖️ Отмена", callbackData: "cancel_flow" }],
+        backToMenuRow(),
       ],
     },
   );
@@ -193,44 +313,275 @@ async function startNewRequest(ctx: BotContext) {
 async function newRequestServicePicked(ctx: BotContext, serviceId: string) {
   const service = await prisma.service.findUnique({ where: { id: serviceId } });
   if (!service) return;
-  const data = ctx.state?.data || {};
+  const data = ctx.state?.data || { items: [] };
   data.serviceId = service.id;
   data.serviceName = service.name;
-  await ctx.setState("new_request", "cartridge", data);
+  data.serviceSlug = service.slug;
+  data.items = data.items || [];
+  await ctx.setState("new_request", "cartridge_pick", data);
+  return sendCartridgePicker(ctx, data);
+}
+
+// ── ВЫБОР КАРТРИДЖА: популярные кнопки + поиск + свободный ввод ─────────────
+async function sendCartridgePicker(ctx: BotContext, data: any) {
+  const popular = await prisma.cartridge.findMany({
+    where: { isPopular: true },
+    include: { prices: { where: { service: { slug: data.serviceSlug || "zapravka" } }, take: 1 } },
+    orderBy: [{ brand: "asc" }, { model: "asc" }],
+    take: 8,
+  });
+
+  const cartLine = data.items?.length
+    ? `\n\n🛒 В корзине: <b>${data.items.length}</b> позиц${endingMatch(data.items.length, "ия", "ии", "ий")} на ~${formatRub(cartTotal(data.items))}`
+    : "";
+
   await ctx.send(
-    `Выбрано: <b>${service.name}</b>\n\n<b>Шаг 2 из 5</b> — модель картриджа или принтера?\n\n` +
-      `<i>Например: HP CF283A или Canon LBP6020. Если не знаете — напишите «не знаю».</i>`,
+    `<b>Шаг 2 из 4</b> — какой картридж?\n\n🔥 Популярные модели:` + cartLine,
+    {
+      inlineKeyboard: [
+        ...popular.map((c) => {
+          const price = c.prices[0]?.amount;
+          const priceLabel = price ? ` · ${Math.round(price / 100)}₽` : "";
+          const chipMark = c.hasChip ? " ⚡" : "";
+          return [{ text: `${c.brand} ${c.model}${priceLabel}${chipMark}`, callbackData: `cart:add:${c.id}` }];
+        }),
+        [{ text: "🔍 Найти по модели", callbackData: "cart:search" }],
+        [{ text: "✏️ Своя модель текстом", callbackData: "cart:custom" }],
+        data.items?.length
+          ? [{ text: "✓ Перейти к оформлению", callbackData: "cart:checkout" }]
+          : null,
+        backToMenuRow(),
+      ].filter(Boolean) as any,
+    },
   );
 }
 
-async function newRequestCartridge(ctx: BotContext) {
-  const data = ctx.state?.data || {};
-  data.printerInfo = ctx.text;
-  await ctx.setState("new_request", "when", data);
-  const now = new Date();
-  const tomorrow = addDays(now, 1);
+async function cartAddCartridge(ctx: BotContext, cartridgeId: string) {
+  const c = await prisma.cartridge.findUnique({
+    where: { id: cartridgeId },
+    include: { prices: { where: { service: { id: (ctx.state?.data || {}).serviceId } }, take: 1 } },
+  });
+  if (!c) return;
+  const data = ctx.state?.data || { items: [] };
+  const refill = c.prices[0]?.amount ?? 0;
+  const chipPrice = c.hasChip ? (c.chipPrice ?? CHIP_PRICE_DEFAULT) : 0;
+  data.items = data.items || [];
+  data.items.push({
+    cartridgeId: c.id,
+    label: `${c.brand} ${c.model}`,
+    price: refill,
+    chipPrice,
+    hasChip: c.hasChip,
+    withChip: c.hasChip, // по умолчанию включаем замену чипа
+    quantity: 1,
+  });
+  await ctx.setState("new_request", "cartridge_pick", data);
+
+  const item = data.items[data.items.length - 1];
+  const total = (item.price + (item.withChip ? item.chipPrice : 0)) * item.quantity;
   await ctx.send(
-    "<b>Шаг 3 из 5</b> — когда вам удобно?",
+    `✅ Добавлено: <b>${item.label}</b>` +
+      `\n• Заправка: ${formatRub(item.price)}` +
+      (item.hasChip ? `\n• Замена чипа: +${formatRub(item.chipPrice)}` : "") +
+      `\n\n🛒 В корзине ${data.items.length} позиц${endingMatch(data.items.length, "ия", "ии", "ий")}, ~${formatRub(cartTotal(data.items))}`,
+    {
+      inlineKeyboard: [
+        [{ text: "➕ Добавить ещё картридж", callbackData: "cart:more" }],
+        [{ text: "✓ Оформить заявку", callbackData: "cart:checkout" }],
+        [{ text: "🗑 Изменить корзину", callbackData: "cart:view" }],
+        backToMenuRow(),
+      ],
+    },
+  );
+}
+
+async function cartView(ctx: BotContext) {
+  const data = ctx.state?.data || { items: [] };
+  if (!data.items?.length) {
+    return ctx.send("Корзина пуста.", {
+      inlineKeyboard: [[{ text: "➕ Добавить картридж", callbackData: "cart:more" }], backToMenuRow()],
+    });
+  }
+  const rows: any[] = data.items.map((it: any, i: number) => {
+    const total = (it.price + (it.withChip ? it.chipPrice : 0)) * it.quantity;
+    return [{ text: `🗑 ${it.label} — ${formatRub(total)}`, callbackData: `cart:remove:${i}` }];
+  });
+  await ctx.send(
+    `🛒 <b>Корзина (нажмите чтобы убрать):</b>\n\nИтого: <b>${formatRub(cartTotal(data.items))}</b>`,
+    {
+      inlineKeyboard: [
+        ...rows,
+        [{ text: "➕ Добавить ещё", callbackData: "cart:more" }],
+        [{ text: "✓ Оформить заявку", callbackData: "cart:checkout" }],
+        backToMenuRow(),
+      ],
+    },
+  );
+}
+
+async function cartRemoveItem(ctx: BotContext, indexStr: string) {
+  const idx = parseInt(indexStr, 10);
+  const data = ctx.state?.data || { items: [] };
+  if (Number.isFinite(idx) && data.items?.[idx]) {
+    data.items.splice(idx, 1);
+    await ctx.setState("new_request", "cartridge_pick", data);
+  }
+  return cartView(ctx);
+}
+
+// Свободный ввод модели текстом
+async function cartCustomPrompt(ctx: BotContext) {
+  await ctx.setState("new_request", "cartridge_custom", ctx.state?.data || { items: [] });
+  await ctx.send(
+    `✏️ Напишите модель текстом — например: <i>HP CF283A</i> или <i>модель принтера Canon LBP6020</i>.\n\n` +
+      `Точную цену скажет мастер на месте.`,
+    { inlineKeyboard: [[{ text: "⬅️ К выбору картриджа", callbackData: "cart:more" }], backToMenuRow()] },
+  );
+}
+
+async function cartCustomReceived(ctx: BotContext) {
+  const data = ctx.state?.data || { items: [] };
+  data.items = data.items || [];
+  data.items.push({
+    cartridgeId: null,
+    label: (ctx.text || "Своя модель").trim(),
+    price: 0,
+    chipPrice: 0,
+    hasChip: false,
+    withChip: false,
+    quantity: 1,
+    isCustom: true,
+  });
+  await ctx.setState("new_request", "cartridge_pick", data);
+  await ctx.send(
+    `✅ Добавлено: <b>${data.items[data.items.length - 1].label}</b>\n<i>Цена уточняется мастером</i>`,
+    {
+      inlineKeyboard: [
+        [{ text: "➕ Добавить ещё картридж", callbackData: "cart:more" }],
+        [{ text: "✓ Оформить заявку", callbackData: "cart:checkout" }],
+        [{ text: "🗑 Изменить корзину", callbackData: "cart:view" }],
+        backToMenuRow(),
+      ],
+    },
+  );
+}
+
+// Поиск по моделям
+async function cartSearchPrompt(ctx: BotContext) {
+  await ctx.setState("new_request", "cartridge_search", ctx.state?.data || { items: [] });
+  await ctx.send(
+    `🔍 Введите модель картриджа или принтера.\n\n<i>Например: «CF283», «LBP6020», «Samsung 111»</i>`,
+    { inlineKeyboard: [[{ text: "⬅️ К выбору", callbackData: "cart:more" }], backToMenuRow()] },
+  );
+}
+
+async function cartSearchReceived(ctx: BotContext) {
+  const q = (ctx.text || "").trim();
+  if (q.length < 2) return ctx.send("Слишком короткий запрос — нужно минимум 2 символа.");
+  const data = ctx.state?.data || { items: [] };
+
+  // Поиск по модели и совместимости
+  const hits = await prisma.cartridge.findMany({
+    where: {
+      OR: [
+        { model: { contains: q } },
+        { brand: { contains: q } },
+        { compatible: { contains: q } },
+      ],
+    },
+    include: { prices: { where: { service: { slug: data.serviceSlug || "zapravka" } }, take: 1 } },
+    orderBy: [{ isPopular: "desc" }, { brand: "asc" }, { model: "asc" }],
+    take: 8,
+  });
+
+  if (hits.length === 0) {
+    return ctx.send(
+      `Ничего не нашли по «${q}». Можно добавить как свободный текст — мастер уточнит на месте.`,
+      {
+        inlineKeyboard: [
+          [{ text: `✏️ Добавить «${q.slice(0, 30)}»`, callbackData: "cart:custom_save" }],
+          [{ text: "🔍 Попробовать ещё", callbackData: "cart:search" }],
+          backToMenuRow(),
+        ],
+      },
+    );
+  }
+
+  // Сохраняем запрос на случай если выберет «добавить как есть»
+  data.lastSearch = q;
+  await ctx.setState("new_request", "cartridge_pick", data);
+  await ctx.send(
+    `Нашли по «${q}» — выберите:`,
+    {
+      inlineKeyboard: [
+        ...hits.map((c) => {
+          const price = c.prices[0]?.amount;
+          const priceLabel = price ? ` · ${Math.round(price / 100)}₽` : "";
+          const chipMark = c.hasChip ? " ⚡" : "";
+          return [{ text: `${c.brand} ${c.model}${priceLabel}${chipMark}`, callbackData: `cart:add:${c.id}` }];
+        }),
+        [{ text: "🔍 Поиск ещё", callbackData: "cart:search" }],
+        [{ text: "⬅️ Назад к популярным", callbackData: "cart:more" }],
+        backToMenuRow(),
+      ],
+    },
+  );
+}
+
+async function cartCustomFromSearch(ctx: BotContext) {
+  const data = ctx.state?.data || { items: [] };
+  if (!data.lastSearch) return cartCustomPrompt(ctx);
+  data.items = data.items || [];
+  data.items.push({
+    cartridgeId: null,
+    label: data.lastSearch,
+    price: 0, chipPrice: 0, hasChip: false, withChip: false,
+    quantity: 1, isCustom: true,
+  });
+  delete data.lastSearch;
+  await ctx.setState("new_request", "cartridge_pick", data);
+  return ctx.send(`✅ Добавлено: <b>${data.items[data.items.length - 1].label}</b>`, {
+    inlineKeyboard: [
+      [{ text: "➕ Добавить ещё", callbackData: "cart:more" }],
+      [{ text: "✓ Оформить заявку", callbackData: "cart:checkout" }],
+      backToMenuRow(),
+    ],
+  });
+}
+
+// Переход к выбору даты
+async function cartCheckout(ctx: BotContext) {
+  const data = ctx.state?.data || { items: [] };
+  if (!data.items?.length) {
+    return ctx.send("Сначала добавьте хотя бы один картридж.", {
+      inlineKeyboard: [[{ text: "➕ Добавить картридж", callbackData: "cart:more" }], backToMenuRow()],
+    });
+  }
+  await ctx.setState("new_request", "when", data);
+  const tomorrow = addDays(new Date(), 1);
+  await ctx.send(
+    `<b>Шаг 3 из 4</b> — когда вам удобно?\n\n🛒 В заявке: ${data.items.length} позиц${endingMatch(data.items.length, "ия", "ии", "ий")}, ~${formatRub(cartTotal(data.items))}`,
     {
       inlineKeyboard: [
         [{ text: "📅 Сегодня", callbackData: `when:today` }],
         [{ text: `📅 Завтра (${format(tomorrow, "d MMM", { locale: ru })})`, callbackData: `when:tomorrow` }],
         [{ text: "🗓 На неделе — обсудим", callbackData: `when:week` }],
-        [{ text: "✖️ Отмена", callbackData: "cancel_flow" }],
+        [{ text: "⬅️ Назад к корзине", callbackData: "cart:view" }],
       ],
     },
   );
 }
 
 async function newRequestWhenPicked(ctx: BotContext, when: string) {
-  const data = ctx.state?.data || {};
+  const data = ctx.state?.data || { items: [] };
   if (when === "today") data.scheduledAt = setMinutes(setHours(new Date(), 16), 0).toISOString();
   else if (when === "tomorrow") data.scheduledAt = setMinutes(setHours(addDays(new Date(), 1), 10), 0).toISOString();
   else data.scheduledAt = null;
   data.whenChoice = when;
   await ctx.setState("new_request", "address", data);
   await ctx.send(
-    "<b>Шаг 4 из 5</b> — куда приехать?\n\n<i>Напишите адрес: район, улица, дом, этаж/офис.</i>",
+    "<b>Шаг 4 из 4</b> — куда приехать?\n\n<i>Напишите адрес: район, улица, дом, этаж/офис.</i>",
+    { inlineKeyboard: [backToMenuRow()] },
   );
 }
 
@@ -306,6 +657,27 @@ async function finalizeRequest(ctx: BotContext, data: any) {
     addressId = addr.id;
   }
 
+  // Корзина → printerInfo (сжатая строка) + comment (детальная)
+  const items: any[] = Array.isArray(data.items) ? data.items : [];
+  const printerInfo = items.length
+    ? items.map((it) => `${it.label}${it.quantity > 1 ? ` ×${it.quantity}` : ""}`).join(", ")
+    : (data.printerInfo === "не знаю" ? null : data.printerInfo) || null;
+
+  const total = cartTotal(items);
+  const detailLines = items.map((it) => {
+    const lineTotal = (it.price + (it.withChip ? it.chipPrice : 0)) * it.quantity;
+    const parts = [`• ${it.label} ×${it.quantity}`];
+    if (it.price) parts.push(`заправка ${Math.round(it.price / 100)}₽`);
+    if (it.withChip) parts.push(`+чип ${Math.round(it.chipPrice / 100)}₽`);
+    if (lineTotal) parts.push(`= ${Math.round(lineTotal / 100)}₽`);
+    if (it.isCustom) parts.push("(уточнить)");
+    return parts.join(" · ");
+  });
+  const commentParts: string[] = [];
+  if (detailLines.length) commentParts.push("Состав:\n" + detailLines.join("\n"));
+  if (total) commentParts.push(`Итого ориентировочно: ${formatRub(total)}`);
+  if (data.whenChoice === "week") commentParts.push("Клиент готов обсудить дату");
+
   // Номер заявки
   const last = await prisma.request.findFirst({ orderBy: { number: "desc" }, select: { number: true } });
   const request = await prisma.request.create({
@@ -314,11 +686,12 @@ async function finalizeRequest(ctx: BotContext, data: any) {
       clientId: client.id,
       addressId,
       serviceId: data.serviceId || null,
-      printerInfo: data.printerInfo === "не знаю" ? null : data.printerInfo,
+      printerInfo,
+      price: total || null,
       scheduledAt: data.scheduledAt ? new Date(data.scheduledAt) : null,
       status: data.scheduledAt ? "SCHEDULED" : "NEW",
       source: "TELEGRAM",
-      comment: data.whenChoice === "week" ? "Клиент готов обсудить дату" : null,
+      comment: commentParts.length ? commentParts.join("\n\n") : null,
     },
     include: { service: true, address: true },
   });
@@ -327,14 +700,19 @@ async function finalizeRequest(ctx: BotContext, data: any) {
   await ctx.send(
     `✅ <b>Заявка #${request.number} принята</b>\n\n` +
       `Услуга: ${request.service?.name || "уточним"}\n` +
-      (request.printerInfo ? `Картридж: ${request.printerInfo}\n` : "") +
+      (items.length
+        ? `Картриджи:\n${detailLines.map((l) => "  " + l).join("\n")}\n${total ? `\n<b>Итого ~${formatRub(total)}</b>\n` : ""}`
+        : printerInfo ? `Картридж: ${printerInfo}\n` : "") +
       (request.address ? `Адрес: ${request.address.address}\n` : "") +
       (request.scheduledAt
         ? `Время: ${format(request.scheduledAt, "d MMMM, HH:mm", { locale: ru })}\n`
         : "Время: согласуем\n") +
       `\nМастер свяжется в ближайшее время.`,
     {
-      inlineKeyboard: [[{ text: "📋 Все мои заявки", callbackData: "my_requests" }]],
+      inlineKeyboard: [
+        [{ text: "📋 Все мои заявки", callbackData: "my_requests" }],
+        backToMenuRow(),
+      ],
     },
   );
   notifyAdminsNewRequest(request.id).catch((e) => console.error("[bot] admin notify failed", e));
@@ -342,11 +720,18 @@ async function finalizeRequest(ctx: BotContext, data: any) {
 
 async function continueNewRequest(ctx: BotContext) {
   const step = ctx.state?.step;
-  if (step === "cartridge") return newRequestCartridge(ctx);
+  // Старая ветка для совместимости: если в state.cartridge юзер пишет текст — трактуем
+  // как «своя модель», добавляем в корзину
+  if (step === "cartridge") return cartCustomReceived(ctx);
+  // Новые шаги корзины
+  if (step === "cartridge_custom") return cartCustomReceived(ctx);
+  if (step === "cartridge_search") return cartSearchReceived(ctx);
   if (step === "address") return newRequestAddress(ctx);
   if (step === "contact") return newRequestContactText(ctx);
   // Если на шаге service/when ждём callback — текст не понимаем
-  await ctx.send("Воспользуйтесь кнопками выше или /cancel чтобы начать заново.");
+  await ctx.send("Воспользуйтесь кнопками выше или /cancel чтобы начать заново.", {
+    inlineKeyboard: [backToMenuRow()],
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -820,6 +1205,23 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
+// ── CART helpers ────────────────────────────────────────────────────────────
+function cartTotal(items: any[]) {
+  return (items || []).reduce(
+    (sum, it) => sum + (it.price + (it.withChip ? it.chipPrice : 0)) * (it.quantity || 1),
+    0,
+  );
+}
+
+/** Окончание для русских числительных: 1 заявка, 2 заявки, 5 заявок */
+function endingMatch(n: number, one: string, few: string, many: string) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return few;
+  return many;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // МАСТЕР
 
@@ -835,11 +1237,21 @@ async function masterMenu(ctx: BotContext) {
     },
   });
   const newCount = await prisma.request.count({ where: { status: "NEW" } });
+  const inProgress = await prisma.request.count({
+    where: { assignedToId: ctx.user.id, status: { in: ["EN_ROUTE", "IN_PROGRESS"] } },
+  });
+
   await ctx.send(
-    `<b>${ctx.user.name}</b>\n\n` +
-      `На сегодня: <b>${today}</b>\n` +
-      `Новых без даты: <b>${newCount}</b>\n\n` +
-      `/today — расписание на сегодня\n/next — следующая заявка`,
+    `🛠 <b>${ctx.user.name}</b> · мастер\n\n` +
+      `📅 На сегодня: <b>${today}</b>\n` +
+      `🚗 Сейчас в работе: <b>${inProgress}</b>\n` +
+      `🆕 Новых без даты: <b>${newCount}</b>`,
+    {
+      inlineKeyboard: [
+        [{ text: "📅 Расписание сегодня", callbackData: "master:today" }],
+        [{ text: "🚗 Следующая заявка", callbackData: "master:next" }],
+      ],
+    },
   );
 }
 
