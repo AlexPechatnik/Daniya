@@ -53,6 +53,25 @@ export async function handleMessage(ctx: BotContext) {
     return;
   }
 
+  // Нажатия persistent reply-кнопок (приходят как обычный текст). Имеют приоритет над flow.
+  const text = (ctx.text || "").trim();
+  if (text === "🏠 Главное меню") {
+    await ctx.clearState();
+    if (isAdmin(ctx)) return adminMenu(ctx);
+    if (ctx.user) return masterMenu(ctx);
+    return clientWelcome(ctx);
+  }
+  if (text === "📝 Новая заявка") {
+    await ctx.clearState();
+    return startNewRequest(ctx);
+  }
+  if (text === "📋 Мои заявки") {
+    return clientStatus(ctx);
+  }
+  if (text === "💰 Цены") {
+    return clientPrices(ctx);
+  }
+
   // Если активен flow — продолжаем его
   if (ctx.state?.flow === "new_request") {
     return continueNewRequest(ctx);
@@ -161,6 +180,31 @@ function backToMenuRow() {
   return [{ text: "🏠 Главное меню", callbackData: "client:menu" }];
 }
 
+/**
+ * Persistent клавиатура клиента — показывается под полем ввода, не исчезает.
+ * Имитирует «нижнее меню» бота: всегда быстрый доступ к ключевым действиям.
+ * Тексты этих кнопок обрабатываются как команды в handleStart.
+ */
+function clientPersistentKeyboard() {
+  return [
+    [{ text: "📝 Новая заявка" }, { text: "📋 Мои заявки" }],
+    [{ text: "💰 Цены" }, { text: "🏠 Главное меню" }],
+  ];
+}
+
+/**
+ * Цена услуги для конкретного картриджа. Если для пары (service, cartridge)
+ * прайс не задан — возвращаем базовую цену услуги (Price с cartridgeId=null).
+ * Это нужно, потому что детальные цены у нас есть только для заправки, а
+ * замена/диагностика/ремонт идут по базовой ставке.
+ */
+async function priceFor(serviceId: string, cartridgeId: string): Promise<number> {
+  const specific = await prisma.price.findFirst({ where: { serviceId, cartridgeId } });
+  if (specific) return specific.amount;
+  const base = await prisma.price.findFirst({ where: { serviceId, cartridgeId: null } });
+  return base?.amount ?? 0;
+}
+
 async function clientWelcome(ctx: BotContext) {
   const name = ctx.displayName ? `, ${ctx.displayName.split(" ")[0]}` : "";
   // Подгружаем счётчик активных заявок чтобы показать в кнопке «Мои заявки (N)»
@@ -188,6 +232,9 @@ async function clientWelcome(ctx: BotContext) {
         [{ text: "📞 Связаться с мастером", callbackData: "client:contact" }],
         [{ text: "ℹ️ О компании", callbackData: "client:about" }],
       ],
+      // Persistent клавиатура под полем ввода — всегда видно главное навменю
+      replyKeyboard: clientPersistentKeyboard(),
+      persistentKeyboard: true,
     },
   );
 }
@@ -357,13 +404,11 @@ async function sendCartridgePicker(ctx: BotContext, data: any) {
 }
 
 async function cartAddCartridge(ctx: BotContext, cartridgeId: string) {
-  const c = await prisma.cartridge.findUnique({
-    where: { id: cartridgeId },
-    include: { prices: { where: { service: { id: (ctx.state?.data || {}).serviceId } }, take: 1 } },
-  });
+  const c = await prisma.cartridge.findUnique({ where: { id: cartridgeId } });
   if (!c) return;
   const data = ctx.state?.data || { items: [] };
-  const refill = c.prices[0]?.amount ?? 0;
+  // Цена для выбранной услуги. Если для этой связки нет — берём базовую цену услуги.
+  const refill = data.serviceId ? await priceFor(data.serviceId, c.id) : 0;
   const chipPrice = c.hasChip ? (c.chipPrice ?? CHIP_PRICE_DEFAULT) : 0;
   data.items = data.items || [];
   data.items.push({
@@ -378,12 +423,15 @@ async function cartAddCartridge(ctx: BotContext, cartridgeId: string) {
   await ctx.setState("new_request", "cartridge_pick", data);
 
   const item = data.items[data.items.length - 1];
-  const total = (item.price + (item.withChip ? item.chipPrice : 0)) * item.quantity;
+  const serviceName = data.serviceName || "услуга";
   await ctx.send(
     `✅ Добавлено: <b>${item.label}</b>` +
-      `\n• Заправка: ${formatRub(item.price)}` +
-      (item.hasChip ? `\n• Замена чипа: +${formatRub(item.chipPrice)}` : "") +
-      `\n\n🛒 В корзине ${data.items.length} позиц${endingMatch(data.items.length, "ия", "ии", "ий")}, ~${formatRub(cartTotal(data.items))}`,
+      (item.price > 0
+        ? `\n• ${serviceName}: ${formatRub(item.price)}`
+        : `\n• ${serviceName}: цена уточняется`) +
+      (item.hasChip && item.withChip ? `\n• Замена чипа: +${formatRub(item.chipPrice)}` : "") +
+      `\n\n🛒 В корзине ${data.items.length} позиц${endingMatch(data.items.length, "ия", "ии", "ий")}` +
+      (cartTotal(data.items) > 0 ? `, ~${formatRub(cartTotal(data.items))}` : ""),
     {
       inlineKeyboard: [
         [{ text: "➕ Добавить ещё картридж", callbackData: "cart:more" }],

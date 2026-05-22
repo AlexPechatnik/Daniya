@@ -33,7 +33,10 @@ export function createTelegramAdapter(): MessengerAdapter {
           row.map((b: KeyboardButton) => ({ text: b.text, request_contact: b.requestContact || undefined }))
         ),
         resize_keyboard: true,
-        one_time_keyboard: true,
+        // По умолчанию одноразовая (для request_contact и т.п.).
+        // persistent=true оставляет клавиатуру видимой — как нижнее меню бота.
+        one_time_keyboard: !opt.persistentKeyboard,
+        is_persistent: opt.persistentKeyboard || undefined,
       };
     }
     return undefined;

@@ -16,6 +16,8 @@ export interface SendOptions {
   inlineKeyboard?: KeyboardButton[][];
   /** Reply-клавиатура (под полем ввода). Используется для request_contact и быстрых меню. */
   replyKeyboard?: KeyboardButton[][];
+  /** Persistent — клавиатура не исчезает после нажатия (видна постоянно, как меню). */
+  persistentKeyboard?: boolean;
   /** Убрать reply-клавиатуру. */
   removeKeyboard?: boolean;
   /** HTML или Markdown. */
