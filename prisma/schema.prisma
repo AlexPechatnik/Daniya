@@ -65,13 +65,17 @@ model ClientChannel {
 }
 
 model Address {
-  id       String  @id @default(cuid())
-  clientId String
-  label    String? // "Офис", "Дом"
-  address  String
-  district String? // авто-определяемый район СПб/ЛО для группировки маршрута
-  client   Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  requests Request[]
+  id               String  @id @default(cuid())
+  clientId         String
+  label            String? // "Офис", "Дом"
+  address          String
+  district         String? // авто-определяемый район СПб/ЛО для группировки маршрута
+  lat              Float?  // координаты от Яндекс.Геокодера
+  lng              Float?
+  formattedAddress String? // канонический вид адреса от геокодера
+  geocodedAt       DateTime?
+  client           Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  requests         Request[]
   @@index([district])
 }
 

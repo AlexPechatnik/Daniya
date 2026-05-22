@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { normalizePhone } from "@/lib/utils";
-import { withDistrict } from "@/lib/districts";
+import { enrichAddress } from "@/lib/districts";
 
 export async function POST(req: NextRequest) {
   await requireUser();
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
 
   if (!addressId && body.address) {
     const addr = await prisma.address.create({
-      data: { clientId: clientId!, ...withDistrict(body.address) },
+      data: { clientId: clientId!, ...(await enrichAddress(body.address)) },
     });
     addressId = addr.id;
   }

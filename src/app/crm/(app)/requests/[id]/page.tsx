@@ -81,10 +81,47 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
           {request.address && (
             <div className="card p-5">
-              <div className="text-xs uppercase tracking-wider text-muted-fg flex items-center gap-1.5">
-                <MapPin className="h-3 w-3" /> Адрес
+              <div className="text-xs uppercase tracking-wider text-muted-fg flex items-center justify-between gap-2">
+                <span className="flex items-center gap-1.5"><MapPin className="h-3 w-3" /> Адрес</span>
+                {request.address.district && (
+                  <span
+                    className="text-[10px] font-medium rounded-full px-2 py-0.5"
+                    style={(() => {
+                      const d = require("@/lib/districts").districtMeta(request.address.district);
+                      return d
+                        ? { background: `${d.color}22`, color: d.color, border: `1px solid ${d.color}55` }
+                        : {};
+                    })()}
+                  >
+                    {request.address.district}
+                  </span>
+                )}
               </div>
-              <div className="mt-2 text-sm">{request.address.address}</div>
+              <div className="mt-2 text-sm">{request.address.formattedAddress || request.address.address}</div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <a
+                  href={
+                    request.address.lat && request.address.lng
+                      ? `https://yandex.ru/maps/?ll=${request.address.lng},${request.address.lat}&z=17&pt=${request.address.lng},${request.address.lat}`
+                      : `https://yandex.ru/maps/?text=${encodeURIComponent(request.address.address)}`
+                  }
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-outline text-xs px-3 py-1.5"
+                >
+                  <MapPin className="h-3.5 w-3.5" /> На карте
+                </a>
+                {request.address.lat && request.address.lng && (
+                  <a
+                    href={`https://yandex.ru/maps/?rtext=~${request.address.lat},${request.address.lng}&rtt=auto`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn-outline text-xs px-3 py-1.5"
+                  >
+                    Маршрут
+                  </a>
+                )}
+              </div>
             </div>
           )}
 

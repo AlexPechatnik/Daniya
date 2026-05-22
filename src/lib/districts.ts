@@ -88,3 +88,40 @@ export function districtMeta(name: string | null | undefined): District | null {
 export function withDistrict(address: string): { address: string; district: string | null } {
   return { address, district: detectDistrict(address) };
 }
+
+/**
+ * Расширенный вариант: пытается геокодировать через Яндекс (если ключ есть),
+ * иначе fallback на regex. Возвращает полный набор полей для Address.create.
+ * Использовать только в async-контексте (server actions, API routes, bot flows).
+ */
+export async function enrichAddress(address: string): Promise<{
+  address: string;
+  district: string | null;
+  lat: number | null;
+  lng: number | null;
+  formattedAddress: string | null;
+  geocodedAt: Date | null;
+}> {
+  // Динамический импорт — модуль доступен только на сервере
+  const { geocodeAddress } = await import("./geocoder");
+  const regexDistrict = detectDistrict(address);
+  const geo = await geocodeAddress(address);
+  if (geo) {
+    return {
+      address,
+      district: geo.district || regexDistrict,
+      lat: geo.lat,
+      lng: geo.lng,
+      formattedAddress: geo.formatted,
+      geocodedAt: new Date(),
+    };
+  }
+  return {
+    address,
+    district: regexDistrict,
+    lat: null,
+    lng: null,
+    formattedAddress: null,
+    geocodedAt: null,
+  };
+}

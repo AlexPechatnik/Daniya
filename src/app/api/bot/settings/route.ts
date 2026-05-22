@@ -16,6 +16,8 @@ const EDITABLE_KEYS = [
   "NEXT_PUBLIC_TELEGRAM_BOT_URL",
   "NEXT_PUBLIC_MAX_BOT_USERNAME",
   "NEXT_PUBLIC_MAX_BOT_URL",
+  // Геокодер
+  "YANDEX_GEOCODER_KEY",
 ] as const;
 
 type EditableKey = (typeof EDITABLE_KEYS)[number];

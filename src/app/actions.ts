@@ -1,7 +1,7 @@
 "use server";
 import { prisma } from "@/lib/db";
 import { normalizePhone } from "@/lib/utils";
-import { withDistrict } from "@/lib/districts";
+import { enrichAddress } from "@/lib/districts";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { startOfDay } from "date-fns";
@@ -40,7 +40,7 @@ export async function submitLead(_prev: LeadFormState, formData: FormData): Prom
     let addressId: string | undefined;
     if (parsed.data.address) {
       const addr = await prisma.address.create({
-        data: { clientId: existing.id, ...withDistrict(parsed.data.address) },
+        data: { clientId: existing.id, ...(await enrichAddress(parsed.data.address)) },
       });
       addressId = addr.id;
     }
