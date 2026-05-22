@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { CalendarTimeline } from "@/components/crm/CalendarTimeline";
 import { startOfWeek, addDays } from "date-fns";
+import { findFreeSlots } from "@/lib/scheduling";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,17 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
 
   const days = Array.from({ length: 7 }).map((_, i) => addDays(start, i));
 
+  // Свободные слоты на каждый день недели — для отображения в agenda как «дырки»
+  const freeSlotsPerDay = await Promise.all(
+    days.map(async (d) => {
+      const slots = await findFreeSlots(d);
+      return {
+        date: d.toISOString().slice(0, 10),
+        slots: slots.map((s) => s.start.toISOString()),
+      };
+    }),
+  );
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -44,6 +56,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
           masterName: r.assignedTo?.name || null,
         }))}
         holidays={holidays.map((h) => ({ date: h.date.toISOString().slice(0, 10), reason: h.reason || "Выходной" }))}
+        freeSlots={freeSlotsPerDay}
         anchor={anchor.toISOString()}
         view={(view as any) || "day"}
       />

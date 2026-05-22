@@ -35,6 +35,14 @@ function dateChip(label: string, sub: string, when: () => Date) {
   return { label, sub, when };
 }
 
+/** ISO-строка → "YYYY-MM-DDTHH:mm" в локальном часовом поясе (для input type=datetime-local) */
+function toLocalInput(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 const datePresets = [
   dateChip("Сейчас", "", () => new Date()),
   dateChip("Сегодня", "16:00", () => setMinutes(setHours(new Date(), 16), 0)),
@@ -42,7 +50,16 @@ const datePresets = [
   dateChip("Завтра", "16:00", () => setMinutes(setHours(addDays(new Date(), 1), 16), 0)),
 ];
 
-export function QuickAddModal({ onClose, services, masters }: { onClose: () => void; services: Service[]; masters: User[] }) {
+export function QuickAddModal({
+  onClose, services, masters, initialScheduledAt,
+}: {
+  onClose: () => void;
+  services: Service[];
+  masters: User[];
+  /** ISO-строка — если передано (например, из клика по свободному слоту в календаре),
+   *  модалка откроется с предзаполненным временем в режиме «Точно». */
+  initialScheduledAt?: string;
+}) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
@@ -81,8 +98,13 @@ export function QuickAddModal({ onClose, services, masters }: { onClose: () => v
   const [name, setName] = useState("");
   const [serviceId, setServiceId] = useState<string>("");
   const [printerInfo, setPrinterInfo] = useState("");
-  const [datePreset, setDatePreset] = useState<number | "custom" | "none">("none");
-  const [customDate, setCustomDate] = useState("");
+  // Если передано initialScheduledAt — сразу режим «Точно» с этой датой/временем
+  const [datePreset, setDatePreset] = useState<number | "custom" | "none">(
+    initialScheduledAt ? "custom" : "none",
+  );
+  const [customDate, setCustomDate] = useState(
+    initialScheduledAt ? toLocalInput(initialScheduledAt) : "",
+  );
   const [address, setAddress] = useState("");
   const [masterId, setMasterId] = useState(masters[0]?.id || "");
   const [showFull, setShowFull] = useState(false);

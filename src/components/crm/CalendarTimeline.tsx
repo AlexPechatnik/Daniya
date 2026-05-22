@@ -20,13 +20,15 @@ interface ReqLite {
 }
 
 interface HolidayLite { date: string; reason: string }
+interface FreeSlotsLite { date: string; slots: string[] }
 
 export function CalendarTimeline({
-  days, requests, holidays = [], anchor, view: initialView = "day",
+  days, requests, holidays = [], freeSlots = [], anchor, view: initialView = "day",
 }: {
   days: string[];
   requests: ReqLite[];
   holidays?: HolidayLite[];
+  freeSlots?: FreeSlotsLite[];
   anchor: string;
   view?: "day" | "week";
 }) {
@@ -126,6 +128,7 @@ export function CalendarTimeline({
           dayKey={activeDayKey}
           requests={requests}
           holiday={holidays.find((h) => h.date.slice(0, 10) === activeDayKey)}
+          freeSlots={freeSlots.find((f) => f.date === activeDayKey)?.slots || []}
         />
       ) : (
         <div className="space-y-3">
@@ -139,6 +142,7 @@ export function CalendarTimeline({
                 dayKey={dayKey}
                 requests={requests}
                 holiday={holidays.find((h) => h.date.slice(0, 10) === dayKey)}
+                freeSlots={freeSlots.find((f) => f.date === dayKey)?.slots || []}
                 compact
               />
             );
@@ -150,11 +154,29 @@ export function CalendarTimeline({
   );
 }
 
-function DayAgenda({ dayKey, requests, holiday, compact = false }: { dayKey: string; requests: ReqLite[]; holiday?: HolidayLite; compact?: boolean }) {
+function DayAgenda({
+  dayKey, requests, holiday, freeSlots = [], compact = false,
+}: {
+  dayKey: string;
+  requests: ReqLite[];
+  holiday?: HolidayLite;
+  freeSlots?: string[];
+  compact?: boolean;
+}) {
   const day = parseLocalDay(dayKey);
   const items = requests
     .filter((r) => r.scheduledAt.slice(0, 10) === dayKey)
     .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
+
+  // Объединяем заявки и свободные слоты в одну временну́ю шкалу
+  const merged: Array<{ kind: "request"; r: ReqLite } | { kind: "slot"; iso: string }> = [
+    ...items.map((r) => ({ kind: "request" as const, r })),
+    ...freeSlots.map((iso) => ({ kind: "slot" as const, iso })),
+  ].sort((a, b) => {
+    const ta = a.kind === "request" ? a.r.scheduledAt : a.iso;
+    const tb = b.kind === "request" ? b.r.scheduledAt : b.iso;
+    return ta.localeCompare(tb);
+  });
 
   return (
     <section className="card overflow-hidden">
@@ -163,23 +185,67 @@ function DayAgenda({ dayKey, requests, holiday, compact = false }: { dayKey: str
           <div className="font-semibold">{compact ? format(day, "d MMMM, EEEE", { locale: ru }) : "Расписание дня"}</div>
           <div className="text-xs text-muted-fg mt-0.5">
             {items.length ? daySummary(items.length) : "Свободный день"}
+            {freeSlots.length > 0 && <span className="text-emerald-400"> · {freeSlotsLabel(freeSlots.length)}</span>}
             {holiday && <span className="text-warning"> · {holiday.reason}</span>}
           </div>
         </div>
-        <Link href="/crm/requests" className="btn-outline px-3 py-2 text-xs gap-1.5">
+        <button
+          type="button"
+          onClick={() => openQuickAdd()}
+          className="btn-outline px-3 py-2 text-xs gap-1.5"
+        >
           <Plus className="h-3.5 w-3.5" /> Заявка
-        </Link>
+        </button>
       </div>
 
-      {items.length === 0 ? (
+      {merged.length === 0 ? (
         <EmptyAgenda holiday={holiday} />
       ) : (
         <div className="divide-y divide-border">
-          {items.map((request) => <AgendaCard key={request.id} request={request} />)}
+          {merged.map((entry) => entry.kind === "request"
+            ? <AgendaCard key={entry.r.id} request={entry.r} />
+            : <FreeSlotRow key={entry.iso} iso={entry.iso} />
+          )}
         </div>
       )}
     </section>
   );
+}
+
+function FreeSlotRow({ iso }: { iso: string }) {
+  const dt = parseISO(iso);
+  return (
+    <button
+      type="button"
+      onClick={() => openQuickAdd(iso)}
+      className="w-full px-4 py-2.5 hover:bg-primary/5 transition flex items-center gap-3 text-left group"
+    >
+      <div className="w-14 shrink-0 text-right">
+        <div className="font-mono text-sm tabular-nums text-muted-fg group-hover:text-primary">{format(dt, "HH:mm")}</div>
+      </div>
+      <div className="flex-1 flex items-center gap-2 text-sm text-muted-fg/70 group-hover:text-primary">
+        <div className="flex-1 border-b border-dashed border-border group-hover:border-primary/40" />
+        <span className="text-xs">Свободно — записать?</span>
+        <Plus className="h-3.5 w-3.5" />
+        <div className="flex-1 border-b border-dashed border-border group-hover:border-primary/40" />
+      </div>
+    </button>
+  );
+}
+
+/**
+ * Открывает модалку «Новая заявка» — глобальный QuickAddTrigger ловит событие
+ * и показывает форму, опционально с предзаполненным временем.
+ */
+function openQuickAdd(scheduledAt?: string) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent("printcare:quickadd", { detail: { scheduledAt } }));
+}
+
+function freeSlotsLabel(n: number) {
+  if (n === 1) return "1 свободный слот";
+  if (n > 1 && n < 5) return `${n} свободных слота`;
+  return `${n} свободных слотов`;
 }
 
 function AgendaCard({ request }: { request: ReqLite }) {
