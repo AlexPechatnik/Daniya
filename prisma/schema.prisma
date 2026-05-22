@@ -168,6 +168,14 @@ model Message {
   @@index([requestId])
 }
 
+model AppSetting {
+  // Универсальное key-value хранилище настроек, чтобы не плодить таблицы.
+  // Значение — JSON-строка, типизация делается в src/lib/settings.ts.
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
 model Holiday {
   // Нерабочий день. Может быть привязан к конкретному мастеру или общий (userId = null).
   id        String   @id @default(cuid())

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { Logo } from "@/components/Logo";
-import { Sun, ListChecks, Users, Calendar, FileSpreadsheet, LogOut, LayoutGrid, BarChart3, History, CalendarOff, Bot } from "lucide-react";
+import { Sun, ListChecks, Users, Calendar, FileSpreadsheet, LogOut, LayoutGrid, BarChart3, History, CalendarOff, Bot, Clock } from "lucide-react";
 import { QuickAddTrigger } from "@/components/crm/QuickAddTrigger";
 import { prisma } from "@/lib/db";
 
@@ -21,6 +21,7 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
     { href: "/crm/history", icon: History, label: "История" },
     { href: "/crm/clients", icon: Users, label: "Клиенты" },
     { href: "/crm/price", icon: FileSpreadsheet, label: "Прайс" },
+    { href: "/crm/settings/schedule", icon: Clock, label: "График работы" },
     { href: "/crm/settings/holidays", icon: CalendarOff, label: "Нерабочие дни" },
     { href: "/crm/settings/bot", icon: Bot, label: "Боты" },
   ];

@@ -5,6 +5,7 @@ import { company } from "../company";
 import { format, addDays, setHours, setMinutes } from "date-fns";
 import { ru } from "date-fns/locale";
 import { notifyAdminsNewRequest } from "./notify";
+import { proposeNextSlots, formatSlotLabel } from "../scheduling";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Главные обработчики
@@ -597,7 +598,7 @@ async function cartCustomFromSearch(ctx: BotContext) {
   });
 }
 
-// Переход к выбору даты
+// Переход к выбору даты — реальные свободные слоты из календаря
 async function cartCheckout(ctx: BotContext) {
   const data = ctx.state?.data || { items: [] };
   if (!data.items?.length) {
@@ -605,27 +606,62 @@ async function cartCheckout(ctx: BotContext) {
       inlineKeyboard: [[{ text: "➕ Добавить картридж", callbackData: "cart:more" }], backToMenuRow()],
     });
   }
+
+  // Запрашиваем 6 ближайших реально свободных слотов с учётом календаря и отсечки
+  const slots = await proposeNextSlots(6);
+  data.proposedSlots = slots.map((s) => s.toISOString());
   await ctx.setState("new_request", "when", data);
-  const tomorrow = addDays(new Date(), 1);
+
+  const buttons: any[] = slots.map((slot, i) => [
+    { text: `🕐 ${formatSlotLabel(slot)}`, callbackData: `when:slot:${i}` },
+  ]);
+
+  // Если слотов нет — fallback на «обсудим»
+  if (buttons.length === 0) {
+    buttons.push([{ text: "🗓 На ближайшие дни — обсудим", callbackData: "when:any" }]);
+  } else {
+    buttons.push([{ text: "🗓 Не подходит — обсудим", callbackData: "when:any" }]);
+  }
+  buttons.push([{ text: "⬅️ Назад к корзине", callbackData: "cart:view" }]);
+
   await ctx.send(
-    `<b>Шаг 3 из 4</b> — когда вам удобно?\n\n🛒 В заявке: ${data.items.length} позиц${endingMatch(data.items.length, "ия", "ии", "ий")}, ~${formatRub(cartTotal(data.items))}`,
-    {
-      inlineKeyboard: [
-        [{ text: "📅 Сегодня", callbackData: `when:today` }],
-        [{ text: `📅 Завтра (${format(tomorrow, "d MMM", { locale: ru })})`, callbackData: `when:tomorrow` }],
-        [{ text: "🗓 На неделе — обсудим", callbackData: `when:week` }],
-        [{ text: "⬅️ Назад к корзине", callbackData: "cart:view" }],
-      ],
-    },
+    `<b>Шаг 3 из 4</b> — когда вам удобно?\n\n` +
+      `🛒 В заявке: ${data.items.length} позиц${endingMatch(data.items.length, "ия", "ии", "ий")}` +
+      (cartTotal(data.items) > 0 ? `, ~${formatRub(cartTotal(data.items))}` : "") +
+      (slots.length > 0
+        ? `\n\nВот свободные окна — выберите удобное:`
+        : `\n\n<i>Свободных слотов на ближайшие дни нет — обсудим с мастером.</i>`),
+    { inlineKeyboard: buttons },
   );
 }
 
 async function newRequestWhenPicked(ctx: BotContext, when: string) {
   const data = ctx.state?.data || { items: [] };
-  if (when === "today") data.scheduledAt = setMinutes(setHours(new Date(), 16), 0).toISOString();
-  else if (when === "tomorrow") data.scheduledAt = setMinutes(setHours(addDays(new Date(), 1), 10), 0).toISOString();
-  else data.scheduledAt = null;
-  data.whenChoice = when;
+
+  if (when === "any") {
+    data.scheduledAt = null;
+    data.whenChoice = "any";
+  } else if (when.startsWith("slot:")) {
+    const idx = parseInt(when.slice(5), 10);
+    const isoList: string[] = Array.isArray(data.proposedSlots) ? data.proposedSlots : [];
+    const iso = isoList[idx];
+    if (iso) {
+      data.scheduledAt = iso;
+      data.whenChoice = "slot";
+    } else {
+      // Слот устарел (state потерялся) — fallback на «обсудим»
+      data.scheduledAt = null;
+      data.whenChoice = "any";
+    }
+  } else if (when === "today") {
+    // Совместимость со старыми сообщениями
+    data.scheduledAt = setMinutes(setHours(new Date(), 16), 0).toISOString();
+  } else if (when === "tomorrow") {
+    data.scheduledAt = setMinutes(setHours(addDays(new Date(), 1), 10), 0).toISOString();
+  } else {
+    data.scheduledAt = null;
+  }
+
   await ctx.setState("new_request", "address", data);
   await ctx.send(
     "<b>Шаг 4 из 4</b> — куда приехать?\n\n<i>Напишите адрес: район, улица, дом, этаж/офис.</i>",
