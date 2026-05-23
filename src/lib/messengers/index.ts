@@ -69,7 +69,7 @@ export async function handleIncoming(event: IncomingEvent) {
 
   // 4. Если у клиента нет активной заявки — создать новую со статусом NEW
   const openRequest = await prisma.request.findFirst({
-    where: { clientId: client.id, status: { in: ["NEW", "SCHEDULED", "IN_PROGRESS"] } },
+    where: { clientId: client.id, status: { in: ["NEW", "ACCEPTED", "SCHEDULED", "EN_ROUTE", "ON_SITE", "IN_PROGRESS"] } },
     orderBy: { createdAt: "desc" },
   });
 

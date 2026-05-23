@@ -3,10 +3,14 @@ import { getAdapter } from "../messengers";
 import { company } from "../company";
 
 const CLIENT_TEMPLATES: Record<string, (req: any) => string> = {
+  ACCEPTED: (r) =>
+    `✅ Мастер принял вашу заявку <b>#${r.number}</b>. Когда он выедет, мы сообщим отдельно.`,
   SCHEDULED: (r) =>
     `📅 Ваша заявка <b>#${r.number}</b> запланирована${r.scheduledAt ? ` на ${formatDate(r.scheduledAt)}` : ""}.\nМастер приедет в назначенное время.`,
   EN_ROUTE: (r) =>
     `🚗 Мастер выехал к вам по заявке <b>#${r.number}</b>. Будет в течение часа.\n\nСвязь: ${company.phone}`,
+  ON_SITE: (r) =>
+    `📍 Мастер прибыл по заявке <b>#${r.number}</b>.`,
   IN_PROGRESS: (r) =>
     `🛠 Мастер прибыл и приступил к работе по заявке <b>#${r.number}</b>.`,
   AWAITING_PAYMENT: (r) =>
@@ -73,6 +77,27 @@ export async function notifyAdminsNewRequest(requestId: string) {
     : undefined;
 
   await notifyAdminRecipients(text, keyboard);
+}
+
+/**
+ * Уведомление мастеру когда клиент написал что-то в чат-бот вне активной заявки.
+ * Чтобы мастер мог быстро открыть диалог в CRM и ответить.
+ */
+export async function notifyAdminsNewMessage(clientId: string, text: string, provider: string) {
+  const client = await prisma.client.findUnique({ where: { id: clientId } });
+  if (!client) return;
+
+  const base = adminBaseUrl();
+  const lines = [
+    `💬 Новое сообщение от клиента`,
+    `${client.name} · ${client.phone}`,
+    `${provider}: «${text.slice(0, 200)}${text.length > 200 ? "…" : ""}»`,
+  ];
+  const keyboard = base
+    ? [[{ text: "💬 Открыть чат в CRM", callbackData: "noop", url: `${base}/crm/inbox?c=${clientId}` } as any]]
+    : undefined;
+
+  await notifyAdminRecipients(lines.join("\n"), keyboard);
 }
 
 export async function notifyAdminsNewLead(leadId: string) {

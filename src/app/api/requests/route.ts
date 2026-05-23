@@ -56,6 +56,35 @@ export async function PATCH(req: NextRequest) {
   await requireUser();
   const body = await req.json();
   const { id, ...patch } = body;
+
+  if ("address" in patch) {
+    const address = String(patch.address || "").trim();
+    delete patch.address;
+
+    const current = await prisma.request.findUnique({
+      where: { id },
+      select: { clientId: true, addressId: true },
+    });
+    if (!current) return NextResponse.json({ error: "Заявка не найдена" }, { status: 404 });
+
+    if (address) {
+      if (current.addressId) {
+        await prisma.address.update({
+          where: { id: current.addressId },
+          data: await enrichAddress(address),
+        });
+        patch.addressId = current.addressId;
+      } else {
+        const created = await prisma.address.create({
+          data: { clientId: current.clientId, ...(await enrichAddress(address)) },
+        });
+        patch.addressId = created.id;
+      }
+    } else {
+      patch.addressId = null;
+    }
+  }
+
   if (patch.scheduledAt) patch.scheduledAt = new Date(patch.scheduledAt);
   const updated = await prisma.request.update({ where: { id }, data: patch });
   return NextResponse.json({ ok: true, request: updated });

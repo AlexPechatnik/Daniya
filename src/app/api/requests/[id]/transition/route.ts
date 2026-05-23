@@ -11,7 +11,7 @@ import { notifyClientStatusChange } from "@/lib/bot/notify";
  * Дополнительно может переключать paymentStatus при переходе AWAITING_PAYMENT → DONE.
  */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  await requireUser();
+  const user = await requireUser();
   const { id } = await params;
   const body = await req.json().catch(() => ({}));
 
@@ -27,13 +27,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   const data: any = { status: to };
+  if ((to === "ACCEPTED" || to === "EN_ROUTE") && !current.assignedToId) {
+    data.assignedToId = user.id;
+  }
   // При переходе в AWAITING_PAYMENT, если ещё не оплачено — оставляем как есть.
   // При переходе в DONE — фиксируем оплату.
   if (to === "DONE" && current.paymentStatus !== "PAID") {
     data.paymentStatus = "PAID";
   }
   // При IN_PROGRESS, если scheduledAt не было — ставим сейчас.
-  if (to === "IN_PROGRESS" && !current.scheduledAt) {
+  if ((to === "ON_SITE" || to === "IN_PROGRESS") && !current.scheduledAt) {
     data.scheduledAt = new Date();
   }
 

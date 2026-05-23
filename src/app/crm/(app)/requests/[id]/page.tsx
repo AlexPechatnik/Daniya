@@ -3,7 +3,6 @@ import { formatRub } from "@/lib/utils";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { RequestEditor } from "@/components/crm/RequestEditor";
-import { StatusPipeline } from "@/components/crm/StatusPipeline";
 import { QuickActionButton } from "@/components/crm/QuickActionButton";
 import { StatusBadge } from "@/components/crm/StatusBadge";
 import { Phone, MapPin, User, Calendar as CalIcon } from "lucide-react";
@@ -46,8 +45,6 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           showCancel={request.status !== "CANCELLED" && request.status !== "DONE"}
         />
       </div>
-
-      <StatusPipeline status={request.status} />
 
       <div className="grid gap-5 lg:grid-cols-[1fr,360px]">
         <div className="space-y-5">

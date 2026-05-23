@@ -6,6 +6,7 @@ import { X, Search, Loader2, Repeat, Droplet, Replace, Stethoscope, Wrench, Chev
 import type { Service, User } from "@prisma/client";
 import { addDays, format, setHours, setMinutes } from "date-fns";
 import { ru } from "date-fns/locale";
+import { AutocompleteInput } from "./AutocompleteInput";
 
 interface ClientHit {
   id: string;
@@ -363,12 +364,24 @@ export function QuickAddModal({
 
           {/* Картридж / комментарий — всегда виден, одно поле */}
           <div>
-            <Label>Картридж или комментарий</Label>
+            <Label>Картридж / принтер</Label>
+            <AutocompleteInput
+              endpoint="/api/suggest/equipment"
+              value={printerInfo}
+              onChange={setPrinterInfo}
+              placeholder="HP CF283A, Canon LBP6020..."
+              minLength={2}
+              className="input h-12 text-base"
+            />
+          </div>
+
+          <div>
+            <Label>Комментарий</Label>
             <textarea
               className="input min-h-[72px] text-base"
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              placeholder="HP CF283A, мажет; второй этаж"
+              placeholder="Мажет, второй этаж, домофон..."
             />
           </div>
 
@@ -387,23 +400,16 @@ export function QuickAddModal({
               {!pickedClient && (
                 <div>
                   <Label>Адрес</Label>
-                  <input
-                    className="input h-12 md:h-11"
+                  <AutocompleteInput
+                    endpoint="/api/suggest/addresses"
                     value={address}
-                    onChange={(e) => setAddress(e.target.value)}
+                    onChange={setAddress}
                     placeholder="Санкт-Петербург, ..."
+                    minLength={3}
+                    className="input h-12 md:h-11"
                   />
                 </div>
               )}
-              <div>
-                <Label>Модель картриджа / принтера</Label>
-                <input
-                  className="input h-12 md:h-11"
-                  value={printerInfo}
-                  onChange={(e) => setPrinterInfo(e.target.value)}
-                  placeholder="HP CF283A, Canon LBP6020..."
-                />
-              </div>
               <div>
                 <Label>Мастер</Label>
                 <select className="input h-12 md:h-11" value={masterId} onChange={(e) => setMasterId(e.target.value)}>

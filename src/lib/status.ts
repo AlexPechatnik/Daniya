@@ -1,14 +1,14 @@
 /**
  * Единый источник правды для статусов заявок:
- * палитра, лейблы, порядок в pipeline и доступные переходы.
- *
- * Используется по всему CRM — никогда не хардкодить цвета/лейблы в компонентах.
+ * подписи, цвета, порядок pipeline и быстрые переходы.
  */
 
 export type RequestStatus =
   | "NEW"
+  | "ACCEPTED"
   | "SCHEDULED"
   | "EN_ROUTE"
+  | "ON_SITE"
   | "IN_PROGRESS"
   | "DONE"
   | "AWAITING_PAYMENT"
@@ -17,13 +17,9 @@ export type RequestStatus =
 export interface StatusMeta {
   label: string;
   shortLabel: string;
-  /** для бордеров/фонов/dot — tailwind-классы */
   cls: { dot: string; bg: string; border: string; text: string; ring: string };
-  /** цвет в hex для inline SVG / графиков */
   hex: string;
-  /** позиция в pipeline (для отображения прогресса). −1 = вне pipeline (отменена) */
   step: number;
-  /** финальные статусы — переход дальше не предлагается */
   terminal: boolean;
 }
 
@@ -42,9 +38,23 @@ export const STATUS_META: Record<RequestStatus, StatusMeta> = {
     step: 0,
     terminal: false,
   },
+  ACCEPTED: {
+    label: "Принята",
+    shortLabel: "Принята",
+    cls: {
+      dot: "bg-lime-500",
+      bg: "bg-lime-500/15",
+      border: "border-lime-500/40",
+      text: "text-lime-400",
+      ring: "ring-lime-500/30",
+    },
+    hex: "#84cc16",
+    step: 1,
+    terminal: false,
+  },
   SCHEDULED: {
     label: "Запланирована",
-    shortLabel: "Запланирована",
+    shortLabel: "План",
     cls: {
       dot: "bg-blue-500",
       bg: "bg-blue-500/15",
@@ -70,6 +80,20 @@ export const STATUS_META: Record<RequestStatus, StatusMeta> = {
     step: 2,
     terminal: false,
   },
+  ON_SITE: {
+    label: "На месте",
+    shortLabel: "На месте",
+    cls: {
+      dot: "bg-indigo-400",
+      bg: "bg-indigo-400/15",
+      border: "border-indigo-400/40",
+      text: "text-indigo-300",
+      ring: "ring-indigo-400/30",
+    },
+    hex: "#818cf8",
+    step: 3,
+    terminal: false,
+  },
   IN_PROGRESS: {
     label: "В работе",
     shortLabel: "В работе",
@@ -81,12 +105,12 @@ export const STATUS_META: Record<RequestStatus, StatusMeta> = {
       ring: "ring-violet-500/30",
     },
     hex: "#8b5cf6",
-    step: 3,
+    step: 4,
     terminal: false,
   },
   AWAITING_PAYMENT: {
     label: "Ожидает оплаты",
-    shortLabel: "Ждёт оплату",
+    shortLabel: "Ждет оплату",
     cls: {
       dot: "bg-orange-500",
       bg: "bg-orange-500/15",
@@ -95,7 +119,7 @@ export const STATUS_META: Record<RequestStatus, StatusMeta> = {
       ring: "ring-orange-500/30",
     },
     hex: "#f97316",
-    step: 4,
+    step: 5,
     terminal: false,
   },
   DONE: {
@@ -109,7 +133,7 @@ export const STATUS_META: Record<RequestStatus, StatusMeta> = {
       ring: "ring-emerald-500/30",
     },
     hex: "#10b981",
-    step: 5,
+    step: 6,
     terminal: true,
   },
   CANCELLED: {
@@ -128,25 +152,32 @@ export const STATUS_META: Record<RequestStatus, StatusMeta> = {
   },
 };
 
-/** Порядок статусов в pipeline (для визуализации) */
 export const PIPELINE: RequestStatus[] = [
   "NEW",
-  "SCHEDULED",
+  "ACCEPTED",
   "EN_ROUTE",
+  "ON_SITE",
   "IN_PROGRESS",
-  "AWAITING_PAYMENT",
   "DONE",
 ];
 
-/** Следующий статус и подпись для primary-кнопки на карточке */
 export function nextAction(status: RequestStatus): { next: RequestStatus; label: string } | null {
   switch (status) {
-    case "NEW": return { next: "SCHEDULED", label: "Запланировать" };
-    case "SCHEDULED": return { next: "EN_ROUTE", label: "Выехать" };
-    case "EN_ROUTE": return { next: "IN_PROGRESS", label: "Прибыл, начать работу" };
-    case "IN_PROGRESS": return { next: "AWAITING_PAYMENT", label: "Завершить работу" };
-    case "AWAITING_PAYMENT": return { next: "DONE", label: "Получена оплата" };
-    default: return null;
+    case "NEW":
+      return { next: "ACCEPTED", label: "Принять" };
+    case "ACCEPTED":
+    case "SCHEDULED":
+      return { next: "EN_ROUTE", label: "В пути" };
+    case "EN_ROUTE":
+      return { next: "ON_SITE", label: "На месте" };
+    case "ON_SITE":
+      return { next: "IN_PROGRESS", label: "Начать работу" };
+    case "IN_PROGRESS":
+      return { next: "DONE", label: "Завершено" };
+    case "AWAITING_PAYMENT":
+      return { next: "DONE", label: "Получена оплата" };
+    default:
+      return null;
   }
 }
 

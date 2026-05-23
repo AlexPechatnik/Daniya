@@ -20,7 +20,7 @@ interface ReqLite {
   price: number | null;
 }
 
-const COLUMNS = ["NEW", "SCHEDULED", "EN_ROUTE", "IN_PROGRESS", "AWAITING_PAYMENT", "DONE"] as const;
+const COLUMNS = ["NEW", "ACCEPTED", "SCHEDULED", "EN_ROUTE", "ON_SITE", "IN_PROGRESS", "AWAITING_PAYMENT", "DONE"] as const;
 
 export function KanbanBoard({ requests }: { requests: ReqLite[] }) {
   const router = useRouter();

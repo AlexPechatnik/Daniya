@@ -4,7 +4,7 @@ import { normalizePhone, formatRub } from "../utils";
 import { company } from "../company";
 import { format, addDays, setHours, setMinutes } from "date-fns";
 import { ru } from "date-fns/locale";
-import { notifyAdminsNewRequest } from "./notify";
+import { notifyAdminsNewRequest, notifyAdminsNewMessage } from "./notify";
 import { proposeNextSlots, formatSlotLabel } from "../scheduling";
 import { enrichAddress } from "../districts";
 
@@ -96,9 +96,12 @@ export async function handleMessage(ctx: BotContext) {
 
   // Свободный текст без активного flow — записываем в общий чат
   if (ctx.client && ctx.text) {
-    // Уже залогировано в runner. Просто подтвердим, что мы получили.
+    // Уже залогировано в runner. Шлём ping мастеру в Telegram и отвечаем клиенту.
+    notifyAdminsNewMessage(ctx.client.id, ctx.text, ctx.provider).catch((e) =>
+      console.error("[bot] notify admin failed", e),
+    );
     await ctx.send(
-      "Сообщение записано — мастер увидит его в CRM.",
+      "Сообщение записано — мастер увидит его в CRM и ответит.",
       { inlineKeyboard: [backToMenuRow()] },
     );
     return;
@@ -215,7 +218,7 @@ async function clientWelcome(ctx: BotContext) {
     activeCount = await prisma.request.count({
       where: {
         clientId: ctx.client.id,
-        status: { in: ["NEW", "SCHEDULED", "EN_ROUTE", "IN_PROGRESS", "AWAITING_PAYMENT"] },
+        status: { in: ["NEW", "ACCEPTED", "SCHEDULED", "EN_ROUTE", "ON_SITE", "IN_PROGRESS", "AWAITING_PAYMENT"] },
       },
     });
   }
@@ -873,7 +876,7 @@ async function adminToday(ctx: BotContext) {
     where: {
       OR: [
         { scheduledAt: { gte: start, lte: end } },
-        { status: { in: ["NEW", "EN_ROUTE", "IN_PROGRESS"] } },
+        { status: { in: ["NEW", "ACCEPTED", "EN_ROUTE", "ON_SITE", "IN_PROGRESS"] } },
       ],
     },
     include: { client: true, service: true, address: true, assignedTo: true },
@@ -1323,7 +1326,7 @@ async function masterMenu(ctx: BotContext) {
   });
   const newCount = await prisma.request.count({ where: { status: "NEW" } });
   const inProgress = await prisma.request.count({
-    where: { assignedToId: ctx.user.id, status: { in: ["EN_ROUTE", "IN_PROGRESS"] } },
+    where: { assignedToId: ctx.user.id, status: { in: ["ACCEPTED", "SCHEDULED", "EN_ROUTE", "ON_SITE", "IN_PROGRESS"] } },
   });
 
   await ctx.send(
@@ -1348,7 +1351,7 @@ async function masterToday(ctx: BotContext) {
     where: {
       OR: [
         { assignedToId: ctx.user.id, scheduledAt: { gte: start, lte: end } },
-        { status: { in: ["IN_PROGRESS", "EN_ROUTE"] }, assignedToId: ctx.user.id },
+        { status: { in: ["ACCEPTED", "SCHEDULED", "IN_PROGRESS", "EN_ROUTE", "ON_SITE"] }, assignedToId: ctx.user.id },
       ],
     },
     include: { client: true, service: true, address: true },
@@ -1363,7 +1366,7 @@ async function masterToday(ctx: BotContext) {
 async function masterNext(ctx: BotContext) {
   if (!ctx.user) return;
   const r = await prisma.request.findFirst({
-    where: { assignedToId: ctx.user.id, status: { in: ["SCHEDULED", "EN_ROUTE", "IN_PROGRESS"] } },
+    where: { assignedToId: ctx.user.id, status: { in: ["ACCEPTED", "SCHEDULED", "EN_ROUTE", "ON_SITE", "IN_PROGRESS"] } },
     include: { client: true, service: true, address: true },
     orderBy: { scheduledAt: "asc" },
   });
@@ -1384,8 +1387,10 @@ async function sendMasterCard(ctx: BotContext, r: any) {
   if (r.comment) lines.push(`💬 ${r.comment}`);
 
   const buttons: any[] = [];
-  if (r.status === "NEW" || r.status === "SCHEDULED") buttons.push({ text: "🚗 Выехать", callbackData: `req:${r.id}:enroute` });
-  if (r.status === "EN_ROUTE") buttons.push({ text: "✅ Прибыл, начать", callbackData: `req:${r.id}:start` });
+  if (r.status === "NEW") buttons.push({ text: "🙋 Принять", callbackData: `req:${r.id}:claim` });
+  if (r.status === "ACCEPTED" || r.status === "SCHEDULED") buttons.push({ text: "🚗 В пути", callbackData: `req:${r.id}:enroute` });
+  if (r.status === "EN_ROUTE") buttons.push({ text: "📍 На месте", callbackData: `req:${r.id}:onsite` });
+  if (r.status === "ON_SITE") buttons.push({ text: "🛠 Начать работу", callbackData: `req:${r.id}:start` });
   if (r.status === "IN_PROGRESS") buttons.push({ text: "🏁 Завершить", callbackData: `req:${r.id}:done` });
   if (r.status === "AWAITING_PAYMENT") buttons.push({ text: "💰 Получена оплата", callbackData: `req:${r.id}:paid` });
 
@@ -1398,7 +1403,7 @@ async function masterRequestAction(ctx: BotContext, payload: string) {
   if (!ctx.user) return;
   const [id, action] = payload.split(":");
 
-  // «Принять на себя» — назначает текущего сотрудника мастером и переводит в SCHEDULED
+  // «Принять на себя» — назначает текущего сотрудника мастером и переводит в ACCEPTED.
   if (action === "claim") {
     const existing = await prisma.request.findUnique({
       where: { id },
@@ -1412,7 +1417,7 @@ async function masterRequestAction(ctx: BotContext, payload: string) {
       where: { id },
       data: {
         assignedToId: ctx.user.id,
-        ...(existing.status === "NEW" ? { status: "SCHEDULED" } : {}),
+        ...(existing.status === "NEW" ? { status: "ACCEPTED" } : {}),
       },
     });
     return ctx.send(`✅ Взяли на себя заявку #${shortNumber(id)}. Дальше — /today.`);
@@ -1420,8 +1425,9 @@ async function masterRequestAction(ctx: BotContext, payload: string) {
 
   const map: Record<string, string> = {
     enroute: "EN_ROUTE",
+    onsite: "ON_SITE",
     start: "IN_PROGRESS",
-    done: "AWAITING_PAYMENT",
+    done: "DONE",
     paid: "DONE",
   };
   const newStatus = map[action];
@@ -1431,7 +1437,7 @@ async function masterRequestAction(ctx: BotContext, payload: string) {
     data: {
       status: newStatus,
       ...(newStatus === "DONE" ? { paymentStatus: "PAID" } : {}),
-      ...(newStatus === "IN_PROGRESS" ? { scheduledAt: new Date() } : {}),
+      ...(newStatus === "ON_SITE" || newStatus === "IN_PROGRESS" ? { scheduledAt: new Date() } : {}),
     },
   });
   // Уведомим клиента отдельно (как делает CRM transition)
@@ -1503,8 +1509,10 @@ async function linkChannel(ctx: BotContext, phone: string, name: string) {
 function statusLabel(s: string) {
   return ({
     NEW: "Новая",
+    ACCEPTED: "Принята",
     SCHEDULED: "Запланирована",
     EN_ROUTE: "Мастер в пути",
+    ON_SITE: "На месте",
     IN_PROGRESS: "В работе",
     AWAITING_PAYMENT: "Ожидает оплаты",
     DONE: "Выполнена",
@@ -1515,8 +1523,10 @@ function statusLabel(s: string) {
 function statusEmoji(s: string) {
   return ({
     NEW: "🆕",
+    ACCEPTED: "✅",
     SCHEDULED: "📅",
     EN_ROUTE: "🚗",
+    ON_SITE: "📍",
     IN_PROGRESS: "🛠",
     AWAITING_PAYMENT: "💰",
     DONE: "✅",

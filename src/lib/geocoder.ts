@@ -17,6 +17,15 @@ export interface GeocodeResult {
   formatted: string;
 }
 
+export interface AddressSuggestion {
+  value: string;
+  title: string;
+  subtitle: string;
+  lat: number | null;
+  lng: number | null;
+  district: string | null;
+}
+
 const GEOCODE_URL = "https://geocode-maps.yandex.ru/1.x/";
 const REQUEST_TIMEOUT_MS = 4000;
 
@@ -70,5 +79,77 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult | n
   } catch (e: any) {
     if (e?.name !== "AbortError") console.error("[geocoder]", e?.message || e);
     return null;
+  }
+}
+
+export async function suggestYandexAddresses(text: string, limit = 8): Promise<AddressSuggestion[]> {
+  const key = process.env.YANDEX_GEOCODER_KEY;
+  const q = text?.trim();
+  if (!key || !q || q.length < 3) return [];
+
+  const query = q.toLowerCase().includes("санкт-петербург") || q.toLowerCase().includes("спб")
+    ? q
+    : `Санкт-Петербург, ${q}`;
+
+  const params = new URLSearchParams({
+    apikey: key,
+    format: "json",
+    geocode: query,
+    results: String(limit),
+    lang: "ru_RU",
+  });
+
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    const res = await fetch(`${GEOCODE_URL}?${params}`, { signal: controller.signal });
+    clearTimeout(timer);
+    if (!res.ok) {
+      console.warn("[geocoder:suggest] yandex returned", res.status);
+      return [];
+    }
+
+    const data: any = await res.json();
+    const members: any[] = data?.response?.GeoObjectCollection?.featureMember || [];
+    const suggestions: AddressSuggestion[] = [];
+
+    for (const member of members) {
+      const geo = member?.GeoObject;
+      if (!geo) continue;
+
+      const formatted = geo.metaDataProperty?.GeocoderMetaData?.text || geo.name;
+      if (!formatted) continue;
+
+      const pos = geo.Point?.pos as string | undefined;
+      const [lng, lat] = pos ? pos.split(" ").map(Number) : [NaN, NaN];
+      const components: any[] = geo.metaDataProperty?.GeocoderMetaData?.Address?.Components || [];
+      const districtComponent = components.find((c) => c.kind === "district");
+      const locality = components.find((c) => c.kind === "locality")?.name;
+      const street = components.find((c) => c.kind === "street")?.name;
+      const house = components.find((c) => c.kind === "house")?.name;
+      const district = districtComponent?.name
+        ? String(districtComponent.name).replace(/\s+район$/i, "").trim()
+        : null;
+
+      suggestions.push({
+        value: formatted,
+        title: [street, house].filter(Boolean).join(", ") || geo.name || formatted,
+        subtitle: [locality, district ? `${district} район` : null].filter(Boolean).join(" · "),
+        lat: isFinite(lat) ? lat : null,
+        lng: isFinite(lng) ? lng : null,
+        district,
+      });
+    }
+
+    const seen = new Set<string>();
+    return suggestions.filter((item) => {
+      const key = item.value.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  } catch (e: any) {
+    if (e?.name !== "AbortError") console.error("[geocoder:suggest]", e?.message || e);
+    return [];
   }
 }

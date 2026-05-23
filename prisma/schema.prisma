@@ -138,7 +138,7 @@ model Request {
   cartridgeId   String?
   printerInfo   String?
   quantity      Int      @default(1)
-  status        String   @default("NEW")    // NEW | SCHEDULED | IN_PROGRESS | DONE | CANCELLED | AWAITING_PAYMENT
+  status        String   @default("NEW")    // NEW | ACCEPTED | SCHEDULED | EN_ROUTE | ON_SITE | IN_PROGRESS | DONE | CANCELLED | AWAITING_PAYMENT
   paymentStatus String   @default("UNPAID") // UNPAID | PAID | PARTIAL
   source        String   @default("WEB")    // MAX | TELEGRAM | WEB | PHONE
   assignedToId  String?
@@ -167,11 +167,14 @@ model Message {
   direction  String   // "in" | "out"
   text       String
   meta       String?  // JSON-строка с сырым payload от мессенджера
+  // unread = true для входящих, пока мастер не открыл диалог
+  unread     Boolean  @default(true)
   createdAt  DateTime @default(now())
   client     Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
   request    Request? @relation(fields: [requestId], references: [id], onDelete: SetNull)
   @@index([clientId])
   @@index([requestId])
+  @@index([unread])
 }
 
 model AppSetting {

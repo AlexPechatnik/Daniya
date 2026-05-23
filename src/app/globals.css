@@ -85,6 +85,13 @@
            focus:outline-none focus:border-primary/60 focus:bg-card focus:shadow-[0_0_0_4px_hsl(var(--primary)/0.12)];
   }
   textarea.input { @apply h-auto py-3; }
+  .clean-input {
+    @apply w-full rounded-xl border border-transparent bg-transparent px-0 text-sm text-fg placeholder:text-muted-fg/60 transition
+           focus:outline-none focus:border-primary/50 focus:bg-card/55 focus:px-3 focus:shadow-[0_0_0_4px_hsl(var(--primary)/0.10)];
+  }
+  select.clean-input {
+    @apply bg-card/50 px-3;
+  }
 
   .card {
     @apply rounded-2xl border border-border bg-card/60 backdrop-blur-md;

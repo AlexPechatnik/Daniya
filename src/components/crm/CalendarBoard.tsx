@@ -20,7 +20,10 @@ interface MasterLite { id: string | null; name: string; color: string | null }
 
 const statusColor: Record<string, string> = {
   NEW: "border-amber-500 bg-amber-500/10",
+  ACCEPTED: "border-lime-500 bg-lime-500/10",
   SCHEDULED: "border-primary bg-primary/10",
+  EN_ROUTE: "border-sky-500 bg-sky-500/10",
+  ON_SITE: "border-indigo-500 bg-indigo-500/10",
   IN_PROGRESS: "border-sky-500 bg-sky-500/10",
   DONE: "border-emerald-500 bg-emerald-500/10",
   AWAITING_PAYMENT: "border-orange-500 bg-orange-500/10",

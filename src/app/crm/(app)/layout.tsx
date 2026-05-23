@@ -1,7 +1,20 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { Logo } from "@/components/Logo";
-import { Sun, ListChecks, Users, Calendar, FileSpreadsheet, LogOut, LayoutGrid, BarChart3, History, CalendarOff, Bot, Clock } from "lucide-react";
+import {
+  ListChecks,
+  Users,
+  Calendar,
+  LogOut,
+  History,
+  CheckCircle2,
+  Play,
+  UserCircle,
+  WalletCards,
+  MoreHorizontal,
+  LayoutDashboard,
+  Inbox,
+} from "lucide-react";
 import { QuickAddTrigger } from "@/components/crm/QuickAddTrigger";
 import { prisma } from "@/lib/db";
 
@@ -12,30 +25,62 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
     prisma.user.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
   ]);
 
-  const nav = [
-    { href: "/crm", icon: Sun, label: "Сегодня" },
-    { href: "/crm/board", icon: LayoutGrid, label: "Доска" },
-    { href: "/crm/calendar", icon: Calendar, label: "Календарь" },
-    { href: "/crm/requests", icon: ListChecks, label: "Все заявки" },
-    { href: "/crm/stats", icon: BarChart3, label: "Аналитика" },
-    { href: "/crm/history", icon: History, label: "История" },
+  const isAdmin = user.role === "ADMIN";
+  // Считаем непрочитанные сообщения для бейджа в навигации
+  const unreadInbox = await prisma.message.count({
+    where: { direction: "in", unread: true },
+  });
+
+  const adminNav = [
+    { href: "/crm", icon: LayoutDashboard, label: "Рабочий стол" },
+    { href: "/crm/requests", icon: ListChecks, label: "Заявки" },
+    { href: "/crm/inbox", icon: Inbox, label: "Чаты", badge: unreadInbox || null },
+    { href: "/crm/calendar", icon: Calendar, label: "План выездов" },
     { href: "/crm/clients", icon: Users, label: "Клиенты" },
-    { href: "/crm/price", icon: FileSpreadsheet, label: "Прайс" },
-    { href: "/crm/settings/schedule", icon: Clock, label: "График работы" },
-    { href: "/crm/settings/holidays", icon: CalendarOff, label: "Нерабочие дни" },
-    { href: "/crm/settings/bot", icon: Bot, label: "Боты" },
+    { href: "/crm/money", icon: WalletCards, label: "Деньги" },
+    { href: "/crm/more", icon: MoreHorizontal, label: "Ещё" },
   ];
+  const masterNav = [
+    { href: "/crm/mobile?tab=new", icon: ListChecks, label: "Новые" },
+    { href: "/crm/mobile?tab=mine", icon: CheckCircle2, label: "Мои" },
+    { href: "/crm/mobile?tab=active", icon: Play, label: "Сейчас" },
+    { href: "/crm/mobile?tab=done", icon: History, label: "Готово" },
+    { href: "/crm/mobile?tab=profile", icon: UserCircle, label: "Профиль" },
+  ];
+  const mobileNav = isAdmin
+    ? [
+        { href: "/crm", icon: LayoutDashboard, label: "Стол" },
+        { href: "/crm/requests", icon: ListChecks, label: "Заявки" },
+        { href: "/crm/calendar", icon: Calendar, label: "План" },
+        { href: "/crm/money", icon: WalletCards, label: "Деньги" },
+        { href: "/crm/more", icon: MoreHorizontal, label: "Ещё" },
+      ]
+    : masterNav;
 
   return (
     <div className="min-h-screen grid lg:grid-cols-[240px,1fr]">
       <aside className="hidden lg:flex border-r border-border bg-card/30 flex-col">
         <div className="px-5 py-4 border-b border-border"><Logo /></div>
         <nav className="p-3 space-y-1">
-          {nav.map((n) => (
-            <Link key={n.href} href={n.href} className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-muted transition">
-              <n.icon className="h-4 w-4 text-muted-fg" /> {n.label}
-            </Link>
-          ))}
+          {isAdmin ? (
+            adminNav.map((n) => (
+              <Link key={n.href} href={n.href} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm hover:bg-muted transition">
+                <n.icon className="h-4 w-4 text-muted-fg" />
+                <span className="flex-1">{n.label}</span>
+                {(n as any).badge && (
+                  <span className="bg-primary text-primary-fg text-[10px] font-mono rounded-full px-1.5 py-0.5 tabular-nums">
+                    {(n as any).badge}
+                  </span>
+                )}
+              </Link>
+            ))
+          ) : (
+            masterNav.map((n) => (
+              <Link key={n.href} href={n.href} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm hover:bg-muted transition">
+                <n.icon className="h-4 w-4 text-muted-fg" /> {n.label}
+              </Link>
+            ))
+          )}
         </nav>
         <div className="mt-auto p-3 border-t border-border">
           <div className="px-3 py-2 text-sm">
@@ -54,21 +99,19 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
         <header className="h-14 border-b border-border bg-bg/70 backdrop-blur flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30">
           <div className="lg:hidden"><Logo compact /></div>
           <div className="hidden lg:block text-sm text-muted-fg">CRM</div>
-          <QuickAddTrigger services={services} masters={masters} variant="header" />
+          {isAdmin && <QuickAddTrigger services={services} masters={masters} variant="header" />}
         </header>
 
-        <main className="p-4 lg:p-6 flex-1 overflow-auto pb-24 lg:pb-6">{children}</main>
+        <main className="flex-1 overflow-auto px-4 py-4 pb-24 lg:px-6 lg:py-6 lg:pb-6">
+          <div className="mx-auto w-full max-w-[1440px]">
+            {children}
+          </div>
+        </main>
 
         {/* Нижняя навигация для мобильного */}
         <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-border bg-bg/95 backdrop-blur-xl pb-[env(safe-area-inset-bottom)]">
           <div className="grid grid-cols-5">
-            {[
-              { href: "/crm", icon: Sun, label: "Сегодня" },
-              { href: "/crm/board", icon: LayoutGrid, label: "Доска" },
-              { href: "/crm/calendar", icon: Calendar, label: "Календарь" },
-              { href: "/crm/stats", icon: BarChart3, label: "Аналитика" },
-              { href: "/crm/clients", icon: Users, label: "Клиенты" },
-            ].map((n) => (
+            {mobileNav.map((n) => (
               <Link key={n.href} href={n.href} className="flex flex-col items-center gap-1 py-2.5 text-[10px] text-muted-fg hover:text-fg">
                 <n.icon className="h-5 w-5" />
                 {n.label}
@@ -79,7 +122,7 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
       </div>
 
       {/* Плавающая «+» — на мобильном поверх всего */}
-      <QuickAddTrigger services={services} masters={masters} variant="fab" />
+      {isAdmin && <QuickAddTrigger services={services} masters={masters} variant="fab" />}
     </div>
   );
 }
