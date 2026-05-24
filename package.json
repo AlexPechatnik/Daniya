@@ -13,7 +13,8 @@
     "db:studio": "prisma studio",
     "bot:poll": "tsx --env-file=.env scripts/bot-poll.ts",
     "bot:poll:prod": "tsx scripts/bot-poll.ts",
-    "geocode:backfill": "tsx --env-file=.env scripts/geocode-backfill.ts"
+    "geocode:backfill": "tsx --env-file=.env scripts/geocode-backfill.ts",
+    "convert:leads": "tsx --env-file=.env scripts/convert-leads.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.1.0",
