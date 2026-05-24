@@ -5,6 +5,7 @@ import { Send, CheckCircle2, ArrowRight, CalendarOff } from "lucide-react";
 import { Reveal } from "./Reveal";
 import { format, parseISO } from "date-fns";
 import { ru } from "date-fns/locale";
+import { AutocompleteInput } from "./crm/AutocompleteInput";
 
 const services = [
   { value: "REFILL", label: "Заправка" },
@@ -16,6 +17,7 @@ const services = [
 export function RequestForm() {
   const [state, formAction, pending] = useActionState<LeadFormState, FormData>(submitLead, {});
   const [holidays, setHolidays] = useState<{ date: string; reason: string }[]>([]);
+  const [address, setAddress] = useState("Санкт-Петербург, ");
   useEffect(() => { getUpcomingHolidays().then(setHolidays); }, []);
   const nearHolidays = holidays.slice(0, 4);
 
@@ -84,7 +86,15 @@ export function RequestForm() {
                 <Field label="Телефон"><input name="phone" required className="input" placeholder="+7 (___) ___-__-__" type="tel" /></Field>
               </div>
               <Field label="Адрес выезда">
-                <input name="address" className="input" placeholder="Город, улица, дом, офис" defaultValue="Санкт-Петербург, " />
+                <AutocompleteInput
+                  endpoint="/api/public/suggest/addresses"
+                  value={address}
+                  onChange={setAddress}
+                  placeholder="Город, улица, дом, офис"
+                  minLength={3}
+                  name="address"
+                  className="input"
+                />
               </Field>
               <div className="grid sm:grid-cols-2 gap-4">
                 <Field label="Услуга">

@@ -16,6 +16,8 @@ export function AutocompleteInput({
   placeholder,
   minLength,
   className = "input h-12 text-base",
+  name,
+  required,
 }: {
   endpoint: string;
   value: string;
@@ -23,6 +25,9 @@ export function AutocompleteInput({
   placeholder: string;
   minLength: number;
   className?: string;
+  /** Имя поля для отправки в formData (server actions) */
+  name?: string;
+  required?: boolean;
 }) {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [open, setOpen] = useState(false);
@@ -68,6 +73,8 @@ export function AutocompleteInput({
         onBlur={() => window.setTimeout(() => setOpen(false), 120)}
         placeholder={placeholder}
         autoComplete="off"
+        name={name}
+        required={required}
       />
       {loading && (
         <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-fg">
