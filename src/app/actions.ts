@@ -34,42 +34,57 @@ export async function submitLead(_prev: LeadFormState, formData: FormData): Prom
 
   const phone = normalizePhone(parsed.data.phone);
 
-  // Если клиент уже есть — создаём заявку сразу
-  const existing = await prisma.client.findUnique({ where: { phone } });
-  if (existing) {
-    let addressId: string | undefined;
-    if (parsed.data.address) {
-      const addr = await prisma.address.create({
-        data: { clientId: existing.id, ...(await enrichAddress(parsed.data.address)) },
-      });
-      addressId = addr.id;
-    }
-    const last = await prisma.request.findFirst({ orderBy: { number: "desc" }, select: { number: true } });
-    const request = await prisma.request.create({
-      data: {
-        number: (last?.number ?? 0) + 1,
-        clientId: existing.id,
-        addressId,
-        source: "WEB",
-        status: "NEW",
-        printerInfo: parsed.data.cartridge,
-        comment: parsed.data.comment,
-      },
+  // Находим или создаём клиента — раньше для нового клиента создавался
+  // RequestLead, который нигде в CRM не показывался. Теперь всегда Request.
+  let client = await prisma.client.findUnique({ where: { phone } });
+  if (!client) {
+    client = await prisma.client.create({
+      data: { name: parsed.data.name, phone },
     });
-    notifyAdminsNewRequest(request.id).catch((e) => console.error("[lead] admin notify failed", e));
-  } else {
-    const lead = await prisma.requestLead.create({
-      data: {
-        name: parsed.data.name,
-        phone,
-        address: parsed.data.address,
-        serviceKind: parsed.data.serviceKind,
-        cartridge: parsed.data.cartridge,
-        comment: parsed.data.comment,
-      },
-    });
-    notifyAdminsNewLead(lead.id).catch((e) => console.error("[lead] admin notify failed", e));
   }
+
+  // Привязываем сервис из формы (REFILL/REPLACE/DIAGNOSTIC/REPAIR → slug)
+  let serviceId: string | null = null;
+  if (parsed.data.serviceKind) {
+    const slugMap: Record<string, string> = {
+      REFILL: "zapravka",
+      REPLACE: "zamena",
+      DIAGNOSTIC: "diagnostika",
+      REPAIR: "remont",
+    };
+    const slug = slugMap[parsed.data.serviceKind];
+    if (slug) {
+      const service = await prisma.service.findUnique({ where: { slug } });
+      serviceId = service?.id || null;
+    }
+  }
+
+  let addressId: string | undefined;
+  if (parsed.data.address) {
+    const addr = await prisma.address.create({
+      data: { clientId: client.id, ...(await enrichAddress(parsed.data.address)) },
+    });
+    addressId = addr.id;
+  }
+
+  const last = await prisma.request.findFirst({ orderBy: { number: "desc" }, select: { number: true } });
+  const request = await prisma.request.create({
+    data: {
+      number: (last?.number ?? 0) + 1,
+      clientId: client.id,
+      addressId,
+      serviceId,
+      source: "WEB",
+      status: "NEW",
+      printerInfo: parsed.data.cartridge,
+      comment: parsed.data.comment,
+    },
+  });
+  notifyAdminsNewRequest(request.id).catch((e) => console.error("[lead] admin notify failed", e));
+
+  // Старый RequestLead больше не создаём — оставляем модель, чтобы не ломать историю,
+  // но новые заявки идут сразу в Request.
+  void notifyAdminsNewLead; // helper остаётся для совместимости
 
   revalidatePath("/crm");
   return { ok: true };
