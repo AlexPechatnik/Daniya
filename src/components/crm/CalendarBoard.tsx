@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { addDays, format } from "date-fns";
 import { ru } from "date-fns/locale";
 import Link from "next/link";
+import { statusMeta } from "@/lib/status";
 
 interface ReqLite {
   id: string;
@@ -17,17 +18,6 @@ interface ReqLite {
   masterId: string | null;
 }
 interface MasterLite { id: string | null; name: string; color: string | null }
-
-const statusColor: Record<string, string> = {
-  NEW: "border-amber-500 bg-amber-500/10",
-  ACCEPTED: "border-lime-500 bg-lime-500/10",
-  SCHEDULED: "border-primary bg-primary/10",
-  EN_ROUTE: "border-sky-500 bg-sky-500/10",
-  ON_SITE: "border-indigo-500 bg-indigo-500/10",
-  IN_PROGRESS: "border-sky-500 bg-sky-500/10",
-  DONE: "border-emerald-500 bg-emerald-500/10",
-  AWAITING_PAYMENT: "border-orange-500 bg-orange-500/10",
-};
 
 export function CalendarBoard({ days, masters, requests, anchor }: { days: string[]; masters: MasterLite[]; requests: ReqLite[]; anchor: string }) {
   const router = useRouter();
@@ -104,7 +94,7 @@ export function CalendarBoard({ days, masters, requests, anchor }: { days: strin
                         href={`/crm/requests/${r.id}`}
                         draggable
                         onDragStart={(e) => e.dataTransfer.setData("text/req-id", r.id)}
-                        className={`block rounded-lg border-l-4 ${statusColor[r.status] || "border-muted bg-muted/20"} px-2 py-1.5 text-xs cursor-grab active:cursor-grabbing`}
+                        className={`block cursor-grab rounded-lg border border-l-4 px-2 py-1.5 text-xs shadow-sm active:cursor-grabbing ${statusMeta(r.status).cls.border} ${statusMeta(r.status).cls.bg}`}
                       >
                         <div className="font-medium truncate">{format(new Date(r.scheduledAt), "HH:mm")} · {r.clientName}</div>
                         <div className="text-muted-fg truncate">{r.serviceName}</div>

@@ -209,7 +209,7 @@ export function HistoryHeatmap({
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <span className="tabular-nums">{formatRub(i.price)}</span>
-                  <span className={`text-xs ${i.paid ? "text-emerald-400" : "text-muted-fg"}`}>{i.paid ? "оплачено" : "не оплачено"}</span>
+                  <span className={`text-xs ${i.paid ? "font-semibold text-[#166534]" : "text-muted-fg"}`}>{i.paid ? "оплачено" : "не оплачено"}</span>
                 </div>
               </Link>
             ))}

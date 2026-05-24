@@ -63,9 +63,9 @@ export default async function MoneyPage() {
       </header>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <MoneyStat icon={Banknote} label="Сегодня оплачено" value={formatRub(revenueToday)} tone="emerald" />
-        <MoneyStat icon={WalletCards} label="За месяц" value={formatRub(revenueMonth)} tone="primary" />
-        <MoneyStat icon={Clock} label="К оплате" value={formatRub(debt)} tone={debt ? "amber" : "muted"} />
+        <MoneyStat icon={Banknote} label="Сегодня оплачено" value={formatRub(revenueToday)} tone="paid" />
+        <MoneyStat icon={WalletCards} label="За месяц" value={formatRub(revenueMonth)} tone="planned" />
+        <MoneyStat icon={Clock} label="К оплате" value={formatRub(debt)} tone={debt ? "payment" : "muted"} />
       </div>
 
       <section className="card overflow-hidden">
@@ -106,20 +106,20 @@ function MoneyStat({
   icon: typeof WalletCards;
   label: string;
   value: string;
-  tone: "primary" | "emerald" | "amber" | "muted";
+  tone: "planned" | "paid" | "payment" | "muted";
 }) {
   const color = {
-    primary: "text-primary",
-    emerald: "text-emerald-400",
-    amber: "text-amber-400",
-    muted: "text-muted-fg",
+    planned: "border-[#C7D2FE] bg-[#EEF2FF] text-[#3730A3]",
+    paid: "border-[#BBF7D0] bg-[#DCFCE7] text-[#166534]",
+    payment: "border-[#FDE68A] bg-[#FEF3C7] text-[#92400E]",
+    muted: "border-border bg-card text-muted-fg",
   }[tone];
   return (
-    <div className="rounded-2xl border border-border bg-card/45 p-4">
-      <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-fg">
+    <div className={`rounded-2xl border p-4 shadow-sm ${color}`}>
+      <div className="flex items-center gap-2 text-xs uppercase tracking-wider opacity-80">
         <Icon className="h-4 w-4" /> {label}
       </div>
-      <div className={`mt-2 text-2xl font-semibold tabular-nums ${color}`}>{value}</div>
+      <div className="mt-2 text-2xl font-semibold tabular-nums">{value}</div>
     </div>
   );
 }
@@ -151,7 +151,7 @@ function RequestMoneyList({ items, empty }: { items: MoneyRequest[]; empty: stri
                 <span className="font-mono text-xs text-muted-fg">#{request.number}</span>
                 <StatusBadge status={request.status} size="sm" />
                 {request.paymentStatus === "PAID" && (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-400">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-[#BBF7D0] bg-[#DCFCE7] px-2 py-0.5 text-[10px] font-semibold text-[#166534]">
                     <CheckCircle2 className="h-3 w-3" /> оплачено
                   </span>
                 )}

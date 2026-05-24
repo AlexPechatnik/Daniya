@@ -58,8 +58,8 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
     : masterNav;
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-[240px,1fr]">
-      <aside className="hidden lg:flex border-r border-border bg-card/30 flex-col">
+    <div className="crm-light min-h-screen grid lg:grid-cols-[240px,1fr] text-fg">
+      <aside className="hidden lg:flex border-r border-border bg-card flex-col">
         <div className="px-5 py-4 border-b border-border"><Logo /></div>
         <nav className="p-3 space-y-1">
           {isAdmin ? (
@@ -96,7 +96,7 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
       </aside>
 
       <div className="flex flex-col min-h-screen">
-        <header className="h-14 border-b border-border bg-bg/70 backdrop-blur flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30">
+        <header className="h-14 border-b border-border bg-card/85 backdrop-blur flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30">
           <div className="lg:hidden"><Logo compact /></div>
           <div className="hidden lg:block text-sm text-muted-fg">CRM</div>
           {isAdmin && <QuickAddTrigger services={services} masters={masters} variant="header" />}
@@ -109,7 +109,7 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
         </main>
 
         {/* Нижняя навигация для мобильного */}
-        <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-border bg-bg/95 backdrop-blur-xl pb-[env(safe-area-inset-bottom)]">
+        <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-border bg-card/95 backdrop-blur-xl pb-[env(safe-area-inset-bottom)]">
           <div className="grid grid-cols-5">
             {mobileNav.map((n) => (
               <Link key={n.href} href={n.href} className="flex flex-col items-center gap-1 py-2.5 text-[10px] text-muted-fg hover:text-fg">

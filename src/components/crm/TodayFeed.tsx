@@ -86,10 +86,10 @@ export async function TodayFeed() {
       </header>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric icon={AlertCircle} label="Требует внимания" value={attentionCount} tone={attentionCount ? "amber" : "muted"} />
-        <Metric icon={Route} label="В работе" value={active.length} tone={active.length ? "primary" : "muted"} />
-        <Metric icon={CalendarDays} label="В плане сегодня" value={todayPlan.length} tone={todayPlan.length ? "primary" : "muted"} />
-        <Metric icon={CreditCard} label="Оплачено сегодня" value={formatRub(revenueToday)} tone="emerald" />
+        <Metric icon={AlertCircle} label="Требует внимания" value={attentionCount} tone={attentionCount ? "attention" : "muted"} />
+        <Metric icon={Route} label="В работе" value={active.length} tone={active.length ? "work" : "muted"} />
+        <Metric icon={CalendarDays} label="В плане сегодня" value={todayPlan.length} tone={todayPlan.length ? "planned" : "muted"} />
+        <Metric icon={CreditCard} label="Оплачено сегодня" value={formatRub(revenueToday)} tone="paid" />
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr),360px]">
@@ -167,7 +167,7 @@ function WorkbenchSection({
   href: string;
 }) {
   return (
-    <section className="rounded-2xl border border-border bg-card/45 overflow-hidden">
+    <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
       <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div>
           <h2 className="font-semibold">{title}</h2>
@@ -198,7 +198,7 @@ function SideSection({
   href: string;
 }) {
   return (
-    <section className="rounded-2xl border border-border bg-card/45 overflow-hidden">
+    <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
       <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
         <h2 className="font-semibold">{title}</h2>
         <Link href={href} className="text-xs text-primary hover:underline">Все</Link>
@@ -289,20 +289,21 @@ function Metric({
   icon: typeof AlertCircle;
   label: string;
   value: string | number;
-  tone: "primary" | "amber" | "emerald" | "muted";
+  tone: "attention" | "work" | "planned" | "paid" | "muted";
 }) {
   const color = {
-    primary: "text-primary",
-    amber: "text-amber-400",
-    emerald: "text-emerald-400",
-    muted: "text-muted-fg",
+    attention: "border-[#FECACA] bg-[#FEE2E2] text-[#B91C1C]",
+    work: "border-[#FED7AA] bg-[#FFF7ED] text-[#C2410C]",
+    planned: "border-[#C7D2FE] bg-[#EEF2FF] text-[#3730A3]",
+    paid: "border-[#BBF7D0] bg-[#DCFCE7] text-[#166534]",
+    muted: "border-border bg-card text-muted-fg",
   }[tone];
   return (
-    <div className="rounded-2xl border border-border bg-card/45 p-4">
-      <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-fg">
+    <div className={`rounded-2xl border p-4 shadow-sm ${color}`}>
+      <div className="flex items-center gap-2 text-xs uppercase tracking-wider opacity-80">
         <Icon className="h-4 w-4" /> {label}
       </div>
-      <div className={`mt-2 text-2xl font-semibold tabular-nums ${color}`}>{value}</div>
+      <div className="mt-2 text-2xl font-semibold tabular-nums">{value}</div>
     </div>
   );
 }

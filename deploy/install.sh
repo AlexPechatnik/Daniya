@@ -152,7 +152,9 @@ cp -r .next/static .next/standalone/.next/static
 mkdir -p .next/standalone/node_modules
 cp -r node_modules/.prisma .next/standalone/node_modules/.prisma 2>/dev/null || true
 cp -r node_modules/@prisma .next/standalone/node_modules/@prisma 2>/dev/null || true
-cp -r prisma .next/standalone/prisma
+rm -rf .next/standalone/prisma
+mkdir -p .next/standalone/prisma
+cp prisma/schema.prisma .next/standalone/prisma/schema.prisma
 cp .env .next/standalone/.env
 ok "standalone bundle собран"
 

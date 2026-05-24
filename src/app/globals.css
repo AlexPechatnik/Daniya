@@ -41,6 +41,70 @@
   ::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 8px; }
   ::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-fg) / 0.4); }
   ::-webkit-scrollbar-track { background: transparent; }
+
+  .crm-light {
+    --bg: 214 33% 97%;
+    --bg-2: 210 40% 99%;
+    --fg: 222 47% 11%;
+    --muted: 214 32% 93%;
+    --muted-fg: 215 18% 38%;
+    --border: 214 22% 82%;
+    --card: 0 0% 100%;
+    --card-2: 210 40% 98%;
+    --primary: 211 100% 50%;
+    --primary-2: 213 94% 58%;
+    --primary-fg: 0 0% 100%;
+    --accent: 222 47% 44%;
+    --success: 145 63% 39%;
+    --warning: 38 92% 48%;
+    --danger: 0 72% 51%;
+    --status-new-bg: #EFF6FF;
+    --status-new-text: #1D4ED8;
+    --status-new-border: #BFDBFE;
+    --status-accepted-bg: #F0FDF4;
+    --status-accepted-text: #15803D;
+    --status-accepted-border: #BBF7D0;
+    --status-planned-bg: #EEF2FF;
+    --status-planned-text: #3730A3;
+    --status-planned-border: #C7D2FE;
+    --status-on-way-bg: #E0F2FE;
+    --status-on-way-text: #0369A1;
+    --status-on-way-border: #BAE6FD;
+    --status-on-site-bg: #F3E8FF;
+    --status-on-site-text: #7E22CE;
+    --status-on-site-border: #E9D5FF;
+    --status-in-work-bg: #FFF7ED;
+    --status-in-work-text: #C2410C;
+    --status-in-work-border: #FED7AA;
+    --status-waiting-payment-bg: #FEF3C7;
+    --status-waiting-payment-text: #92400E;
+    --status-waiting-payment-border: #FDE68A;
+    --status-stuck-bg: #FEE2E2;
+    --status-stuck-text: #B91C1C;
+    --status-stuck-border: #FECACA;
+    --status-done-bg: #DCFCE7;
+    --status-done-text: #166534;
+    --status-done-border: #BBF7D0;
+    --status-cancelled-bg: #F1F5F9;
+    --status-cancelled-text: #64748B;
+    --status-cancelled-border: #CBD5E1;
+    color-scheme: light;
+    background:
+      linear-gradient(180deg, hsl(210 40% 99%) 0%, hsl(214 33% 96%) 100%);
+    font-size: 16px;
+  }
+
+  .crm-light input,
+  .crm-light textarea,
+  .crm-light select {
+    color-scheme: light;
+  }
+
+  .crm-light input::placeholder,
+  .crm-light textarea::placeholder {
+    color: hsl(215 16% 52%);
+    opacity: 1;
+  }
 }
 
 @layer components {
@@ -62,9 +126,44 @@
       inset 0 1px 0 hsl(0 0% 100% / 0.3);
     transform: translateY(-1px);
   }
+
+  .crm-light .btn-primary {
+    box-shadow:
+      0 1px 2px hsl(222 47% 11% / 0.08),
+      0 8px 20px -14px hsl(var(--primary) / 0.9);
+  }
+
+  .crm-light .btn-primary:hover {
+    box-shadow:
+      0 1px 2px hsl(222 47% 11% / 0.10),
+      0 12px 24px -16px hsl(var(--primary) / 0.9);
+  }
   .btn-ghost { @apply btn text-fg/80 hover:bg-muted hover:text-fg; }
   .btn-outline {
     @apply btn bg-card/40 backdrop-blur border border-border hover:bg-card hover:border-primary/40 hover:text-primary;
+  }
+
+  .crm-light .btn-outline {
+    background: hsl(var(--card));
+    color: hsl(var(--fg));
+    border-color: hsl(var(--border));
+    box-shadow: 0 1px 2px hsl(222 47% 11% / 0.04);
+  }
+
+  .crm-light .btn-outline:hover {
+    background: hsl(var(--muted));
+    color: hsl(var(--fg));
+    border-color: hsl(214 20% 76%);
+  }
+
+  .crm-light .btn:disabled,
+  .crm-light button:disabled {
+    opacity: 1;
+    background: hsl(var(--muted));
+    color: hsl(var(--muted-fg));
+    border-color: hsl(var(--border));
+    box-shadow: none;
+    cursor: not-allowed;
   }
   .btn-glow {
     position: relative;
@@ -83,6 +182,51 @@
   .input {
     @apply h-11 w-full rounded-xl border border-border bg-card/60 backdrop-blur px-4 text-sm text-fg placeholder:text-muted-fg/60 transition-all
            focus:outline-none focus:border-primary/60 focus:bg-card focus:shadow-[0_0_0_4px_hsl(var(--primary)/0.12)];
+  }
+
+  .crm-light .input,
+  .crm-light .clean-input {
+    background: hsl(var(--card));
+    box-shadow: 0 1px 2px hsl(222 47% 11% / 0.03);
+  }
+
+  .crm-light .input:focus,
+  .crm-light .clean-input:focus {
+    border-color: hsl(214 24% 72%);
+    background: hsl(var(--card));
+    box-shadow:
+      0 0 0 3px hsl(214 60% 92%),
+      0 1px 2px hsl(222 47% 11% / 0.05);
+  }
+
+  .crm-light .card {
+    background: hsl(var(--card));
+    box-shadow:
+      0 1px 2px hsl(222 47% 11% / 0.04),
+      0 10px 30px -24px hsl(222 47% 11% / 0.22);
+  }
+
+  .crm-light .text-xs {
+    font-size: 0.8125rem;
+    line-height: 1.15rem;
+  }
+
+  .crm-light .text-\[10px\] {
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+
+  .crm-light .text-\[11px\] {
+    font-size: 0.78rem;
+    line-height: 1.05rem;
+  }
+
+  .crm-light .quick-date-chip:not(:disabled) {
+    color: hsl(var(--fg));
+  }
+
+  .crm-light .quick-date-chip:not(:disabled) .text-slate-500 {
+    color: hsl(215 16% 42%);
   }
   textarea.input { @apply h-auto py-3; }
   .clean-input {

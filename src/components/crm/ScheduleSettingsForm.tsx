@@ -142,7 +142,7 @@ export function ScheduleSettingsForm({ initial }: { initial: ScheduleSettings })
           <Save className="h-4 w-4" /> {pending ? "Сохранение…" : "Сохранить"}
         </button>
         {msg && (
-          <div className={`text-sm flex items-center gap-2 ${msg.ok ? "text-emerald-400" : "text-danger"}`}>
+          <div className={`text-sm flex items-center gap-2 ${msg.ok ? "font-medium text-[#166534]" : "text-danger"}`}>
             {!msg.ok && <AlertTriangle className="h-4 w-4" />}
             {msg.text}
           </div>

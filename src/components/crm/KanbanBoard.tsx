@@ -73,7 +73,7 @@ export function KanbanBoard({ requests }: { requests: ReqLite[] }) {
                   <KanbanCard key={r.id} r={r} />
                 ))}
                 {items.length === 0 && (
-                  <div className="text-center text-xs text-muted-fg/60 py-10">пусто</div>
+                  <div className="py-10 text-center text-xs text-slate-500">пусто</div>
                 )}
               </div>
             </div>

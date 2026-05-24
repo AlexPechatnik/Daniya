@@ -54,7 +54,7 @@ export function QuickAddTrigger({
           <button onClick={openManually} className="btn-primary hidden md:inline-flex">
             <Plus className="h-4 w-4" />
             Новая заявка
-            <kbd className="hidden lg:inline ml-2 text-[10px] opacity-70">Ctrl+K</kbd>
+            <kbd className="ml-2 hidden text-[10px] text-white/90 lg:inline">Ctrl+K</kbd>
           </button>
           <button
             onClick={openManually}

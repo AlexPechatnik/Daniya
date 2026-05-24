@@ -144,22 +144,22 @@ export function CalendarTimeline({
                 onClick={() => goToDay(dayKey)}
                 className={`relative min-h-[106px] rounded-2xl border p-3 text-left transition ${
                   active
-                    ? "border-primary bg-primary/15 shadow-[0_0_0_1px_hsl(var(--primary)/0.25)]"
+                    ? "border-[#C7D2FE] bg-[#EEF2FF] shadow-[inset_0_0_0_1px_#C7D2FE]"
                     : relation === "past"
-                      ? "border-border/50 bg-bg/20 opacity-50 hover:opacity-75"
+                      ? "border-[#CBD5E1] bg-[#F8FAFC] text-slate-500"
                       : relation === "today"
-                        ? "border-primary/55 bg-primary/10"
+                        ? "border-[#BFDBFE] bg-[#EFF6FF]"
                         : holiday
-                          ? "border-amber-500/35 bg-amber-500/10"
-                          : "border-border bg-bg/45 hover:bg-muted"
+                          ? "border-[#FDE68A] bg-[#FEF3C7]"
+                          : "border-border bg-card hover:bg-muted"
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <div className={`text-[11px] uppercase tracking-wider ${active || relation === "today" ? "text-primary" : "text-muted-fg"}`}>
+                    <div className={`text-[11px] uppercase tracking-wider ${active ? "text-[#3730A3]" : relation === "today" ? "text-[#1D4ED8]" : "text-muted-fg"}`}>
                       {format(day, "EEEEEE", { locale: ru })}
                     </div>
-                    <div className={`mt-1 text-2xl font-semibold tabular-nums ${active || relation === "today" ? "text-primary" : ""}`}>{format(day, "d")}</div>
+                    <div className={`mt-1 text-2xl font-semibold tabular-nums ${active ? "text-[#3730A3]" : relation === "today" ? "text-[#1D4ED8]" : ""}`}>{format(day, "d")}</div>
                   </div>
                   <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${dayRelationClass(relation, active)}`}>
                     {dayStripLabel(dayKey, todayKey, index)}
@@ -170,7 +170,7 @@ export function CalendarTimeline({
                 </div>
                 <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
                   <div
-                    className={`h-full rounded-full ${count > 0 ? "bg-primary" : holiday ? "bg-amber-400" : "bg-muted-fg/25"}`}
+                    className={`h-full rounded-full ${count > 0 ? "bg-[#4F46E5]" : holiday ? "bg-[#D97706]" : "bg-[#CBD5E1]"}`}
                     style={{ width: count > 0 ? `${Math.min(100, 24 + count * 18)}%` : "16%" }}
                   />
                 </div>
@@ -228,7 +228,7 @@ function DayPlanner({
         </div>
 
         {holiday && (
-          <div className="rounded-2xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+          <div className="rounded-2xl border border-[#FDE68A] bg-[#FEF3C7] px-4 py-3 text-sm font-medium text-[#92400E]">
             Нерабочий день: {holiday.reason}. Создать заявку можно, но клиенту нужно подтвердить выезд отдельно.
           </div>
         )}
@@ -267,7 +267,7 @@ function DayPlanner({
                   key={slot}
                   type="button"
                   onClick={() => openQuickAdd(slot)}
-                  className="rounded-xl border border-border bg-bg/45 px-3 py-3 text-left transition hover:border-primary/50 hover:bg-primary/10"
+                  className="rounded-xl border border-border bg-card px-3 py-3 text-left shadow-sm transition hover:border-[#BFDBFE] hover:bg-[#EFF6FF]"
                 >
                   <div className="font-mono text-base font-semibold text-primary">{format(parseISO(slot), "HH:mm")}</div>
                   <div className="mt-1 text-xs text-muted-fg">создать заявку</div>
@@ -317,7 +317,7 @@ function WeekPlanner({
         const day = parseLocalDay(dayKey);
         const holiday = holidays.find((h) => h.date === dayKey);
         return (
-          <section key={dayKey} className={`rounded-2xl border p-3 ${holiday ? "border-amber-500/35 bg-amber-500/10" : "border-border bg-card/45"}`}>
+          <section key={dayKey} className={`rounded-2xl border p-3 shadow-sm ${holiday ? "border-[#FDE68A] bg-[#FEF3C7]" : "border-border bg-card"}`}>
             <div className="flex items-start justify-between gap-2">
               <div>
                 <div className="text-[10px] uppercase tracking-wider text-muted-fg">{format(day, "EEEEEE", { locale: ru })}</div>
@@ -325,7 +325,7 @@ function WeekPlanner({
               </div>
               <span className="rounded-full bg-muted px-2 py-0.5 text-xs tabular-nums">{dayRequests.length}</span>
             </div>
-            {holiday && <div className="mt-2 text-xs text-amber-300">{holiday.reason}</div>}
+            {holiday && <div className="mt-2 text-xs font-medium text-[#92400E]">{holiday.reason}</div>}
             <div className="mt-3 space-y-2">
               {dayRequests.slice(0, 4).map((request) => (
                 <Link key={request.id} href={`/crm/requests/${request.id}`} className="block rounded-xl border border-border bg-bg/45 px-3 py-2 hover:bg-muted">
@@ -341,7 +341,7 @@ function WeekPlanner({
         );
       })}
       {queueCount > 0 && (
-        <div className="lg:col-span-7 rounded-2xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-primary">
+        <div className="lg:col-span-7 rounded-2xl border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3 text-sm font-medium text-[#1D4ED8]">
           В очереди без времени: {queueCount}. Откройте день, чтобы поставить их в план.
         </div>
       )}
@@ -359,7 +359,7 @@ function TripCard({ request, index }: { request: ReqLite; index: number }) {
     <div className="px-4 py-4">
       <div className="flex gap-3">
         <div className="flex w-16 shrink-0 flex-col items-center">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full border border-primary/35 bg-primary/12 text-sm font-semibold text-primary">{index}</div>
+          <div className="flex h-9 w-9 items-center justify-center rounded-full border border-[#C7D2FE] bg-[#EEF2FF] text-sm font-semibold text-[#3730A3]">{index}</div>
           <div className={`mt-2 font-mono text-sm font-semibold tabular-nums ${meta.cls.text}`}>{format(dt, "HH:mm")}</div>
           <div className="text-[10px] text-muted-fg">{request.duration} мин</div>
         </div>
@@ -385,7 +385,7 @@ function TripCard({ request, index }: { request: ReqLite; index: number }) {
           <div className="mt-3 grid gap-2 text-sm text-muted-fg">
             {request.address && (
               <div className="flex items-start gap-2">
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#0369A1]" />
                 <span>{request.address}</span>
               </div>
             )}
@@ -445,7 +445,7 @@ function QueueCard({ request }: { request: QueueReqLite }) {
 
 function SummaryTile({ icon: Icon, label, value, hint }: { icon: typeof Route; label: string; value: string; hint: string }) {
   return (
-    <div className="rounded-2xl border border-border bg-card/45 p-4">
+    <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
       <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-fg">
         <Icon className="h-4 w-4" /> {label}
       </div>
@@ -539,10 +539,10 @@ function dayStripLabel(dayKey: string, todayKey: string, index: number) {
 }
 
 function dayRelationClass(relation: string, active: boolean) {
-  if (relation === "today") return "bg-primary text-primary-fg";
-  if (relation === "past") return active ? "bg-zinc-500/20 text-zinc-300" : "bg-zinc-500/10 text-zinc-500";
-  if (relation === "tomorrow") return "bg-sky-500/15 text-sky-300";
-  return active ? "bg-primary/15 text-primary" : "bg-muted text-muted-fg";
+  if (relation === "today") return "border border-[#BFDBFE] bg-[#EFF6FF] text-[#1D4ED8]";
+  if (relation === "past") return active ? "border border-[#CBD5E1] bg-[#F1F5F9] text-[#64748B]" : "bg-[#F1F5F9] text-[#64748B]";
+  if (relation === "tomorrow") return "border border-[#BAE6FD] bg-[#E0F2FE] text-[#0369A1]";
+  return active ? "border border-[#C7D2FE] bg-[#EEF2FF] text-[#3730A3]" : "bg-muted text-muted-fg";
 }
 
 function distanceFromToday(dayKey: string) {
@@ -576,4 +576,4 @@ function buildRouteHref(request: Pick<ReqLite, "address" | "lat" | "lng">) {
   return "";
 }
 
-const actionClass = "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-bg/50 px-3 text-sm font-medium hover:bg-muted";
+const actionClass = "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-semibold text-fg shadow-sm transition hover:bg-muted";

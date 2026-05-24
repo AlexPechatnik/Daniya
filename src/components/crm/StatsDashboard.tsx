@@ -151,7 +151,7 @@ export function StatsDashboard(p: Props) {
 function Kpi({ icon: Icon, label, value, hint, tone }: { icon: any; label: string; value: string; hint?: string; tone?: "primary" | "success" | "muted" }) {
   const toneClasses = {
     primary: "text-primary",
-    success: "text-emerald-400",
+    success: "text-[#166534]",
     muted: "text-muted-fg",
   };
   const valueClr = tone ? toneClasses[tone] : "text-fg";

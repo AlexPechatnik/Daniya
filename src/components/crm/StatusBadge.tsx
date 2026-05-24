@@ -8,8 +8,8 @@ export function StatusBadge({ status, size = "md" }: { status: string; size?: "s
     lg: "px-3 py-1.5 text-sm",
   }[size];
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border ${m.cls.bg} ${m.cls.border} ${m.cls.text} ${sizes} font-medium`}>
-      <span className={`h-1.5 w-1.5 rounded-full ${m.cls.dot}`} />
+    <span className={`inline-flex items-center gap-1.5 rounded-full border ${m.cls.bg} ${m.cls.border} ${m.cls.text} ${sizes} font-semibold shadow-[inset_0_1px_0_rgb(255_255_255/0.65)]`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${m.cls.dot} shadow-sm`} />
       {size === "sm" ? m.shortLabel : m.label}
     </span>
   );

@@ -12,7 +12,7 @@ import { formatRub } from "@/lib/utils";
 type MasterTab = "new" | "mine" | "active" | "done" | "profile";
 
 const ACTIVE_STATUSES = ["ACCEPTED", "SCHEDULED", "EN_ROUTE", "ON_SITE", "IN_PROGRESS", "AWAITING_PAYMENT"];
-const actionTileClass = "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-bg/55 px-2 text-sm font-medium hover:bg-muted";
+const actionTileClass = "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-card px-2 text-sm font-semibold text-fg shadow-sm transition hover:bg-muted";
 
 export async function MasterMobileDashboard({ tab = "new" }: { tab?: string }) {
   const user = await requireUser();
@@ -78,9 +78,9 @@ export async function MasterMobileDashboard({ tab = "new" }: { tab?: string }) {
         </div>
 
         <div className="grid grid-cols-3 gap-2">
-          <Counter label="новые" value={newRequests.length} tone={newRequests.length ? "amber" : "muted"} />
-          <Counter label="мои" value={myRequests.length} tone="primary" />
-          <Counter label="в работе" value={activeNow.length} tone={activeNow.length ? "violet" : "muted"} />
+          <Counter label="новые" value={newRequests.length} tone={newRequests.length ? "new" : "muted"} />
+          <Counter label="мои" value={myRequests.length} tone="planned" />
+          <Counter label="в работе" value={activeNow.length} tone={activeNow.length ? "work" : "muted"} />
         </div>
       </header>
 
@@ -164,9 +164,9 @@ function MasterJobCard({ request }: { request: MasterRequest }) {
       </div>
 
       {request.address?.address && (
-        <div className="mt-3 rounded-xl border border-border bg-bg/40 p-3">
+        <div className="mt-3 rounded-xl border border-border bg-card p-3 shadow-sm">
           <div className="flex items-start gap-2 text-sm leading-snug">
-            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#0369A1]" />
             <span>{request.address.address}</span>
           </div>
         </div>
@@ -215,17 +215,17 @@ function MasterJobCard({ request }: { request: MasterRequest }) {
   );
 }
 
-function Counter({ label, value, tone }: { label: string; value: number; tone: "primary" | "amber" | "violet" | "muted" }) {
+function Counter({ label, value, tone }: { label: string; value: number; tone: "new" | "planned" | "work" | "muted" }) {
   const color = {
-    primary: "text-primary",
-    amber: "text-amber-400",
-    violet: "text-violet-400",
-    muted: "text-muted-fg",
+    new: "border-[#BFDBFE] bg-[#EFF6FF] text-[#1D4ED8]",
+    planned: "border-[#C7D2FE] bg-[#EEF2FF] text-[#3730A3]",
+    work: "border-[#FED7AA] bg-[#FFF7ED] text-[#C2410C]",
+    muted: "border-border bg-card text-muted-fg",
   }[tone];
   return (
-    <div className="rounded-2xl border border-border bg-card/45 px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-muted-fg">{label}</div>
-      <div className={`text-2xl font-semibold tabular-nums ${color}`}>{value}</div>
+    <div className={`rounded-2xl border px-3 py-2 shadow-sm ${color}`}>
+      <div className="text-[10px] uppercase tracking-wider opacity-80">{label}</div>
+      <div className="text-2xl font-semibold tabular-nums">{value}</div>
     </div>
   );
 }

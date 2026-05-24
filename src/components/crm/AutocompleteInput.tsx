@@ -82,7 +82,7 @@ export function AutocompleteInput({
         </div>
       )}
       {open && suggestions.length > 0 && (
-        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 max-h-64 overflow-y-auto rounded-xl border border-border bg-bg-2 shadow-2xl shadow-black/40">
+        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 max-h-64 overflow-y-auto rounded-2xl border border-border bg-card shadow-2xl shadow-slate-900/12">
           {suggestions.map((suggestion) => (
             <button
               key={`${suggestion.kind || "item"}:${suggestion.value}`}

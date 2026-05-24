@@ -46,7 +46,7 @@ export function QuickActionButton({
         <button
           onClick={() => go({ to: na.next })}
           disabled={!!pending}
-          className={`inline-flex items-center justify-center gap-2 rounded-xl font-medium transition border ${meta.cls.bg} ${meta.cls.border} ${meta.cls.text} hover:opacity-90 ${sizes}`}
+          className={`inline-flex items-center justify-center gap-2 rounded-xl border font-semibold shadow-sm transition hover:brightness-[0.98] hover:shadow disabled:cursor-not-allowed disabled:border-border disabled:bg-muted disabled:text-muted-fg disabled:shadow-none ${meta.cls.bg} ${meta.cls.border} ${meta.cls.text} ${sizes}`}
         >
           {pending === "next" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
           {na.label}
@@ -56,7 +56,7 @@ export function QuickActionButton({
         <button
           onClick={() => { if (confirm("Отменить заявку?")) go({ cancel: true }); }}
           disabled={!!pending}
-          className={`inline-flex items-center justify-center gap-2 rounded-xl font-medium transition border border-border bg-card/40 hover:bg-card text-muted-fg hover:text-fg ${sizes}`}
+          className={`inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card font-medium text-muted-fg shadow-sm transition hover:bg-muted hover:text-fg disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-fg disabled:shadow-none ${sizes}`}
           title="Отменить"
         >
           {pending === "cancel" ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}

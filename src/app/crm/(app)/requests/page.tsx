@@ -48,8 +48,8 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
             href={`/crm/requests${filter.id === "attention" ? "" : `?queue=${filter.id}`}`}
             className={`shrink-0 rounded-xl border px-3 py-2 text-sm transition ${
               activeFilter === filter.id
-                ? "border-primary bg-primary text-primary-fg"
-                : "border-border bg-card/45 text-muted-fg hover:bg-card hover:text-fg"
+                ? "border-transparent bg-blue-50 text-primary shadow-inner"
+                : "border-border bg-card text-muted-fg hover:bg-muted hover:text-fg"
             }`}
           >
             {filter.label}
@@ -62,7 +62,7 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
         {requests.length === 0 && <Empty />}
       </div>
 
-      <div className="hidden overflow-hidden rounded-2xl border border-border bg-card/45 md:block">
+      <div className="hidden overflow-hidden rounded-2xl border border-border bg-card shadow-sm md:block">
         <table className="w-full text-sm">
           <thead className="border-b border-border bg-muted/20 text-xs uppercase tracking-wider text-muted-fg">
             <tr>
@@ -119,7 +119,7 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
 
 function RequestCard({ request }: { request: any }) {
   return (
-    <article className="rounded-2xl border border-border bg-card/45 p-4">
+    <article className="rounded-2xl border border-border bg-card p-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">

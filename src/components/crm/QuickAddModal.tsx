@@ -198,15 +198,15 @@ export function QuickAddModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[1000] bg-black/70 backdrop-blur-md flex items-end md:items-start md:justify-center md:pt-16 animate-fade-in"
+      className="crm-light fixed inset-0 z-[1000] flex items-end bg-slate-900/30 backdrop-blur-md md:items-start md:justify-center md:pt-16 animate-fade-in"
       onClick={onClose}
     >
       <form
         onClick={(e) => e.stopPropagation()}
         onSubmit={onSubmit}
         className="
-          relative w-full md:max-w-2xl bg-bg-2 border border-border shadow-2xl shadow-black/60
-          rounded-t-3xl md:rounded-2xl
+          relative w-full md:max-w-2xl bg-card border border-border shadow-2xl shadow-slate-900/18
+          rounded-t-3xl md:rounded-3xl
           max-h-[92vh] md:max-h-[88vh]
           flex flex-col
           animate-fade-up
@@ -220,8 +220,8 @@ export function QuickAddModal({
         {/* Header */}
         <div className="flex items-center justify-between px-5 md:px-6 pt-4 pb-3 md:pt-6 md:pb-4 border-b border-border">
           <div>
-            <h2 className="text-lg font-semibold tracking-tight">Новая заявка</h2>
-            {!showFull && <div className="text-xs text-muted-fg mt-0.5">Быстрый режим. Можно добавить детали потом.</div>}
+            <h2 className="text-xl font-semibold tracking-tight">Новая заявка</h2>
+            {!showFull && <div className="text-sm text-muted-fg mt-0.5">Быстрый режим. Можно добавить детали потом.</div>}
           </div>
           <button type="button" onClick={onClose} className="btn-ghost p-2 -mr-2"><X className="h-5 w-5" /></button>
         </div>
@@ -248,12 +248,12 @@ export function QuickAddModal({
 
             {/* Найденные клиенты */}
             {hits.length > 0 && !pickedClient && (
-              <div className="mt-2 rounded-xl border border-border divide-y divide-border max-h-48 overflow-y-auto bg-card/40">
+              <div className="mt-2 max-h-48 overflow-y-auto rounded-2xl border border-border bg-card divide-y divide-border shadow-lg shadow-slate-900/8">
                 {hits.map((h) => (
                   <div key={h.id} className="px-3 py-2.5">
                     <button type="button" onClick={() => { setPickedClient(h); setPhone(h.phone); }} className="w-full text-left">
-                      <div className="font-medium text-sm">{h.name}{h.org && <span className="text-muted-fg"> · {h.org}</span>}</div>
-                      <div className="text-xs text-muted-fg mt-0.5">{h.phone} {h.addresses[0]?.address && `· ${h.addresses[0].address}`}</div>
+                      <div className="text-sm font-medium">{h.name}{h.org && <span className="text-muted-fg"> · {h.org}</span>}</div>
+                      <div className="mt-0.5 text-sm text-muted-fg">{h.phone} {h.addresses[0]?.address && `· ${h.addresses[0].address}`}</div>
                     </button>
                     {h.lastRequest && (
                       <button
@@ -274,10 +274,10 @@ export function QuickAddModal({
 
             {/* Выбранный клиент */}
             {pickedClient && (
-              <div className="mt-2 rounded-xl border border-primary/40 bg-primary/5 px-3 py-2.5 flex items-start justify-between gap-3">
+              <div className="mt-2 flex items-start justify-between gap-3 rounded-2xl border border-transparent bg-blue-50 px-3 py-2.5">
                 <div className="text-sm">
                   <div className="font-medium">{pickedClient.name}</div>
-                  <div className="text-xs text-muted-fg">{pickedClient.addresses[0]?.address || "адрес уточнить"}</div>
+                  <div className="text-sm text-muted-fg">{pickedClient.addresses[0]?.address || "адрес уточнить"}</div>
                 </div>
                 <button type="button" onClick={() => setPickedClient(null)} className="text-xs text-muted-fg hover:text-fg">сменить</button>
               </div>
@@ -294,7 +294,7 @@ export function QuickAddModal({
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Иван / ООО Ромашка"
               />
-              <div className="text-xs text-muted-fg mt-1.5">Если оставить пустым — сохраним как «Клиент {phone || "+7..."}», уточните при перезвоне.</div>
+              <div className="mt-1.5 text-sm text-muted-fg">Если оставить пустым — сохраним как «Клиент {phone || "+7..."}», уточните при перезвоне.</div>
             </div>
           )}
 
@@ -311,10 +311,10 @@ export function QuickAddModal({
                     type="button"
                     onClick={() => setServiceId(active ? "" : s.id)}
                     className={`flex items-center gap-3 rounded-xl border px-3.5 py-3 text-left text-sm transition ${
-                      active ? "border-primary bg-primary/10 text-fg" : "border-border bg-card/40 text-fg/80 hover:bg-card"
+                      active ? "border-transparent bg-blue-50 text-fg shadow-inner" : "border-border bg-bg-2 text-fg hover:bg-muted"
                     }`}
                   >
-                    <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${active ? "bg-primary/20 text-primary" : "bg-muted text-muted-fg"}`}>
+                    <div className={`h-9 w-9 rounded-xl flex items-center justify-center ${active ? "bg-white text-primary shadow-sm" : "bg-muted text-muted-fg"}`}>
                       <Icon className="h-4 w-4" />
                     </div>
                     <span className="font-medium leading-tight">{s.name}</span>
@@ -330,17 +330,17 @@ export function QuickAddModal({
             <div className="flex flex-wrap gap-2">
               <DateChip active={datePreset === "none"} onClick={() => setDatePreset("none")}>
                 <div className="font-medium">Без даты</div>
-                <div className="text-[10px] text-muted-fg">уточнить</div>
+                <div className="text-[10px] text-slate-500">уточнить</div>
               </DateChip>
               {datePresets.map((d, i) => (
                 <DateChip key={i} active={datePreset === i} onClick={() => setDatePreset(i)}>
                   <div className="font-medium">{d.label}</div>
-                  <div className="text-[10px] text-muted-fg">{d.sub || format(d.when(), "HH:mm")}</div>
+                  <div className="text-[10px] text-slate-500">{d.sub || format(d.when(), "HH:mm")}</div>
                 </DateChip>
               ))}
               <DateChip active={datePreset === "custom"} onClick={() => setDatePreset("custom")}>
                 <div className="font-medium">Точно</div>
-                <div className="text-[10px] text-muted-fg">выбрать</div>
+                <div className="text-[10px] text-slate-500">выбрать</div>
               </DateChip>
             </div>
             {datePreset === "custom" && (
@@ -389,7 +389,7 @@ export function QuickAddModal({
           <button
             type="button"
             onClick={() => setShowFull((v) => !v)}
-            className="w-full flex items-center justify-center gap-2 text-sm text-muted-fg hover:text-fg transition"
+            className="w-full flex items-center justify-center gap-2 rounded-2xl border border-border bg-bg-2 px-4 py-3 text-sm font-medium text-muted-fg hover:text-fg transition"
           >
             <ChevronDown className={`h-4 w-4 transition-transform ${showFull ? "rotate-180" : ""}`} />
             {showFull ? "Скрыть детали" : "Заполнить полностью (адрес, мастер, модель)"}
@@ -437,7 +437,7 @@ export function QuickAddModal({
 }
 
 function Label({ children }: { children: React.ReactNode }) {
-  return <div className="text-xs font-medium text-muted-fg mb-2 uppercase tracking-wider">{children}</div>;
+  return <div className="text-sm font-semibold text-muted-fg mb-2">{children}</div>;
 }
 
 function DateChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
@@ -445,8 +445,8 @@ function DateChip({ active, onClick, children }: { active: boolean; onClick: () 
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-xl border px-3.5 py-2 text-sm transition min-w-[88px] ${
-        active ? "border-primary bg-primary/10 text-fg" : "border-border bg-card/40 hover:bg-card"
+      className={`quick-date-chip min-w-[88px] rounded-xl border px-3.5 py-2 text-sm transition ${
+        active ? "border-transparent bg-blue-50 text-primary shadow-inner" : "border-border bg-card text-fg shadow-sm hover:border-slate-300 hover:bg-bg-2"
       }`}
     >
       {children}

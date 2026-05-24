@@ -813,7 +813,7 @@ function SettingsField({ label, hint, children }: { label: string; hint: string;
     <label className="block">
       <div className="mb-1.5 flex flex-wrap items-baseline gap-2">
         <span className="text-xs font-medium uppercase tracking-wider text-muted-fg">{label}</span>
-        <span className="text-[11px] text-muted-fg/70">{hint}</span>
+        <span className="text-[11px] text-slate-500">{hint}</span>
       </div>
       {children}
     </label>

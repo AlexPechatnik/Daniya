@@ -262,8 +262,8 @@ export function InboxView({ initialClientIdPromise }: { initialClientIdPromise: 
                   >
                     <div>{m.text}</div>
                     <div
-                      className={`text-[10px] mt-1 opacity-70 text-right ${
-                        m.direction === "out" ? "" : "text-muted-fg"
+                      className={`mt-1 text-right text-[10px] ${
+                        m.direction === "out" ? "text-white/90" : "text-slate-500"
                       }`}
                     >
                       {format(parseISO(m.createdAt), "HH:mm")} · {m.provider}
