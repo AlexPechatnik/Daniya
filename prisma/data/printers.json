@@ -274,6 +274,20 @@
     "demand": "A"
   },
   {
+    "rank": "19a",
+    "brand": "HP",
+    "model": "LaserJet 3050 / 3052 / 3055",
+    "kind": "МФУ A4 mono",
+    "segment": "Очень массовый старый парк",
+    "cartridges": [
+      "Q2612A 12A"
+    ],
+    "yield": "2 000",
+    "chip": "Нет",
+    "chipNote": "Классический картридж для заправки; чипа нет",
+    "demand": "A"
+  },
+  {
     "rank": "20",
     "brand": "HP",
     "model": "LaserJet Pro M15a / M15w",

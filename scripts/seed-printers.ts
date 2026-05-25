@@ -132,13 +132,6 @@ function shouldAppearInRefillPrice(type: string): boolean {
   return type === "лазерный";
 }
 
-function defaultInkPrice(brand: string, code: string): number {
-  if (brand !== "Epson") return 600;
-  if (/^(108|057|673|T0811|29XL|502XL)$/i.test(code)) return 700;
-  if (/^(29|502)$/i.test(code)) return 650;
-  return 500;
-}
-
 function parseYields(raw?: string): number[] {
   if (!raw) return [];
   return Array.from(raw.matchAll(/\d[\d\s]{0,5}/g))
@@ -153,7 +146,6 @@ export async function seedPrintersAndCartridges(prisma: PrismaClient) {
 
   const refillService = await prisma.service.findUnique({ where: { slug: "zapravka" } });
   if (!refillService) throw new Error("Сервис 'zapravka' не найден — сначала запусти основной seed");
-  const inkService = await prisma.service.findUnique({ where: { slug: "chernila" } });
 
   let printersUpserted = 0;
   let cartridgesCreated = 0;
@@ -228,22 +220,6 @@ export async function seedPrintersAndCartridges(prisma: PrismaClient) {
             });
             pricesCreated++;
           }
-          if (inkService && existing.type === "струйный") {
-            const hasInkPrice = await prisma.price.findFirst({
-              where: { serviceId: inkService.id, cartridgeId: existing.id },
-            });
-            if (!hasInkPrice) {
-              await prisma.price.create({
-                data: {
-                  serviceId: inkService.id,
-                  cartridgeId: existing.id,
-                  amount: defaultInkPrice(existing.brand, existing.model) * 100,
-                  note: "Долив/замена чернил, проверка печати",
-                },
-              });
-              pricesCreated++;
-            }
-          }
         } else {
           const pageYield = yields[yieldIdx] ?? null;
           const created = await prisma.cartridge.create({
@@ -269,17 +245,6 @@ export async function seedPrintersAndCartridges(prisma: PrismaClient) {
                 serviceId: refillService.id,
                 cartridgeId: created.id,
                 amount: refillPrice * 100,
-              },
-            });
-            pricesCreated++;
-          }
-          if (inkService && type === "струйный") {
-            await prisma.price.create({
-              data: {
-                serviceId: inkService.id,
-                cartridgeId: created.id,
-                amount: defaultInkPrice(cartBrand, code) * 100,
-                note: "Долив/замена чернил, проверка печати",
               },
             });
             pricesCreated++;
@@ -325,31 +290,10 @@ export async function seedPrintersAndCartridges(prisma: PrismaClient) {
     }
   }
 
-  let inkBackfilled = 0;
-  if (inkService) {
-    const inkCartridges = await prisma.cartridge.findMany({ where: { type: "струйный" } });
-    for (const c of inkCartridges) {
-      const hasPrice = await prisma.price.findFirst({
-        where: { serviceId: inkService.id, cartridgeId: c.id },
-      });
-      if (!hasPrice) {
-        await prisma.price.create({
-          data: {
-            serviceId: inkService.id,
-            cartridgeId: c.id,
-            amount: defaultInkPrice(c.brand, c.model) * 100,
-            note: "Долив/замена чернил, проверка печати",
-          },
-        });
-        inkBackfilled++;
-      }
-    }
-  }
-
   console.log(
     `  ✓ принтеров: ${printersUpserted}, новых картриджей: ${cartridgesCreated}, ` +
     `новых цен: ${pricesCreated}, связей: ${linksCreated}, бэкфилл-цен: ${backfilled}, ` +
-    `бэкфилл-чернил: ${inkBackfilled}, убрано не-лазерных цен: ${removedNonRefillPrices.count}`,
+    `убрано не-лазерных цен: ${removedNonRefillPrices.count}`,
   );
 }
 

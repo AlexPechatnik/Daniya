@@ -13,13 +13,17 @@ const prisma = new PrismaClient();
 //   Диагностика на месте — 500–1000 ₽, медиана 700 ₽ (бесплатно при заказе ремонта).
 //   Ремонт принтера от 1500 ₽; чистка струйной головки 1000–2000 ₽; СНПЧ 2500–4500 ₽.
 const services: { name: string; slug: string; kind: string; base?: number }[] = [
-  { name: "Заправка картриджа",          slug: "zapravka",     kind: "REFILL",     base: 600 },
-  { name: "Долив и замена чернил",       slug: "chernila",     kind: "INKJET",     base: 500 },
+  { name: "Заправка лазерного картриджа", slug: "zapravka",    kind: "REFILL",     base: 600 },
+  { name: "Установка СНПЧ",              slug: "ciss-install", kind: "INKJET_REPAIR", base: 2500 },
   { name: "Прочистка печатающей головки", slug: "head-cleaning", kind: "INKJET_REPAIR", base: 1000 },
   { name: "Промывка печатающей головки", slug: "head-flush",   kind: "INKJET_REPAIR", base: 1800 },
   { name: "Обслуживание СНПЧ",           slug: "ciss-service", kind: "INKJET_REPAIR", base: 1500 },
+  { name: "Обслуживание системы подачи чернил", slug: "ink-system-service", kind: "INKJET_REPAIR", base: 1200 },
   { name: "Ремонт подачи бумаги",        slug: "paper-feed",   kind: "REPAIR",     base: 1200 },
   { name: "Сброс памперса / абсорбера",  slug: "waste-ink-reset", kind: "INKJET_REPAIR", base: 900 },
+  { name: "Диагностика струйного принтера", slug: "inkjet-diagnostics", kind: "INKJET_REPAIR", base: 700 },
+  { name: "Ремонт струйного принтера",   slug: "inkjet-repair", kind: "INKJET_REPAIR", base: 1500 },
+  { name: "Настройка качества печати",   slug: "print-quality-setup", kind: "INKJET_REPAIR", base: 800 },
   { name: "Замена картриджа (работа)",   slug: "zamena",       kind: "REPLACE",    base: 700 },
   { name: "Диагностика принтера",        slug: "diagnostika",  kind: "DIAGNOSTIC", base: 700 },
   { name: "Ремонт принтера",             slug: "remont",       kind: "REPAIR",     base: 1500 },
@@ -109,24 +113,6 @@ const cartridges: CartridgeSeed[] = [
 
 const CHIP_PRICE_DEFAULT = 150; // ₽ — дефолтная цена замены чипа
 
-const inkRefillPrices: Record<string, number> = {
-  "Epson|001": 600,
-  "Epson|003": 500,
-  "Epson|005": 500,
-  "Epson|057": 700,
-  "Epson|103": 500,
-  "Epson|108": 700,
-  "Epson|29": 650,
-  "Epson|29XL": 750,
-  "Epson|502": 650,
-  "Epson|502XL": 750,
-  "Epson|664": 500,
-  "Epson|673": 700,
-  "Epson|774": 500,
-  "Epson|T0811": 700,
-  "Epson|T774": 500,
-};
-
 async function upsertPrice(serviceId: string, cartridgeId: string | null, amountRub: number, note?: string) {
   const existing = await prisma.price.findFirst({ where: { serviceId, cartridgeId } });
   const data = { amount: amountRub * 100, note: note || null };
@@ -149,7 +135,6 @@ async function main() {
 
   console.log("→ Seeding cartridges & refill prices...");
   const refillService = await prisma.service.findUnique({ where: { slug: "zapravka" } });
-  const inkService = await prisma.service.findUnique({ where: { slug: "chernila" } });
   for (const c of cartridges) {
     const cart = await prisma.cartridge.upsert({
       where: { brand_model: { brand: c.brand, model: c.model } },
@@ -171,10 +156,12 @@ async function main() {
     if (refillService && c.type === "лазерный") {
       await upsertPrice(refillService.id, cart.id, c.refill);
     }
-    if (inkService && c.type === "струйный") {
-      const inkPrice = inkRefillPrices[`${c.brand}|${c.model}`] ?? c.refill;
-      await upsertPrice(inkService.id, cart.id, inkPrice, "Долив/замена чернил, проверка печати");
-    }
+  }
+
+  const oldInkService = await prisma.service.findUnique({ where: { slug: "chernila" } });
+  if (oldInkService) {
+    await prisma.price.deleteMany({ where: { serviceId: oldInkService.id } });
+    await prisma.service.delete({ where: { id: oldInkService.id } });
   }
 
   console.log("→ Base service prices...");

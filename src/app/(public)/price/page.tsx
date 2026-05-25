@@ -3,35 +3,21 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PriceCatalog, type PriceRow } from "@/components/PriceCatalog";
 import { PrinterCartridgeFinder } from "@/components/PrinterCartridgeFinder";
+import { cartridges as fmtCartridges, servicesCount as fmtServices } from "@/lib/plural";
 
 export const metadata: Metadata = {
-  title: "Цены на заправку и ремонт картриджей в СПб — 2026",
-  description: "Прозрачный прайс по картриджам и принтерам: заправка, замена, диагностика, ремонт. Поиск, сортировка, фильтры.",
+  title: "Прайс на сервис принтеров в СПб — 2026",
+  description:
+    "Прозрачный прайс по заправке, замене, диагностике и ремонту принтеров. Поиск картриджа по модели принтера.",
 };
 
 export const dynamic = "force-dynamic";
 
-const SERVICE_FACTS: Record<string, { from: number; about: string }> = {
-  zapravka:   { from: 500,  about: "Заправляем оригинальным тонером Static Control/Mitsubishi. Чек, гарантия 30 дней." },
-  chernila:   { from: 500,  about: "Долив и замена чернил Epson EcoTank, WorkForce, Expression. Проверяем печать после работ." },
-  "head-cleaning": { from: 1000, about: "Прочистка печатающей головки штатными и сервисными режимами без разборки." },
-  "head-flush": { from: 1800, about: "Промывка печатающей головки при засорах, полосах и пропусках цвета." },
-  "ciss-service": { from: 1500, about: "Обслуживание СНПЧ: воздух в шлейфе, доноры, трубки, герметичность, прокачка." },
-  "paper-feed": { from: 1200, about: "Ремонт подачи бумаги: ролики, тормозная площадка, захват, перекос и замятия." },
-  "waste-ink-reset": { from: 900, about: "Сброс абсорбера и обслуживание памперса после диагностики состояния." },
-  zamena:     { from: 700,  about: "Замена картриджа на оригинал/совместимый. Привозим картридж в наличии." },
-  diagnostika:{ from: 700,  about: "Полная диагностика на месте за 20–30 минут. При заказе ремонта — бесплатно." },
-  remont:     { from: 1500, about: "Чистка, замена термопары, муфт, ролика подхвата. Сложный ремонт — в мастерской." },
-};
-
 export default async function Page() {
-  const [services, prices] = await Promise.all([
-    prisma.service.findMany({ orderBy: { name: "asc" } }),
-    prisma.price.findMany({
-      include: { service: true, cartridge: true },
-      orderBy: [{ cartridge: { brand: "asc" } }, { cartridge: { model: "asc" } }],
-    }),
-  ]);
+  const prices = await prisma.price.findMany({
+    include: { service: true, cartridge: true },
+    orderBy: [{ cartridge: { brand: "asc" } }, { cartridge: { model: "asc" } }],
+  });
 
   const rows: PriceRow[] = prices.map((p) => ({
     id: p.id,
@@ -53,60 +39,30 @@ export default async function Page() {
       : null,
   }));
 
+  const cartridgeCount = rows.filter((r) => r.cartridge).length;
+  const serviceOnlyCount = rows.length - cartridgeCount;
+
   return (
     <section className="container py-16 lg:py-24">
       <Link href="/" className="chip mb-6 hover:text-fg transition">← На главную</Link>
 
+      {/* HERO — одна сильная фраза и подзаголовок. HIG: clarity, focus. */}
       <div className="max-w-3xl">
         <h1 className="heading-display text-4xl md:text-5xl lg:text-6xl">Прайс на 2026</h1>
-        <p className="mt-5 text-muted-fg leading-relaxed">
-          Все цены ориентировочные, опираются на среднюю цену по Санкт-Петербургу.
-          Точная стоимость — на месте: зависит от модели, состояния картриджа и объёма работ.
+        <p className="mt-5 text-lg text-muted-fg leading-relaxed">
+          {fmtCartridges(cartridgeCount)} с фиксированной ценой заправки и {fmtServices(serviceOnlyCount)} ремонта.
+          Цены ориентировочные — точная стоимость на месте после осмотра.
         </p>
       </div>
 
-      {/* Карточки услуг — что во сколько обходится и почему */}
-      <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {services.map((s) => {
-          const fact = SERVICE_FACTS[s.slug];
-          return (
-            <div key={s.id} className="card rounded-3xl p-5 transition hover:shadow-md">
-              <div className="text-xs uppercase tracking-wider text-muted-fg">{s.kind}</div>
-              <div className="mt-1 text-lg font-semibold">{s.name}</div>
-              <div className="mt-3 flex items-baseline gap-1">
-                <span className="text-xs text-muted-fg">от</span>
-                <span className="text-2xl font-semibold tabular-nums">{(fact?.from ?? 500).toLocaleString("ru-RU")}</span>
-                <span className="text-sm text-muted-fg">₽</span>
-              </div>
-              {fact?.about && <p className="mt-3 text-sm text-muted-fg leading-relaxed">{fact.about}</p>}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Поиск картриджа по модели принтера — для клиентов, которые не знают код */}
-      <div className="mt-12">
+      {/* Поиск картриджа по принтеру — главный инструмент страницы. */}
+      <div className="mt-10">
         <PrinterCartridgeFinder />
       </div>
 
-      {/* Каталог: поиск + фильтры + сортировка */}
-      <div className="mt-14">
-        <h2 className="text-2xl font-semibold tracking-tight">Картриджи в работе</h2>
-        <p className="mt-2 text-sm text-muted-fg">
-          {rows.length} позиций · нажмите на строку, чтобы увидеть совместимые принтеры и факты о картридже.
-        </p>
-        <div className="mt-6">
-          <PriceCatalog rows={rows} />
-        </div>
-      </div>
-
-      {/* CTA */}
-      <div className="mt-16 rounded-3xl border border-border bg-card p-8 text-center lg:p-12">
-        <h3 className="text-2xl font-semibold tracking-tight">Не нашли вашу модель?</h3>
-        <p className="mx-auto mt-3 max-w-xl text-muted-fg">
-          У нас на складе — более 250 совместимых картриджей. Напишите модель — назовём цену в течение 15 минут.
-        </p>
-        <Link href="/#request" className="btn-primary mt-6 inline-flex">Оставить заявку</Link>
+      {/* Один каталог: категории + поиск + таблица — единая точка взаимодействия. */}
+      <div id="catalog" className="mt-14">
+        <PriceCatalog rows={rows} />
       </div>
     </section>
   );

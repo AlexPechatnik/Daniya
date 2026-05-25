@@ -42,7 +42,10 @@
       "Bash(grep -q \"online\\\\|errored\\\\|ERR\\\\|Failed to compile\" \"C:\\\\\\\\Users\\\\\\\\user\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\C--danya\\\\\\\\33e00135-572f-492f-ba17-75881911871a\\\\\\\\tasks\\\\\\\\bqc6ho0ie.output\")",
       "Read(//c/Users/user/AppData/Roaming/Claude/local-agent-mode-sessions/skills-plugin/970b9294-3739-41a5-80c3-7b2e1ef3ad14/3f45813e-d43f-40ac-8be3-018232a7858f/skills/xlsx/**)",
       "Bash(python -c \"import pandas as pd; xl = pd.ExcelFile\\(r'E:\\\\Users\\\\Nigulak\\\\Загрузки\\\\top100_printers_cartridges_spb_russia_with_epson_inkjet.xlsx'\\); print\\('Sheets:', xl.sheet_names\\)\")",
-      "PowerShell($env:PYTHONIOENCODING=\"utf-8\"; & \"C:\\\\Users\\\\user\\\\AppData\\\\Local\\\\Python\\\\bin\\\\python.exe\" -c \"import pandas as pd; xl = pd.ExcelFile\\(r'E:\\\\Users\\\\Nigulak\\\\Загрузки\\\\top100_printers_cartridges_spb_russia_with_epson_inkjet.xlsx'\\); print\\('Sheets:', xl.sheet_names\\)\")"
+      "PowerShell($env:PYTHONIOENCODING=\"utf-8\"; & \"C:\\\\Users\\\\user\\\\AppData\\\\Local\\\\Python\\\\bin\\\\python.exe\" -c \"import pandas as pd; xl = pd.ExcelFile\\(r'E:\\\\Users\\\\Nigulak\\\\Загрузки\\\\top100_printers_cartridges_spb_russia_with_epson_inkjet.xlsx'\\); print\\('Sheets:', xl.sheet_names\\)\")",
+      "Bash(mkdir -p C:/danya/.claude)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(curl -s \"http://localhost:53633/api/public/cartridges-for-printer?q=HP+M404\")"
     ]
   }
 }

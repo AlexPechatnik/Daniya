@@ -32,6 +32,7 @@ export default async function PriceAdminPage() {
       ? {
           brand: p.cartridge.brand,
           model: p.cartridge.model,
+          type: p.cartridge.type,
           hasChip: p.cartridge.hasChip,
           pageYield: p.cartridge.pageYield,
         }

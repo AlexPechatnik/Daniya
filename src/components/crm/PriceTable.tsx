@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, ChevronLeft, ChevronRight, Loader2, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { PRICE_CATEGORIES, priceCategoryForSlug } from "@/lib/priceStructure";
 
 export type CrmPriceRow = {
   id: string;
@@ -11,7 +12,7 @@ export type CrmPriceRow = {
   serviceName: string;
   amount: number; // ₽
   note: string | null;
-  cartridge: { brand: string; model: string; hasChip: boolean; pageYield: number | null } | null;
+  cartridge: { brand: string; model: string; type: string; hasChip: boolean; pageYield: number | null } | null;
 };
 
 type Service = { id: string; slug: string; name: string };
@@ -28,6 +29,7 @@ export function PriceTable({ initialRows, services }: { initialRows: CrmPriceRow
   const router = useRouter();
   const [rows, setRows] = useState(initialRows);
   const [query, setQuery] = useState("");
+  const [categoryId, setCategoryId] = useState<string>("all");
   const [serviceSlug, setServiceSlug] = useState<string>("all");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<{ amount: string; note: string }>({ amount: "", note: "" });
@@ -37,7 +39,11 @@ export function PriceTable({ initialRows, services }: { initialRows: CrmPriceRow
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
+    const categorySlugs = categoryId === "all"
+      ? null
+      : new Set<string>(PRICE_CATEGORIES.find((item) => item.id === categoryId)?.slugs ?? []);
     return rows
+      .filter((r) => !categorySlugs || categorySlugs.has(r.serviceSlug))
       .filter((r) => serviceSlug === "all" || r.serviceSlug === serviceSlug)
       .filter((r) => {
         if (!q) return true;
@@ -49,7 +55,13 @@ export function PriceTable({ initialRows, services }: { initialRows: CrmPriceRow
         ].filter(Boolean).join(" ").toLowerCase();
         return hay.includes(q);
       });
-  }, [rows, query, serviceSlug]);
+  }, [rows, query, categoryId, serviceSlug]);
+
+  const servicesForCategory = useMemo(() => {
+    if (categoryId === "all") return services;
+    const categorySlugs = new Set<string>(PRICE_CATEGORIES.find((item) => item.id === categoryId)?.slugs ?? []);
+    return services.filter((service) => categorySlugs.has(service.slug));
+  }, [services, categoryId]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
@@ -114,13 +126,35 @@ export function PriceTable({ initialRows, services }: { initialRows: CrmPriceRow
           className="input h-10 w-44"
         >
           <option value="all">Все услуги</option>
-          {services.map((s) => (
+          {servicesForCategory.map((s) => (
             <option key={s.id} value={s.slug}>{s.name}</option>
           ))}
         </select>
         <button type="button" onClick={() => setShowAdd(true)} className="btn-primary h-10 px-4">
           <Plus className="h-4 w-4" /> Добавить
         </button>
+      </div>
+
+      <div className="grid gap-2 md:grid-cols-3 xl:grid-cols-6">
+        {[{ id: "all", title: "Все разделы", description: "Полный прайс" }, ...PRICE_CATEGORIES].map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => {
+              setCategoryId(item.id);
+              setServiceSlug("all");
+              setPage(1);
+            }}
+            className={`rounded-2xl border p-3 text-left transition ${
+              categoryId === item.id
+                ? "border-primary bg-primary/10 text-fg"
+                : "border-border bg-card text-muted-fg hover:border-primary/50 hover:text-fg"
+            }`}
+          >
+            <div className="text-sm font-semibold">{item.title}</div>
+            <div className="mt-1 text-xs leading-snug">{item.description}</div>
+          </button>
+        ))}
       </div>
 
       {/* Таблица */}
@@ -142,7 +176,12 @@ export function PriceTable({ initialRows, services }: { initialRows: CrmPriceRow
             const busy = busyId === row.id;
             return (
               <li key={row.id} className="grid grid-cols-[180px,1fr,90px,140px,140px,80px] items-center gap-3 px-4 py-2.5">
-                <div className="text-sm text-muted-fg">{row.serviceName}</div>
+                <div className="text-sm text-muted-fg">
+                  <div>{row.serviceName}</div>
+                  <div className="mt-1 text-[10px] uppercase tracking-wider text-muted-fg/70">
+                    {priceCategoryForSlug(row.serviceSlug).title}
+                  </div>
+                </div>
 
                 <div className="min-w-0">
                   {row.cartridge ? (
@@ -169,7 +208,9 @@ export function PriceTable({ initialRows, services }: { initialRows: CrmPriceRow
                 </div>
 
                 <div className="text-right text-xs tabular-nums text-muted-fg">
-                  {row.cartridge?.pageYield ? `${row.cartridge.pageYield.toLocaleString("ru-RU")} стр.` : "—"}
+                  {row.cartridge?.type === "лазерный" && row.cartridge.pageYield
+                    ? `${row.cartridge.pageYield.toLocaleString("ru-RU")} стр.`
+                    : "—"}
                 </div>
 
                 <div className="text-right text-sm font-semibold tabular-nums">
