@@ -208,6 +208,7 @@ export function PriceCatalog({ rows }: { rows: PriceRow[] }) {
                 <button
                   type="button"
                   onClick={() => setExpandedId(expanded ? null : row.id)}
+                  data-cartridge-key={c ? `${c.brand} ${c.model}` : ""}
                   className="grid w-full grid-cols-[1fr,80px,120px,120px] items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-bg-2/60"
                 >
                   <div className="min-w-0">

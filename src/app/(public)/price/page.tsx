@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PriceCatalog, type PriceRow } from "@/components/PriceCatalog";
+import { PrinterCartridgeFinder } from "@/components/PrinterCartridgeFinder";
 
 export const metadata: Metadata = {
   title: "Цены на заправку и ремонт картриджей в СПб — 2026",
@@ -75,6 +76,11 @@ export default async function Page() {
             </div>
           );
         })}
+      </div>
+
+      {/* Поиск картриджа по модели принтера — для клиентов, которые не знают код */}
+      <div className="mt-12">
+        <PrinterCartridgeFinder />
       </div>
 
       {/* Каталог: поиск + фильтры + сортировка */}

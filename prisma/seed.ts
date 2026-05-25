@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { detectDistrict } from "../src/lib/districts";
+import { seedPrintersAndCartridges } from "../scripts/seed-printers";
 
 const prisma = new PrismaClient();
 
@@ -133,6 +134,10 @@ async function main() {
       await prisma.price.create({ data: { serviceId: svc.id, amount: s.base * 100, note: "Базовая цена" } });
     }
   }
+
+  // Каталог принтеров (138 моделей) + связи с картриджами из prisma/data/printers.json
+  console.log("→ Seeding printer catalog + cartridge compatibility...");
+  await seedPrintersAndCartridges(prisma);
 
   // Backfill: проставить район у адресов, где он ещё пустой (после миграции)
   console.log("→ Backfilling districts for existing addresses...");
