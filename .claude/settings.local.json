@@ -35,7 +35,11 @@
       "Bash(python -c \"print\\(1\\)\")",
       "Bash(echo \"exit=$?\")",
       "Read(//c/Users/user/AppData/Local/Python/pythoncore-3.14-64/**)",
-      "Bash(/c/Users/user/AppData/Local/Python/pythoncore-3.14-64/python.exe -c \"print\\('hi'\\)\")"
+      "Bash(/c/Users/user/AppData/Local/Python/pythoncore-3.14-64/python.exe -c \"print\\('hi'\\)\")",
+      "Bash([ ! -f \"C:\\\\\\\\Users\\\\\\\\user\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\C--danya\\\\\\\\33e00135-572f-492f-ba17-75881911871a\\\\\\\\tasks\\\\\\\\bqc6ho0ie.status\" ])",
+      "Bash(grep -q \"exited\" \"C:\\\\\\\\Users\\\\\\\\user\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\C--danya\\\\\\\\33e00135-572f-492f-ba17-75881911871a\\\\\\\\tasks\\\\\\\\bqc6ho0ie.status\")",
+      "Bash(cat \"C:\\\\\\\\Users\\\\\\\\user\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\C--danya\\\\\\\\33e00135-572f-492f-ba17-75881911871a\\\\\\\\tasks\\\\\\\\bqc6ho0ie.output\")",
+      "Bash(grep -q \"online\\\\|errored\\\\|ERR\\\\|Failed to compile\" \"C:\\\\\\\\Users\\\\\\\\user\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\C--danya\\\\\\\\33e00135-572f-492f-ba17-75881911871a\\\\\\\\tasks\\\\\\\\bqc6ho0ie.output\")"
     ]
   }
 }

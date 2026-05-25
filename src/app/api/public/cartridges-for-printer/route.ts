@@ -22,7 +22,8 @@ export async function GET(req: NextRequest) {
   // Сначала пробуем «самый длинный» токен — чаще всего это модель.
   tokens.sort((a, b) => b.length - a.length);
 
-  let printer = null as Awaited<ReturnType<typeof prisma.printerModel.findFirst>> | null;
+  // Используем any — Prisma не выводит include-связи через переменную с findFirst в цикле.
+  let printer: any = null;
   for (const t of tokens) {
     printer = await prisma.printerModel.findFirst({
       where: {
