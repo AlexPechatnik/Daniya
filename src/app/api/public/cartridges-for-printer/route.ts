@@ -15,17 +15,27 @@ export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q")?.trim() || "";
   if (q.length < 2) return NextResponse.json({ printer: null, cartridges: [] });
 
-  // Ищем первое максимально точное совпадение.
-  const printer = await prisma.printerModel.findFirst({
-    where: {
-      OR: [
-        { family: { contains: q } },
-        { aliases: { contains: q } },
-      ],
-    },
-    include: { cartridges: { include: { cartridge: true } } },
-    orderBy: [{ demand: "asc" }],
-  });
+  // Разбиваем запрос на токены и ищем по каждому из них (поэтому работает
+  // «HP M404», «LaserJet M404», «Pantum P2200» — даже если family хранится как
+  // «LaserJet Pro M404dn»).
+  const tokens = q.split(/\s+/).filter((t) => t.length >= 2);
+  // Сначала пробуем «самый длинный» токен — чаще всего это модель.
+  tokens.sort((a, b) => b.length - a.length);
+
+  let printer = null as Awaited<ReturnType<typeof prisma.printerModel.findFirst>> | null;
+  for (const t of tokens) {
+    printer = await prisma.printerModel.findFirst({
+      where: {
+        OR: [
+          { family: { contains: t } },
+          { aliases: { contains: t } },
+        ],
+      },
+      include: { cartridges: { include: { cartridge: true } } },
+      orderBy: [{ demand: "asc" }],
+    });
+    if (printer) break;
+  }
 
   if (!printer) return NextResponse.json({ printer: null, cartridges: [] });
 
