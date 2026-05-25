@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q")?.trim() || "";
   if (q.length < 2) return NextResponse.json({ suggestions: [] });
 
-  const [cartridges, printers, requests] = await Promise.all([
+  const [cartridges, printers, printerModels, requests] = await Promise.all([
     prisma.cartridge.findMany({
       where: {
         OR: [
@@ -27,6 +27,20 @@ export async function GET(req: NextRequest) {
         ],
       },
       include: { client: { select: { name: true } } },
+      take: 6,
+    }),
+    // Каталог моделей принтеров — даёт подсказку даже если этот клиент
+    // никогда у нас не обслуживался: «HP M404 → CF259A/CF259X».
+    prisma.printerModel.findMany({
+      where: {
+        OR: [
+          { brand: { contains: q } },
+          { family: { contains: q } },
+          { aliases: { contains: q } },
+        ],
+      },
+      include: { cartridges: { include: { cartridge: true }, take: 4 } },
+      orderBy: [{ demand: "asc" }, { family: "asc" }],
       take: 6,
     }),
     prisma.request.findMany({
@@ -51,6 +65,15 @@ export async function GET(req: NextRequest) {
       subtitle: p.client?.name ? `принтер · ${p.client.name}` : "принтер",
       kind: "Принтер",
     })),
+    ...printerModels.map((pm) => {
+      const carts = pm.cartridges.map((pc) => pc.cartridge.model);
+      return {
+        value: `${pm.brand} ${pm.family}`,
+        title: `${pm.brand} ${pm.family}`,
+        subtitle: carts.length > 0 ? `Картриджи: ${carts.join(", ")}` : (pm.kind || "принтер"),
+        kind: "Каталог",
+      };
+    }),
     ...requests
       .map((r) => r.printerInfo?.trim())
       .filter((value): value is string => !!value)

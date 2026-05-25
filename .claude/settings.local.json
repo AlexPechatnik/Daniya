@@ -21,7 +21,21 @@
       "Bash(curl -sI https://api.github.com/repos/AlexPechatnik/Daniya)",
       "Bash(git commit *)",
       "Bash(npm run *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(python \"C:\\\\Users\\\\user\\\\AppData\\\\Roaming\\\\Claude\\\\local-agent-mode-sessions\\\\skills-plugin\\\\970b9294-3739-41a5-80c3-7b2e1ef3ad14\\\\3f45813e-d43f-40ac-8be3-018232a7858f\\\\skills\\\\xlsx\\\\scripts\\\\extract-text.py\" \"E:\\\\Users\\\\Nigulak\\\\Загрузки\\\\top100_printers_cartridges_spb_russia_with_epson_inkjet.xlsx\")",
+      "Bash(ls \"C:\\\\Users\\\\user\\\\AppData\\\\Roaming\\\\Claude\\\\local-agent-mode-sessions\\\\skills-plugin\\\\970b9294-3739-41a5-80c3-7b2e1ef3ad14\\\\3f45813e-d43f-40ac-8be3-018232a7858f\\\\skills\\\\xlsx\\\\scripts\" 2>&1)",
+      "Bash(python -c \"import pandas as pd; xl=pd.ExcelFile\\(r'E:\\\\Users\\\\Nigulak\\\\Загрузки\\\\top100_printers_cartridges_spb_russia_with_epson_inkjet.xlsx'\\); print\\('SHEETS:', xl.sheet_names\\)\")",
+      "Bash(pip install *)",
+      "Bash(chcp 65001)",
+      "Bash(python -X utf8 -c \"import pandas as pd; path=r'E:\\\\Users\\\\Nigulak\\\\Загрузки\\\\top100_printers_cartridges_spb_russia_with_epson_inkjet.xlsx'; xl=pd.ExcelFile\\(path\\); print\\('SHEETS:', xl.sheet_names\\)\")",
+      "Bash(cp \"E:\\\\Users\\\\Nigulak\\\\Загрузки\\\\top100_printers_cartridges_spb_russia_with_epson_inkjet.xlsx\" \"C:\\\\danya\\\\_tmp_printers.xlsx\" 2>&1)",
+      "Bash(python -X utf8 -c \"print\\('hi'\\)\")",
+      "PowerShell(python -X utf8 -c \"import pandas as pd; xl=pd.ExcelFile\\(r'C:\\\\danya\\\\_tmp_printers.xlsx'\\); print\\(xl.sheet_names\\)\")",
+      "Bash(python C:\\\\\\\\danya\\\\\\\\_tmp_inspect.py)",
+      "Bash(python -c \"print\\(1\\)\")",
+      "Bash(echo \"exit=$?\")",
+      "Read(//c/Users/user/AppData/Local/Python/pythoncore-3.14-64/**)",
+      "Bash(/c/Users/user/AppData/Local/Python/pythoncore-3.14-64/python.exe -c \"print\\('hi'\\)\")"
     ]
   }
 }

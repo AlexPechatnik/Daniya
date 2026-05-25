@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Request, Service, User } from "@prisma/client";
 import {
@@ -71,6 +71,25 @@ export function RequestEditor({
     price: request.price ? Math.round(request.price / 100) : 0,
     comment: request.comment || "",
   });
+
+  // Подсказка совместимых картриджей по введённой технике.
+  // Мастер пишет «HP M404» → CRM показывает CF259A/CF259X из каталога.
+  const [cartridgeHints, setCartridgeHints] = useState<{ brand: string; model: string; hasChip: boolean }[]>([]);
+  useEffect(() => {
+    const q = form.printerInfo.trim();
+    if (q.length < 2) { setCartridgeHints([]); return; }
+    const controller = new AbortController();
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/public/cartridges-for-printer?q=${encodeURIComponent(q)}`, { signal: controller.signal });
+        const data = await res.json();
+        setCartridgeHints(data.cartridges || []);
+      } catch (e: any) {
+        if (e?.name !== "AbortError") setCartridgeHints([]);
+      }
+    }, 400);
+    return () => { clearTimeout(t); controller.abort(); };
+  }, [form.printerInfo]);
 
   const selectedService = services.find((service) => service.id === form.serviceId)?.name || "Не выбрана";
   const selectedMaster = masters.find((master) => master.id === form.assignedToId)?.name || "Не назначен";
@@ -199,6 +218,21 @@ export function RequestEditor({
                   minLength={2}
                   className="input h-12"
                 />
+                {cartridgeHints.length > 0 && (
+                  <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                    <span className="text-muted-fg">Подходят к этому принтеру:</span>
+                    {cartridgeHints.map((h) => (
+                      <button
+                        key={`${h.brand}-${h.model}`}
+                        type="button"
+                        onClick={() => setForm({ ...form, printerInfo: `${form.printerInfo.trim()}  →  ${h.brand} ${h.model}` })}
+                        className="rounded-full border border-border bg-card px-2.5 py-1 font-medium hover:border-primary hover:text-primary"
+                      >
+                        {h.brand} {h.model}{h.hasChip ? " · чип" : ""}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </FormSection>

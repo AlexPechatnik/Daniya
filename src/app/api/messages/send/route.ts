@@ -12,7 +12,7 @@ import { sendToClient } from "@/lib/messengers";
  */
 export async function POST(req: NextRequest) {
   await requireUser();
-  const { clientId, text, provider } = await req.json();
+  const { clientId, text, provider, requestId } = await req.json();
 
   if (!clientId || !text?.trim()) {
     return NextResponse.json({ error: "clientId и text обязательны" }, { status: 400 });
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  usedProvider = await sendToClient(clientId, text.trim());
+  usedProvider = await sendToClient(clientId, text.trim(), requestId);
   if (!usedProvider) {
     return NextResponse.json(
       { error: "Не удалось доставить сообщение. Проверьте статус ботов." },

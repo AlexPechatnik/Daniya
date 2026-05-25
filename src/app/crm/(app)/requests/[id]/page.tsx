@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { RequestEditor } from "@/components/crm/RequestEditor";
+import { RequestChat } from "@/components/crm/RequestChat";
 import { QuickActionButton } from "@/components/crm/QuickActionButton";
 import { StatusBadge } from "@/components/crm/StatusBadge";
 
@@ -12,14 +13,26 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const request = await prisma.request.findUnique({
     where: { id },
     include: {
-      client: { include: { addresses: true, printers: true } },
+      client: { include: { addresses: true, printers: true, channels: true } },
       address: true,
       assignedTo: true,
       service: true,
-      messages: { orderBy: { createdAt: "asc" }, take: 50 },
     },
   });
   if (!request) notFound();
+
+  // Полная переписка с этим клиентом по всем каналам и заявкам — чат на странице
+  // должен быть осмысленной хронологической лентой, а не только логом из ботов.
+  const messages = await prisma.message.findMany({
+    where: { clientId: request.clientId },
+    orderBy: { createdAt: "asc" },
+    take: 200,
+  });
+  // Открыли заявку → считаем входящие прочитанными, чтобы счётчик в инбоксе обнулился.
+  await prisma.message.updateMany({
+    where: { clientId: request.clientId, direction: "in", unread: true },
+    data: { unread: false },
+  });
 
   const services = await prisma.service.findMany({ orderBy: { name: "asc" } });
   const masters = await prisma.user.findMany({ where: { active: true }, orderBy: { name: "asc" } });
@@ -44,28 +57,22 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
       <RequestEditor request={request as any} services={services} masters={masters} />
 
-      <section className="rounded-3xl border border-border bg-card p-5 shadow-sm">
-        <div className="mb-3 font-semibold">История сообщений</div>
-        {request.messages.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border bg-bg-2 px-4 py-8 text-center text-sm text-muted-fg">
-            Сообщений пока нет. Здесь появится история общения с клиентом.
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {request.messages.map((message) => (
-              <div
-                key={message.id}
-                className={`rounded-2xl p-3 text-sm ${message.direction === "in" ? "bg-muted" : "ml-12 bg-primary/10"}`}
-              >
-                <div className="mb-0.5 text-xs text-muted-fg">
-                  {message.provider} · {message.direction === "in" ? "от клиента" : "ответ"} · {message.createdAt.toLocaleString("ru-RU")}
-                </div>
-                {message.text}
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+      {/* Чат шире не должен быть редактора — кладём в ту же grid-сетку, что и RequestEditor */}
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr),340px]">
+        <RequestChat
+          requestId={request.id}
+          clientId={request.clientId}
+          hasChannels={request.client.channels.length > 0}
+          initialMessages={messages.map((m) => ({
+            id: m.id,
+            direction: m.direction,
+            provider: m.provider,
+            text: m.text,
+            createdAt: m.createdAt.toISOString(),
+          }))}
+        />
+        <div className="hidden xl:block" />
+      </div>
     </div>
   );
 }

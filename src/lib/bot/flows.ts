@@ -533,8 +533,8 @@ async function cartSearchReceived(ctx: BotContext) {
   if (q.length < 2) return ctx.send("Слишком короткий запрос — нужно минимум 2 символа.");
   const data = ctx.state?.data || { items: [] };
 
-  // Поиск по модели и совместимости
-  const hits = await prisma.cartridge.findMany({
+  // 1) Прямой поиск по картриджам (бренд/модель/совместимость).
+  const direct = await prisma.cartridge.findMany({
     where: {
       OR: [
         { model: { contains: q } },
@@ -546,6 +546,43 @@ async function cartSearchReceived(ctx: BotContext) {
     orderBy: [{ isPopular: "desc" }, { brand: "asc" }, { model: "asc" }],
     take: 8,
   });
+
+  // 2) Клиент написал модель принтера (например «M404») —
+  // подтягиваем подходящие картриджи из каталога PrinterModel.
+  const printerMatch = await prisma.printerModel.findFirst({
+    where: {
+      OR: [
+        { family: { contains: q } },
+        { aliases: { contains: q } },
+        { brand: { contains: q } },
+      ],
+    },
+    include: {
+      cartridges: {
+        include: {
+          cartridge: {
+            include: { prices: { where: { service: { slug: data.serviceSlug || "zapravka" } }, take: 1 } },
+          },
+        },
+      },
+    },
+    orderBy: [{ demand: "asc" }],
+  });
+  const fromPrinter = printerMatch?.cartridges.map((pc) => pc.cartridge) || [];
+
+  // Объединяем, дедуплицируем по id, ограничиваем до 10.
+  const seen = new Set<string>();
+  const hits = [...direct, ...fromPrinter].filter((c) => {
+    if (seen.has(c.id)) return false;
+    seen.add(c.id);
+    return true;
+  }).slice(0, 10);
+
+  // Запомним, что нашёлся принтер — покажем в подписи, чтобы клиент понял
+  // «это картриджи для вашей модели».
+  const printerHintLine = printerMatch
+    ? `\n\nПо запросу узнал принтер: <b>${printerMatch.brand} ${printerMatch.family}</b>. Вот подходящие картриджи:`
+    : "";
 
   if (hits.length === 0) {
     return ctx.send(
@@ -564,7 +601,7 @@ async function cartSearchReceived(ctx: BotContext) {
   data.lastSearch = q;
   await ctx.setState("new_request", "cartridge_pick", data);
   await ctx.send(
-    `Нашли по «${q}» — выберите:`,
+    `Нашли по «${q}» — выберите:` + printerHintLine,
     {
       inlineKeyboard: [
         ...hits.map((c) => {
@@ -745,8 +782,14 @@ async function finalizeRequest(ctx: BotContext, data: any) {
     addressId = addr.id;
   }
 
-  // Корзина → printerInfo (сжатая строка) + comment (детальная)
+  // Если в ходе диалога клиент упомянул модель принтера (через поиск картриджа
+  // или свой текст) — сохраняем её в карточку клиента, чтобы в следующий раз
+  // мастер увидел технику без расспросов.
   const items: any[] = Array.isArray(data.items) ? data.items : [];
+  const printerQueries = [data.lastSearch, ...items.map((it) => it.label).filter(Boolean)].filter(Boolean) as string[];
+  await savePrinterFromQueries(client.id, printerQueries);
+
+  // Корзина → printerInfo (сжатая строка) + comment (детальная)
   const printerInfo = items.length
     ? items.map((it) => `${it.label}${it.quantity > 1 ? ` ×${it.quantity}` : ""}`).join(", ")
     : (data.printerInfo === "не знаю" ? null : data.printerInfo) || null;
@@ -1146,6 +1189,12 @@ async function createAdminRequest(ctx: BotContext) {
     addressId = addr.id;
   }
 
+  // Если админ указал технику в printerInfo — пытаемся опознать модель
+  // принтера по каталогу и сохранить в карточку клиента.
+  if (data.printerInfo) {
+    await savePrinterFromQueries(client.id, [data.printerInfo]);
+  }
+
   const last = await prisma.request.findFirst({ orderBy: { number: "desc" }, select: { number: true } });
   const request = await prisma.request.create({
     data: {
@@ -1541,4 +1590,43 @@ function serviceEmoji(slug: string) {
     diagnostika: "🩺",
     remont: "🔧",
   } as Record<string, string>)[slug] || "•";
+}
+
+/**
+ * По списку строк (что клиент писал про технику — модели картриджей, запрос
+ * на поиск, свободный текст) находим в каталоге PrinterModel первое совпадение
+ * и записываем модель в карточку клиента (Printer). Если такой принтер уже
+ * есть у клиента — пропускаем.
+ *
+ * Это делает повторные обращения короче: в CRM мастер сразу видит технику,
+ * клиенту не приходится снова диктовать модель.
+ */
+async function savePrinterFromQueries(clientId: string, queries: string[]) {
+  const seen = new Set<string>();
+  for (const raw of queries) {
+    const q = (raw || "").trim();
+    if (q.length < 2) continue;
+    if (seen.has(q.toLowerCase())) continue;
+    seen.add(q.toLowerCase());
+
+    const match = await prisma.printerModel.findFirst({
+      where: {
+        OR: [
+          { family: { contains: q } },
+          { aliases: { contains: q } },
+        ],
+      },
+    }).catch(() => null);
+    if (!match) continue;
+
+    const exists = await prisma.printer.findFirst({
+      where: { clientId, brand: match.brand, model: match.family },
+    });
+    if (exists) return; // у клиента уже есть этот принтер — не дублируем
+
+    await prisma.printer.create({
+      data: { clientId, brand: match.brand, model: match.family },
+    }).catch((e) => console.error("[bot] save printer failed", e));
+    return;
+  }
 }

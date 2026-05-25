@@ -12,6 +12,7 @@ const leadSchema = z.object({
   phone: z.string().min(10, "Укажите телефон"),
   address: z.string().optional(),
   serviceKind: z.enum(["REFILL", "REPLACE", "DIAGNOSTIC", "REPAIR"]).optional(),
+  printer: z.string().optional(),
   cartridge: z.string().optional(),
   comment: z.string().optional(),
 });
@@ -24,6 +25,7 @@ export async function submitLead(_prev: LeadFormState, formData: FormData): Prom
     phone: String(formData.get("phone") || ""),
     address: String(formData.get("address") || "") || undefined,
     serviceKind: (formData.get("serviceKind") as string) || undefined,
+    printer: String(formData.get("printer") || "") || undefined,
     cartridge: String(formData.get("cartridge") || "") || undefined,
     comment: String(formData.get("comment") || "") || undefined,
   };
@@ -67,6 +69,39 @@ export async function submitLead(_prev: LeadFormState, formData: FormData): Prom
     addressId = addr.id;
   }
 
+  // Если клиент указал и принтер, и картридж — храним оба в printerInfo для мастера.
+  // Если только что-то одно — пишем его как есть.
+  const printerInfoParts: string[] = [];
+  if (parsed.data.printer) printerInfoParts.push(`Принтер: ${parsed.data.printer}`);
+  if (parsed.data.cartridge) printerInfoParts.push(`Картридж: ${parsed.data.cartridge}`);
+  const printerInfo = printerInfoParts.length > 0 ? printerInfoParts.join(" · ") : undefined;
+
+  // Сохраняем модель принтера в каталог клиента — пригодится при повторных заявках.
+  if (parsed.data.printer) {
+    const [brand, ...rest] = parsed.data.printer.trim().split(/\s+/);
+    const model = rest.join(" ");
+    if (brand && model) {
+      await prisma.printer.create({
+        data: { clientId: client.id, brand, model },
+      }).catch(() => undefined);
+    }
+  }
+
+  // Если в форме указан картридж и он есть в нашем каталоге — линкуем его к заявке.
+  let cartridgeId: string | null = null;
+  if (parsed.data.cartridge) {
+    const raw = parsed.data.cartridge.trim();
+    const [maybeBrand, ...rest] = raw.split(/\s+/);
+    const tryModel = rest.join(" ") || maybeBrand;
+    const tryBrand = rest.length > 0 ? maybeBrand : undefined;
+    const cart = await prisma.cartridge.findFirst({
+      where: tryBrand
+        ? { brand: { contains: tryBrand }, model: { contains: tryModel } }
+        : { model: { contains: tryModel } },
+    });
+    if (cart) cartridgeId = cart.id;
+  }
+
   const last = await prisma.request.findFirst({ orderBy: { number: "desc" }, select: { number: true } });
   const request = await prisma.request.create({
     data: {
@@ -74,9 +109,10 @@ export async function submitLead(_prev: LeadFormState, formData: FormData): Prom
       clientId: client.id,
       addressId,
       serviceId,
+      cartridgeId,
       source: "WEB",
       status: "NEW",
-      printerInfo: parsed.data.cartridge,
+      printerInfo,
       comment: parsed.data.comment,
     },
   });

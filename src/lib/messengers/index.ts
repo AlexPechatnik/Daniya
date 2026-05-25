@@ -89,7 +89,7 @@ export async function handleIncoming(event: IncomingEvent) {
   return client;
 }
 
-export async function sendToClient(clientId: string, text: string) {
+export async function sendToClient(clientId: string, text: string, requestId?: string) {
   const channels = await prisma.clientChannel.findMany({ where: { clientId } });
   for (const ch of channels) {
     const adapter = getAdapter(ch.provider);
@@ -97,7 +97,7 @@ export async function sendToClient(clientId: string, text: string) {
     try {
       await adapter.sendMessage(ch.externalId, text);
       await prisma.message.create({
-        data: { clientId, provider: ch.provider, direction: "out", text },
+        data: { clientId, provider: ch.provider, direction: "out", text, requestId },
       });
       return ch.provider;
     } catch (e) {

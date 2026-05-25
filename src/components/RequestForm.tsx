@@ -14,10 +14,38 @@ const services = [
   { value: "REPAIR", label: "Ремонт" },
 ];
 
+type CartridgeHint = { brand: string; model: string; hasChip: boolean };
+
 export function RequestForm() {
   const [state, formAction, pending] = useActionState<LeadFormState, FormData>(submitLead, {});
   const [holidays, setHolidays] = useState<{ date: string; reason: string }[]>([]);
   const [address, setAddress] = useState("Санкт-Петербург, ");
+  const [printer, setPrinter] = useState("");
+  const [cartridge, setCartridge] = useState("");
+  const [hints, setHints] = useState<CartridgeHint[]>([]);
+  const [hintsLoading, setHintsLoading] = useState(false);
+
+  // Подтягиваем подходящие картриджи, когда клиент выбрал/ввёл принтер.
+  // Это работает и если он не выбирал из выпадашки — лишь бы написал что-то распознаваемое.
+  useEffect(() => {
+    const q = printer.trim();
+    if (q.length < 2) { setHints([]); return; }
+    const controller = new AbortController();
+    const t = setTimeout(async () => {
+      setHintsLoading(true);
+      try {
+        const res = await fetch(`/api/public/cartridges-for-printer?q=${encodeURIComponent(q)}`, { signal: controller.signal });
+        const data = await res.json();
+        setHints(data.cartridges || []);
+      } catch (e: any) {
+        if (e?.name !== "AbortError") setHints([]);
+      } finally {
+        setHintsLoading(false);
+      }
+    }, 350);
+    return () => { clearTimeout(t); controller.abort(); };
+  }, [printer]);
+
   useEffect(() => { getUpcomingHolidays().then(setHolidays); }, []);
   const nearHolidays = holidays.slice(0, 4);
 
@@ -100,10 +128,45 @@ export function RequestForm() {
                 <Field label="Услуга">
                   <select name="serviceKind" className="input">{services.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}</select>
                 </Field>
-                <Field label="Картридж / принтер">
-                  <input name="cartridge" className="input" placeholder="HP CF283A, Canon LBP6020..." />
+                <Field label="Модель принтера">
+                  <AutocompleteInput
+                    endpoint="/api/public/suggest/printers"
+                    value={printer}
+                    onChange={setPrinter}
+                    placeholder="HP M404, Canon LBP6020, Epson L3100…"
+                    minLength={2}
+                    name="printer"
+                    className="input"
+                  />
                 </Field>
               </div>
+              <Field label="Картридж (если знаете)">
+                <input
+                  name="cartridge"
+                  value={cartridge}
+                  onChange={(e) => setCartridge(e.target.value)}
+                  className="input"
+                  placeholder="CF283A, 725, TN-1075… — или оставьте пустым"
+                />
+                {hints.length > 0 && (
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                    <span className="text-muted-fg">Подходят к этому принтеру:</span>
+                    {hints.map((h) => (
+                      <button
+                        type="button"
+                        key={`${h.brand}-${h.model}`}
+                        onClick={() => setCartridge(`${h.brand} ${h.model}`)}
+                        className="rounded-full border border-border bg-bg-2 px-2.5 py-1 font-medium hover:border-primary hover:text-primary"
+                      >
+                        {h.brand} {h.model}{h.hasChip ? " · чип" : ""}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {hintsLoading && printer.trim().length >= 2 && hints.length === 0 && (
+                  <div className="mt-2 text-xs text-muted-fg">ищем подходящие картриджи…</div>
+                )}
+              </Field>
               <Field label="Комментарий">
                 <textarea name="comment" className="input min-h-[88px]" placeholder="Что случилось, удобное время и т.п." />
               </Field>

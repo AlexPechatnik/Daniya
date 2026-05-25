@@ -100,11 +100,42 @@ model Cartridge {
   // Доплата к цене заправки — берём `chipPrice` если задана, иначе глобальный дефолт 150 ₽.
   hasChip    Boolean   @default(false)
   chipPrice  Int?      // копейки; null = использовать дефолт
+  // Ресурс в страницах при 5% заполнении — фактоид для прайса.
+  pageYield  Int?
   prices     Price[]
   requests   Request[]
+  printers   PrinterCartridge[]
   @@unique([brand, model])
   @@index([brand])
   @@index([model])
+}
+
+model PrinterModel {
+  // Каталог моделей принтеров/МФУ. Заполняется из ТОП‑100 (prisma/data/printers.json).
+  // Нужен, чтобы клиент ввёл модель принтера и система подсказала картридж.
+  id         String   @id @default(cuid())
+  brand      String   // HP / Canon / Brother / Epson / ...
+  family     String   // "LaserJet Pro M404dn" — первый вариант из строки таблицы
+  aliases    String   // JSON-массив строк-вариантов: ["M404dn","M404dw","M404n"]
+  kind       String?  // "Принтер A4 mono" / "МФУ A4 mono" / "Струйный" / ...
+  segment    String?  // "Офис", "Малый офис", "Дом"
+  demand     String?  // A | B | C — рейтинг сервисной популярности (A = массовый)
+  chipNote   String?  // комментарий про чип
+  speedPpm   Int?     // скорость печати, страниц в минуту (заводская)
+  cartridges PrinterCartridge[]
+  @@unique([brand, family])
+  @@index([brand])
+  @@index([family])
+}
+
+model PrinterCartridge {
+  // Many-to-many между моделью принтера и подходящими картриджами.
+  printerModelId String
+  cartridgeId    String
+  printerModel   PrinterModel @relation(fields: [printerModelId], references: [id], onDelete: Cascade)
+  cartridge      Cartridge    @relation(fields: [cartridgeId], references: [id], onDelete: Cascade)
+  @@id([printerModelId, cartridgeId])
+  @@index([cartridgeId])
 }
 
 model Service {

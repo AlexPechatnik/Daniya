@@ -1,0 +1,2172 @@
+[
+  {
+    "rank": "1",
+    "brand": "HP",
+    "model": "LaserJet Pro M404dn / M404dw / M404n",
+    "kind": "Принтер A4 mono",
+    "segment": "Офис, современный",
+    "cartridges": [
+      "CF259A 59A",
+      "CF259X 59X"
+    ],
+    "yield": "3 000; 10 000",
+    "chip": "Да",
+    "chipNote": "Для совместимых часто нужен чип/перенос чипа; зависит от прошивки",
+    "demand": "A"
+  },
+  {
+    "rank": "2",
+    "brand": "HP",
+    "model": "LaserJet Pro MFP M428dw / M428fdn / M428fdw",
+    "kind": "МФУ A4 mono",
+    "segment": "Офис, современный",
+    "cartridges": [
+      "CF259A 59A",
+      "CF259X 59X"
+    ],
+    "yield": "3 000; 10 000",
+    "chip": "Да",
+    "chipNote": "Чип обязателен для полноценного отображения ресурса",
+    "demand": "A"
+  },
+  {
+    "rank": "3",
+    "brand": "HP",
+    "model": "LaserJet Pro M203dn / M203dw",
+    "kind": "Принтер A4 mono",
+    "segment": "Офис",
+    "cartridges": [
+      "CF230A 30A",
+      "CF230X 30X"
+    ],
+    "yield": "1 600; 3 500/6 000 у аналогов",
+    "chip": "Да",
+    "chipNote": "Нужен новый/переносимый чип; у X-версий ресурс выше",
+    "demand": "A"
+  },
+  {
+    "rank": "4",
+    "brand": "HP",
+    "model": "LaserJet Pro MFP M227fdn / M227fdw / M227sdn",
+    "kind": "МФУ A4 mono",
+    "segment": "Офис",
+    "cartridges": [
+      "CF230A 30A",
+      "CF230X 30X"
+    ],
+    "yield": "1 600; 3 500/6 000 у аналогов",
+    "chip": "Да",
+    "chipNote": "Нужен чип; X-версия выгоднее для офисов",
+    "demand": "A"
+  },
+  {
+    "rank": "5",
+    "brand": "HP",
+    "model": "LaserJet Pro M102a / M102w",
+    "kind": "Принтер A4 mono",
+    "segment": "Малый офис",
+    "cartridges": [
+      "CF217A 17A"
+    ],
+    "yield": "1 600",
+    "chip": "Да",
+    "chipNote": "Совместимые чаще идут с чипом",
+    "demand": "A"
+  },
+  {
+    "rank": "6",
+    "brand": "HP",
+    "model": "LaserJet Pro MFP M130a / M130fn / M130fw / M130nw",
+    "kind": "МФУ A4 mono",
+    "segment": "Малый офис",
+    "cartridges": [
+      "CF217A 17A"
+    ],
+    "yield": "1 600",
+    "chip": "Да",
+    "chipNote": "Чип желательно менять при заправке/замене",
+    "demand": "A"
+  },
+  {
+    "rank": "7",
+    "brand": "HP",
+    "model": "LaserJet Pro M104a / M104w",
+    "kind": "Принтер A4 mono",
+    "segment": "Малый офис",
+    "cartridges": [
+      "CF218A 18A",
+      "CF218X 18X"
+    ],
+    "yield": "1 400; 2 800/6 000 у аналогов",
+    "chip": "Да",
+    "chipNote": "Чип нужен; следить за версией аналога",
+    "demand": "A"
+  },
+  {
+    "rank": "8",
+    "brand": "HP",
+    "model": "LaserJet Pro MFP M132a / M132fn / M132fw / M132nw",
+    "kind": "МФУ A4 mono",
+    "segment": "Малый офис",
+    "cartridges": [
+      "CF218A 18A",
+      "CF218X 18X"
+    ],
+    "yield": "1 400; 2 800/6 000 у аналогов",
+    "chip": "Да",
+    "chipNote": "Чип нужен, особенно для совместимых",
+    "demand": "A"
+  },
+  {
+    "rank": "9",
+    "brand": "HP",
+    "model": "LaserJet Pro M125a / M125r / M125rnw / M125nw",
+    "kind": "МФУ A4 mono",
+    "segment": "Массовый парк",
+    "cartridges": [
+      "CF283A 83A"
+    ],
+    "yield": "1 500",
+    "chip": "Да",
+    "chipNote": "Чип встречается; для заправки полезно держать запас",
+    "demand": "A"
+  },
+  {
+    "rank": "10",
+    "brand": "HP",
+    "model": "LaserJet Pro M127fn / M127fw / M128fn",
+    "kind": "МФУ A4 mono",
+    "segment": "Массовый парк",
+    "cartridges": [
+      "CF283A 83A"
+    ],
+    "yield": "1 500",
+    "chip": "Да",
+    "chipNote": "Чип/индикатор ресурса; уточнять по прошивке",
+    "demand": "A"
+  },
+  {
+    "rank": "11",
+    "brand": "HP",
+    "model": "LaserJet Pro M201n / M201dw",
+    "kind": "Принтер A4 mono",
+    "segment": "Офис",
+    "cartridges": [
+      "CF283A 83A",
+      "CF283X"
+    ],
+    "yield": "1 500; 2 200+",
+    "chip": "Да",
+    "chipNote": "CF283X совместим как увеличенный ресурс в части аналогов",
+    "demand": "A"
+  },
+  {
+    "rank": "12",
+    "brand": "HP",
+    "model": "LaserJet Pro MFP M225dn / M225dw / M225rdn",
+    "kind": "МФУ A4 mono",
+    "segment": "Офис",
+    "cartridges": [
+      "CF283A 83A",
+      "CF283X"
+    ],
+    "yield": "1 500; 2 200+",
+    "chip": "Да",
+    "chipNote": "Чип и совместимость аналога проверять",
+    "demand": "A"
+  },
+  {
+    "rank": "13",
+    "brand": "HP",
+    "model": "LaserJet Pro P1102 / P1102w",
+    "kind": "Принтер A4 mono",
+    "segment": "Массовый старый парк",
+    "cartridges": [
+      "CE285A 85A"
+    ],
+    "yield": "1 600",
+    "chip": "Нет/не критично",
+    "chipNote": "Обычно заправляется без критичного чипа; возможен индикатор ресурса",
+    "demand": "A"
+  },
+  {
+    "rank": "14",
+    "brand": "HP",
+    "model": "LaserJet Pro M1132 MFP",
+    "kind": "МФУ A4 mono",
+    "segment": "Массовый старый парк",
+    "cartridges": [
+      "CE285A 85A"
+    ],
+    "yield": "1 600",
+    "chip": "Нет/не критично",
+    "chipNote": "Один из самых частых картриджей для выездной заправки",
+    "demand": "A"
+  },
+  {
+    "rank": "15",
+    "brand": "HP",
+    "model": "LaserJet Pro M1212nf / M1217nfw",
+    "kind": "МФУ A4 mono",
+    "segment": "Массовый старый парк",
+    "cartridges": [
+      "CE285A 85A"
+    ],
+    "yield": "1 600",
+    "chip": "Нет/не критично",
+    "chipNote": "Подходит тот же 85A; держать расходники постоянно",
+    "demand": "A"
+  },
+  {
+    "rank": "16",
+    "brand": "HP",
+    "model": "LaserJet P1005",
+    "kind": "Принтер A4 mono",
+    "segment": "Старый парк",
+    "cartridges": [
+      "CB435A 35A"
+    ],
+    "yield": "1 500",
+    "chip": "Нет/не критично",
+    "chipNote": "Простая заправка; совместимость тонера с P1005/P1006",
+    "demand": "B"
+  },
+  {
+    "rank": "17",
+    "brand": "HP",
+    "model": "LaserJet P1006 / P1505",
+    "kind": "Принтер A4 mono",
+    "segment": "Старый парк",
+    "cartridges": [
+      "CB436A 36A"
+    ],
+    "yield": "2 000",
+    "chip": "Нет/не критично",
+    "chipNote": "Чип обычно не блокирует печать",
+    "demand": "B"
+  },
+  {
+    "rank": "18",
+    "brand": "HP",
+    "model": "LaserJet 1018 / 1020",
+    "kind": "Принтер A4 mono",
+    "segment": "Очень массовый старый парк",
+    "cartridges": [
+      "Q2612A 12A"
+    ],
+    "yield": "2 000",
+    "chip": "Нет",
+    "chipNote": "Классический картридж для заправки; чипа нет",
+    "demand": "A"
+  },
+  {
+    "rank": "19",
+    "brand": "HP",
+    "model": "LaserJet M1005 MFP",
+    "kind": "МФУ A4 mono",
+    "segment": "Очень массовый старый парк",
+    "cartridges": [
+      "Q2612A 12A"
+    ],
+    "yield": "2 000",
+    "chip": "Нет",
+    "chipNote": "Часто встречается в офисах и у физлиц",
+    "demand": "A"
+  },
+  {
+    "rank": "20",
+    "brand": "HP",
+    "model": "LaserJet Pro M15a / M15w",
+    "kind": "Принтер A4 mono",
+    "segment": "Дом/малый офис",
+    "cartridges": [
+      "CF244A 44A"
+    ],
+    "yield": "1 000",
+    "chip": "Да",
+    "chipNote": "Для аналогов нужен чип; картридж малой ёмкости",
+    "demand": "A"
+  },
+  {
+    "rank": "21",
+    "brand": "HP",
+    "model": "LaserJet Pro MFP M28a / M28w",
+    "kind": "МФУ A4 mono",
+    "segment": "Дом/малый офис",
+    "cartridges": [
+      "CF244A 44A"
+    ],
+    "yield": "1 000",
+    "chip": "Да",
+    "chipNote": "Чип обязателен для корректного ресурса",
+    "demand": "A"
+  },
+  {
+    "rank": "22",
+    "brand": "HP",
+    "model": "LaserJet Pro M402dn / M402dw / M402n",
+    "kind": "Принтер A4 mono",
+    "segment": "Офис",
+    "cartridges": [
+      "CF226A 26A",
+      "CF226X 26X"
+    ],
+    "yield": "3 100; 9 000",
+    "chip": "Да",
+    "chipNote": "X-версия выгодна; чип/прошивку проверять",
+    "demand": "A"
+  },
+  {
+    "rank": "23",
+    "brand": "HP",
+    "model": "LaserJet Pro MFP M426fdn / M426fdw",
+    "kind": "МФУ A4 mono",
+    "segment": "Офис",
+    "cartridges": [
+      "CF226A 26A",
+      "CF226X 26X"
+    ],
+    "yield": "3 100; 9 000",
+    "chip": "Да",
+    "chipNote": "Популярный корпоративный картридж",
+    "demand": "A"
+  },
+  {
+    "rank": "24",
+    "brand": "HP",
+    "model": "LaserJet Enterprise M506dn / M506x",
+    "kind": "Принтер A4 mono",
+    "segment": "Средний офис",
+    "cartridges": [
+      "CF287A 87A",
+      "CF287X 87X"
+    ],
+    "yield": "9 000; 18 000",
+    "chip": "Да",
+    "chipNote": "Высокий ресурс, нужен чип/совместимый аналог",
+    "demand": "B"
+  },
+  {
+    "rank": "25",
+    "brand": "HP",
+    "model": "LaserJet Enterprise MFP M527dn / M527f",
+    "kind": "МФУ A4 mono",
+    "segment": "Средний офис",
+    "cartridges": [
+      "CF287A 87A",
+      "CF287X 87X"
+    ],
+    "yield": "9 000; 18 000",
+    "chip": "Да",
+    "chipNote": "Для офисных контрактов держать X-ресурс",
+    "demand": "B"
+  },
+  {
+    "rank": "26",
+    "brand": "HP",
+    "model": "LaserJet P3015 / Enterprise M521",
+    "kind": "Принтер/МФУ A4 mono",
+    "segment": "Старый корпоративный парк",
+    "cartridges": [
+      "CE255A 55A",
+      "CE255X 55X"
+    ],
+    "yield": "6 000; 12 500",
+    "chip": "Да/индикатор",
+    "chipNote": "Уточнять по конкретному аппарату; ресурсный картридж",
+    "demand": "B"
+  },
+  {
+    "rank": "27",
+    "brand": "HP",
+    "model": "LaserJet P2035 / P2055",
+    "kind": "Принтер A4 mono",
+    "segment": "Старый офисный парк",
+    "cartridges": [
+      "CE505A 05A",
+      "CE505X 05X"
+    ],
+    "yield": "2 300; 6 500",
+    "chip": "Нет/индикатор",
+    "chipNote": "Классическая заправка, спрос остаточный",
+    "demand": "B"
+  },
+  {
+    "rank": "28",
+    "brand": "HP",
+    "model": "Color LaserJet Pro M452 / M477",
+    "kind": "Цветной принтер/МФУ",
+    "segment": "Цветной офис",
+    "cartridges": [
+      "CF410A",
+      "411A",
+      "412A",
+      "413A",
+      "410X series"
+    ],
+    "yield": "2 300/2 300; X до 6 500",
+    "chip": "Да",
+    "chipNote": "Цветной комплект, чипы обязательны",
+    "demand": "C"
+  },
+  {
+    "rank": "29",
+    "brand": "HP",
+    "model": "Color LaserJet Pro M454 / M479",
+    "kind": "Цветной принтер/МФУ",
+    "segment": "Цветной офис",
+    "cartridges": [
+      "W2030A",
+      "W2031A",
+      "W2032A",
+      "W2033A",
+      "W2030X series"
+    ],
+    "yield": "2 400; X до 7 500",
+    "chip": "Да",
+    "chipNote": "Дорогой комплект; часто выгоднее замена/оригинал",
+    "demand": "C"
+  },
+  {
+    "rank": "30",
+    "brand": "Canon",
+    "model": "i-SENSYS MF3010",
+    "kind": "МФУ A4 mono",
+    "segment": "Массовый парк",
+    "cartridges": [
+      "Canon 725",
+      "CRG-725"
+    ],
+    "yield": "1 600",
+    "chip": "Нет/не критично",
+    "chipNote": "Чаще без блокирующего чипа; совместим с LBP6000/6030",
+    "demand": "A"
+  },
+  {
+    "rank": "31",
+    "brand": "Canon",
+    "model": "i-SENSYS LBP6000 / LBP6020 / LBP6030",
+    "kind": "Принтер A4 mono",
+    "segment": "Дом/малый офис",
+    "cartridges": [
+      "Canon 725",
+      "CRG-725"
+    ],
+    "yield": "1 600",
+    "chip": "Нет/не критично",
+    "chipNote": "Популярный маленький Canon",
+    "demand": "A"
+  },
+  {
+    "rank": "32",
+    "brand": "Canon",
+    "model": "LBP2900 / LBP3000",
+    "kind": "Принтер A4 mono",
+    "segment": "Очень старый парк",
+    "cartridges": [
+      "Canon 703"
+    ],
+    "yield": "2 000",
+    "chip": "Нет",
+    "chipNote": "Классический картридж без чипа",
+    "demand": "B"
+  },
+  {
+    "rank": "33",
+    "brand": "Canon",
+    "model": "MF4018 / MF4010 / MF4120 / MF4140",
+    "kind": "МФУ A4 mono",
+    "segment": "Старый парк",
+    "cartridges": [
+      "Canon FX-10"
+    ],
+    "yield": "2 000",
+    "chip": "Нет/не критично",
+    "chipNote": "Старые МФУ; спрос остаточный, но частый в офисах",
+    "demand": "B"
+  },
+  {
+    "rank": "34",
+    "brand": "Canon",
+    "model": "MF4410 / MF4430 / MF4450 / MF4570",
+    "kind": "МФУ A4 mono",
+    "segment": "Массовый старый парк",
+    "cartridges": [
+      "Canon 728"
+    ],
+    "yield": "2 100",
+    "chip": "Нет/не критично",
+    "chipNote": "Популярные МФУ Canon; картридж близок к HP 85A по тонеру",
+    "demand": "A"
+  },
+  {
+    "rank": "35",
+    "brand": "Canon",
+    "model": "MF211 / MF212w / MF216n / MF217w",
+    "kind": "МФУ A4 mono",
+    "segment": "Массовый парк",
+    "cartridges": [
+      "Canon 737"
+    ],
+    "yield": "2 400",
+    "chip": "Нет/уточнять",
+    "chipNote": "Официальная совместимость Canon 737; чип обычно не ключевой",
+    "demand": "A"
+  },
+  {
+    "rank": "36",
+    "brand": "Canon",
+    "model": "MF226dn / MF229dw",
+    "kind": "МФУ A4 mono",
+    "segment": "Офис",
+    "cartridges": [
+      "Canon 737"
+    ],
+    "yield": "2 400",
+    "chip": "Нет/уточнять",
+    "chipNote": "То же семейство 737; держать как ходовой",
+    "demand": "A"
+  },
+  {
+    "rank": "37",
+    "brand": "Canon",
+    "model": "MF231 / MF232w / MF237w",
+    "kind": "МФУ A4 mono",
+    "segment": "Массовый парк",
+    "cartridges": [
+      "Canon 737"
+    ],
+    "yield": "2 400",
+    "chip": "Нет/уточнять",
+    "chipNote": "Подтверждено в совместимости Canon 737",
+    "demand": "A"
+  },
+  {
+    "rank": "38",
+    "brand": "Canon",
+    "model": "MF244dw / MF247dw / MF249dw",
+    "kind": "МФУ A4 mono",
+    "segment": "Офис",
+    "cartridges": [
+      "Canon 737"
+    ],
+    "yield": "2 400",
+    "chip": "Нет/уточнять",
+    "chipNote": "Ходовой офисный картридж",
+    "demand": "A"
+  },
+  {
+    "rank": "39",
+    "brand": "Canon",
+    "model": "LBP151dw",
+    "kind": "Принтер A4 mono",
+    "segment": "Офис",
+    "cartridges": [
+      "Canon 737"
+    ],
+    "yield": "2 400",
+    "chip": "Нет/уточнять",
+    "chipNote": "Печатающая часть того же семейства",
+    "demand": "B"
+  },
+  {
+    "rank": "40",
+    "brand": "Canon",
+    "model": "LBP112 / MF112 / MF113w",
+    "kind": "Принтер/МФУ A4 mono",
+    "segment": "Дом/малый офис",
+    "cartridges": [
+      "Canon 047"
+    ],
+    "yield": "1 600",
+    "chip": "Да",
+    "chipNote": "Новые малые модели; чип/совместимость проверять",
+    "demand": "B"
+  },
+  {
+    "rank": "41",
+    "brand": "Canon",
+    "model": "LBP162dw / MF264dw / MF267dw / MF269dw",
+    "kind": "Принтер/МФУ A4 mono",
+    "segment": "Офис",
+    "cartridges": [
+      "Canon 051",
+      "051H"
+    ],
+    "yield": "1 700; 4 100",
+    "chip": "Да",
+    "chipNote": "051H предпочтителен для офисов; чип важен",
+    "demand": "A"
+  },
+  {
+    "rank": "42",
+    "brand": "Canon",
+    "model": "LBP223dw / LBP226dw / LBP228x",
+    "kind": "Принтер A4 mono",
+    "segment": "Офис",
+    "cartridges": [
+      "Canon 057",
+      "057H"
+    ],
+    "yield": "3 100; 10 000",
+    "chip": "Да",
+    "chipNote": "Высокоресурсный картридж, аналог HP 59 по классу",
+    "demand": "B"
+  },
+  {
+    "rank": "43",
+    "brand": "Canon",
+    "model": "MF443dw / MF445dw / MF449x",
+    "kind": "МФУ A4 mono",
+    "segment": "Офис",
+    "cartridges": [
+      "Canon 057",
+      "057H"
+    ],
+    "yield": "3 100; 10 000",
+    "chip": "Да",
+    "chipNote": "Ходовой для новых офисных Canon",
+    "demand": "B"
+  },
+  {
+    "rank": "44",
+    "brand": "Canon",
+    "model": "LBP611Cn / MF631Cn / MF633Cdw / MF635Cx",
+    "kind": "Цветной принтер/МФУ",
+    "segment": "Цветной офис",
+    "cartridges": [
+      "Canon 045",
+      "045H комплект"
+    ],
+    "yield": "1 300/1 400; H до 2 800",
+    "chip": "Да",
+    "chipNote": "Цветной комплект; чипы и тонер по цветам",
+    "demand": "C"
+  },
+  {
+    "rank": "45",
+    "brand": "Canon",
+    "model": "LBP621Cw / MF641Cw / MF643Cdw / MF645Cx",
+    "kind": "Цветной принтер/МФУ",
+    "segment": "Цветной офис",
+    "cartridges": [
+      "Canon 054",
+      "054H комплект"
+    ],
+    "yield": "1 500/1 200; H до 3 100",
+    "chip": "Да",
+    "chipNote": "Новые цветные Canon; высокая стоимость комплектов",
+    "demand": "C"
+  },
+  {
+    "rank": "46",
+    "brand": "Canon",
+    "model": "LBP7010C / LBP7018C",
+    "kind": "Цветной принтер",
+    "segment": "Старый цветной парк",
+    "cartridges": [
+      "Canon 729 комплект"
+    ],
+    "yield": "1 200/1 000",
+    "chip": "Да/уточнять",
+    "chipNote": "Остаточный спрос, комплект из 4 цветов",
+    "demand": "C"
+  },
+  {
+    "rank": "47",
+    "brand": "Canon",
+    "model": "MF3228 / MF3110",
+    "kind": "МФУ A4 mono",
+    "segment": "Очень старый парк",
+    "cartridges": [
+      "Canon FX-10",
+      "EP-27"
+    ],
+    "yield": "2 000/2 500",
+    "chip": "Нет",
+    "chipNote": "Проверять конкретную модель и корпус картриджа",
+    "demand": "C"
+  },
+  {
+    "rank": "48",
+    "brand": "Canon",
+    "model": "LBP1120 / LBP1210",
+    "kind": "Принтер A4 mono",
+    "segment": "Очень старый парк",
+    "cartridges": [
+      "EP-22",
+      "EP-25"
+    ],
+    "yield": "2 500",
+    "chip": "Нет",
+    "chipNote": "Встречается редко, но может быть у старых клиентов",
+    "demand": "C"
+  },
+  {
+    "rank": "49",
+    "brand": "Brother",
+    "model": "HL-1110R / HL-1112R",
+    "kind": "Принтер A4 mono",
+    "segment": "Дом/малый офис",
+    "cartridges": [
+      "TN-1075",
+      "DR-1075"
+    ],
+    "yield": "1 000; DR 10 000",
+    "chip": "Нет/счётчик",
+    "chipNote": "Тонер + отдельный фотобарабан; сброс счётчика",
+    "demand": "A"
+  },
+  {
+    "rank": "50",
+    "brand": "Brother",
+    "model": "DCP-1510R / DCP-1512R",
+    "kind": "МФУ A4 mono",
+    "segment": "Дом/малый офис",
+    "cartridges": [
+      "TN-1075",
+      "DR-1075"
+    ],
+    "yield": "1 000; DR 10 000",
+    "chip": "Нет/счётчик",
+    "chipNote": "Частый Brother начального уровня",
+    "demand": "A"
+  },
+  {
+    "rank": "51",
+    "brand": "Brother",
+    "model": "DCP-1610WR / DCP-1612WR",
+    "kind": "МФУ A4 mono",
+    "segment": "Дом/малый офис",
+    "cartridges": [
+      "TN-1075",
+      "DR-1075"
+    ],
+    "yield": "1 000; DR 10 000",
+    "chip": "Нет/счётчик",
+    "chipNote": "Спрос по Wi‑Fi моделям",
+    "demand": "A"
+  },
+  {
+    "rank": "52",
+    "brand": "Brother",
+    "model": "HL-L2300DR / HL-L2340DWR / HL-L2360DNR",
+    "kind": "Принтер A4 mono",
+    "segment": "Офис",
+    "cartridges": [
+      "TN-2335",
+      "TN-2375",
+      "DR-2335"
+    ],
+    "yield": "1 200; 2 600; DR 12 000",
+    "chip": "Счётчик/уточнять",
+    "chipNote": "В РФ встречаются аналоги с чипом; держать TN-2375",
+    "demand": "A"
+  },
+  {
+    "rank": "53",
+    "brand": "Brother",
+    "model": "DCP-L2500DR / DCP-L2520DWR / DCP-L2540DNR",
+    "kind": "МФУ A4 mono",
+    "segment": "Офис",
+    "cartridges": [
+      "TN-2335",
+      "TN-2375",
+      "DR-2335"
+    ],
+    "yield": "1 200; 2 600; DR 12 000",
+    "chip": "Счётчик/уточнять",
+    "chipNote": "Очень ходовое семейство Brother",
+    "demand": "A"
+  },
+  {
+    "rank": "54",
+    "brand": "Brother",
+    "model": "MFC-L2700DNR / MFC-L2700DWR",
+    "kind": "МФУ A4 mono",
+    "segment": "Офис",
+    "cartridges": [
+      "TN-2335",
+      "TN-2375",
+      "DR-2335"
+    ],
+    "yield": "1 200; 2 600; DR 12 000",
+    "chip": "Счётчик/уточнять",
+    "chipNote": "Для офисов держать TN-2375, фотобарабан отдельно",
+    "demand": "A"
+  },
+  {
+    "rank": "55",
+    "brand": "Brother",
+    "model": "HL-L2350DW / HL-L2370DN",
+    "kind": "Принтер A4 mono",
+    "segment": "Офис",
+    "cartridges": [
+      "TN-2410",
+      "TN-2420",
+      "DR-2400"
+    ],
+    "yield": "1 200; 3 000; DR 12 000",
+    "chip": "Счётчик/уточнять",
+    "chipNote": "Новые Brother; совместимость по региону проверять",
+    "demand": "B"
+  },
+  {
+    "rank": "56",
+    "brand": "Brother",
+    "model": "DCP-L2530DW / DCP-L2550DN",
+    "kind": "МФУ A4 mono",
+    "segment": "Офис",
+    "cartridges": [
+      "TN-2410",
+      "TN-2420",
+      "DR-2400"
+    ],
+    "yield": "1 200; 3 000; DR 12 000",
+    "chip": "Счётчик/уточнять",
+    "chipNote": "Популярная серия после L2500",
+    "demand": "B"
+  },
+  {
+    "rank": "57",
+    "brand": "Brother",
+    "model": "MFC-L2710DW / MFC-L2730DW / MFC-L2750DW",
+    "kind": "МФУ A4 mono",
+    "segment": "Офис",
+    "cartridges": [
+      "TN-2410",
+      "TN-2420",
+      "DR-2400"
+    ],
+    "yield": "1 200; 3 000; DR 12 000",
+    "chip": "Счётчик/уточнять",
+    "chipNote": "Держать тонер и DR как отдельные позиции",
+    "demand": "B"
+  },
+  {
+    "rank": "58",
+    "brand": "Brother",
+    "model": "HL-L5000D / HL-L5100DN",
+    "kind": "Принтер A4 mono",
+    "segment": "Средний офис",
+    "cartridges": [
+      "TN-3430",
+      "TN-3480",
+      "DR-3400"
+    ],
+    "yield": "3 000; 8 000; DR 30 000",
+    "chip": "Счётчик/уточнять",
+    "chipNote": "Высокий ресурс, реже в малом бизнесе",
+    "demand": "C"
+  },
+  {
+    "rank": "59",
+    "brand": "Brother",
+    "model": "DCP-L5500DN / MFC-L5700DN",
+    "kind": "МФУ A4 mono",
+    "segment": "Средний офис",
+    "cartridges": [
+      "TN-3430",
+      "TN-3480",
+      "DR-3400"
+    ],
+    "yield": "3 000; 8 000; DR 30 000",
+    "chip": "Счётчик/уточнять",
+    "chipNote": "Склад по фактической базе клиентов",
+    "demand": "C"
+  },
+  {
+    "rank": "60",
+    "brand": "Brother",
+    "model": "HL-2130R / HL-2240R / DCP-7057R",
+    "kind": "Принтер/МФУ A4 mono",
+    "segment": "Старый парк",
+    "cartridges": [
+      "TN-2090",
+      "DR-2090"
+    ],
+    "yield": "1 000; DR 12 000",
+    "chip": "Счётчик",
+    "chipNote": "Старые Brother; запасать по спросу",
+    "demand": "C"
+  },
+  {
+    "rank": "61",
+    "brand": "Xerox",
+    "model": "Phaser 3020BI",
+    "kind": "Принтер A4 mono",
+    "segment": "Дом/малый офис",
+    "cartridges": [
+      "106R02773",
+      "106R03048"
+    ],
+    "yield": "1 500; 3 000 у аналогов",
+    "chip": "Да",
+    "chipNote": "Есть версии чипа под старую/новую прошивку",
+    "demand": "A"
+  },
+  {
+    "rank": "62",
+    "brand": "Xerox",
+    "model": "WorkCentre 3025BI / 3025NI",
+    "kind": "МФУ A4 mono",
+    "segment": "Дом/малый офис",
+    "cartridges": [
+      "106R02773",
+      "106R03048"
+    ],
+    "yield": "1 500; 3 000 у аналогов",
+    "chip": "Да",
+    "chipNote": "Прошивка важна; держать новые чипы",
+    "demand": "A"
+  },
+  {
+    "rank": "63",
+    "brand": "Xerox",
+    "model": "Phaser 3140 / 3155 / 3160",
+    "kind": "Принтер A4 mono",
+    "segment": "Старый парк",
+    "cartridges": [
+      "108R00909",
+      "108R00908"
+    ],
+    "yield": "1 500; 2 500",
+    "chip": "Да/уточнять",
+    "chipNote": "Близко к Samsung ML-1910/SCX-4600 семейству",
+    "demand": "B"
+  },
+  {
+    "rank": "64",
+    "brand": "Xerox",
+    "model": "WorkCentre 3215 / 3225",
+    "kind": "МФУ A4 mono",
+    "segment": "Офис",
+    "cartridges": [
+      "106R02777",
+      "106R02778"
+    ],
+    "yield": "1 500; 3 000",
+    "chip": "Да",
+    "chipNote": "Подбирать по прошивке и региону",
+    "demand": "B"
+  },
+  {
+    "rank": "65",
+    "brand": "Xerox",
+    "model": "B205 / B210 / B215",
+    "kind": "Принтер/МФУ A4 mono",
+    "segment": "Офис",
+    "cartridges": [
+      "106R04348",
+      "106R04349"
+    ],
+    "yield": "3 000; 6 000",
+    "chip": "Да",
+    "chipNote": "Новые Xerox, чип критичен",
+    "demand": "B"
+  },
+  {
+    "rank": "66",
+    "brand": "Samsung",
+    "model": "Xpress SL-M2020 / M2020W / M2022",
+    "kind": "Принтер A4 mono",
+    "segment": "Дом/малый офис",
+    "cartridges": [
+      "MLT-D111S",
+      "MLT-D111L"
+    ],
+    "yield": "1 000; 1 800",
+    "chip": "Да",
+    "chipNote": "Чип одноразовый/ресурсный; для прошитых устройств возможны варианты",
+    "demand": "A"
+  },
+  {
+    "rank": "67",
+    "brand": "Samsung",
+    "model": "Xpress SL-M2070 / M2070W / M2070FW",
+    "kind": "МФУ A4 mono",
+    "segment": "Дом/малый офис",
+    "cartridges": [
+      "MLT-D111S",
+      "MLT-D111L"
+    ],
+    "yield": "1 000; 1 800",
+    "chip": "Да",
+    "chipNote": "Очень ходовое семейство; держать чипы",
+    "demand": "A"
+  },
+  {
+    "rank": "68",
+    "brand": "Samsung",
+    "model": "ML-2160 / ML-2165 / SCX-3400 / SCX-3405",
+    "kind": "Принтер/МФУ A4 mono",
+    "segment": "Старый парк",
+    "cartridges": [
+      "MLT-D101S"
+    ],
+    "yield": "1 500",
+    "chip": "Да",
+    "chipNote": "Чип нужен, но часто аппараты прошиты",
+    "demand": "A"
+  },
+  {
+    "rank": "69",
+    "brand": "Samsung",
+    "model": "ML-1660 / ML-1665 / SCX-3200",
+    "kind": "Принтер/МФУ A4 mono",
+    "segment": "Старый парк",
+    "cartridges": [
+      "MLT-D104S"
+    ],
+    "yield": "1 500",
+    "chip": "Да",
+    "chipNote": "Часто прошивались; уточнять у клиента",
+    "demand": "B"
+  },
+  {
+    "rank": "70",
+    "brand": "Samsung",
+    "model": "ML-1860 / SCX-3205",
+    "kind": "Принтер/МФУ A4 mono",
+    "segment": "Старый парк",
+    "cartridges": [
+      "MLT-D104S"
+    ],
+    "yield": "1 500",
+    "chip": "Да",
+    "chipNote": "Схожее семейство с D104S",
+    "demand": "B"
+  },
+  {
+    "rank": "71",
+    "brand": "Samsung",
+    "model": "ML-2850 / ML-2851",
+    "kind": "Принтер A4 mono",
+    "segment": "Офисный старый парк",
+    "cartridges": [
+      "MLT-D209S",
+      "MLT-D209L"
+    ],
+    "yield": "2 000; 5 000",
+    "chip": "Да/уточнять",
+    "chipNote": "Реже, но выгоден на обслуживании",
+    "demand": "C"
+  },
+  {
+    "rank": "72",
+    "brand": "Samsung",
+    "model": "SCX-4824 / SCX-4828",
+    "kind": "МФУ A4 mono",
+    "segment": "Офисный старый парк",
+    "cartridges": [
+      "MLT-D209S",
+      "MLT-D209L"
+    ],
+    "yield": "2 000; 5 000",
+    "chip": "Да/уточнять",
+    "chipNote": "Проверять прошивку и регион",
+    "demand": "C"
+  },
+  {
+    "rank": "73",
+    "brand": "Pantum",
+    "model": "P2200 / P2207 / P2500 / P2500W",
+    "kind": "Принтер A4 mono",
+    "segment": "Дом/малый офис",
+    "cartridges": [
+      "PC-211EV",
+      "PA-210",
+      "PC-211"
+    ],
+    "yield": "1 600",
+    "chip": "Да/зависит",
+    "chipNote": "У Pantum часто важен чип и версия прошивки",
+    "demand": "A"
+  },
+  {
+    "rank": "74",
+    "brand": "Pantum",
+    "model": "M6500 / M6500W / M6507 / M6507W",
+    "kind": "МФУ A4 mono",
+    "segment": "Дом/малый офис",
+    "cartridges": [
+      "PC-211EV",
+      "PA-210",
+      "PC-211"
+    ],
+    "yield": "1 600",
+    "chip": "Да/зависит",
+    "chipNote": "Популярные бюджетные МФУ; держать чипы",
+    "demand": "A"
+  },
+  {
+    "rank": "75",
+    "brand": "Pantum",
+    "model": "M6550NW / M6557NW",
+    "kind": "МФУ A4 mono",
+    "segment": "Малый офис",
+    "cartridges": [
+      "PC-211EV",
+      "PA-210",
+      "PC-211"
+    ],
+    "yield": "1 600",
+    "chip": "Да/зависит",
+    "chipNote": "Ходовой Pantum; проверять версию картриджа",
+    "demand": "A"
+  },
+  {
+    "rank": "76",
+    "brand": "Pantum",
+    "model": "M6600N / M6600NW / M6607NW",
+    "kind": "МФУ A4 mono",
+    "segment": "Малый офис",
+    "cartridges": [
+      "PC-211EV",
+      "PA-210",
+      "PC-211"
+    ],
+    "yield": "1 600",
+    "chip": "Да/зависит",
+    "chipNote": "Чип/прошивка критичны у части поставок",
+    "demand": "A"
+  },
+  {
+    "rank": "77",
+    "brand": "Pantum",
+    "model": "P3010D / P3010DW / P3300DN / P3300DW",
+    "kind": "Принтер A4 mono",
+    "segment": "Офис",
+    "cartridges": [
+      "TL-410",
+      "TL-410H",
+      "TL-410X"
+    ],
+    "yield": "1 500; 3 000; 6 000",
+    "chip": "Да",
+    "chipNote": "Увеличенные версии выгодны; проверять региональный чип",
+    "demand": "A"
+  },
+  {
+    "rank": "78",
+    "brand": "Pantum",
+    "model": "M6700D / M6700DW / M7100DN / M7100DW",
+    "kind": "МФУ A4 mono",
+    "segment": "Офис",
+    "cartridges": [
+      "TL-410",
+      "TL-410H",
+      "TL-410X"
+    ],
+    "yield": "1 500; 3 000; 6 000",
+    "chip": "Да",
+    "chipNote": "Офисные Pantum, нужна версия чипа",
+    "demand": "A"
+  },
+  {
+    "rank": "79",
+    "brand": "Pantum",
+    "model": "BP5100DN / BP5100DW",
+    "kind": "Принтер A4 mono",
+    "segment": "Офис",
+    "cartridges": [
+      "TL-5120",
+      "TL-5120H",
+      "TL-5120X"
+    ],
+    "yield": "3 000; 6 000; 15 000",
+    "chip": "Да",
+    "chipNote": "Для TL-5120X встречаются новые версии чипа под прошивки",
+    "demand": "B"
+  },
+  {
+    "rank": "80",
+    "brand": "Pantum",
+    "model": "BM5100ADN / BM5100ADW / BM5100FDN / BM5100FDW",
+    "kind": "МФУ A4 mono",
+    "segment": "Офис",
+    "cartridges": [
+      "TL-5120",
+      "TL-5120H",
+      "TL-5120X"
+    ],
+    "yield": "3 000; 6 000; 15 000",
+    "chip": "Да",
+    "chipNote": "Чип зависит от прошивки; держать актуальные версии",
+    "demand": "B"
+  },
+  {
+    "rank": "81",
+    "brand": "Kyocera",
+    "model": "ECOSYS M2135dn / M2635dn / M2735dw",
+    "kind": "МФУ A4 mono",
+    "segment": "Офис",
+    "cartridges": [
+      "TK-1150"
+    ],
+    "yield": "3 000",
+    "chip": "Да",
+    "chipNote": "Совместимые могут идти с чипом",
+    "demand": "A"
+  },
+  {
+    "rank": "82",
+    "brand": "Kyocera",
+    "model": "ECOSYS P2235d / P2235dn / P2235dw",
+    "kind": "Принтер A4 mono",
+    "segment": "Офис",
+    "cartridges": [
+      "TK-1150",
+      "TK-1200"
+    ],
+    "yield": "3 000; 3 000",
+    "chip": "Да",
+    "chipNote": "Семейство TK-1150/1200; проверять точную модель",
+    "demand": "A"
+  },
+  {
+    "rank": "83",
+    "brand": "Kyocera",
+    "model": "ECOSYS M2040dn / M2540dn / M2640idw",
+    "kind": "МФУ A4 mono",
+    "segment": "Офис",
+    "cartridges": [
+      "TK-1170"
+    ],
+    "yield": "7 200",
+    "chip": "Да",
+    "chipNote": "Высокий ресурс; картридж отличается от TK-1150",
+    "demand": "B"
+  },
+  {
+    "rank": "84",
+    "brand": "Kyocera",
+    "model": "ECOSYS P2040dn / P2040dw",
+    "kind": "Принтер A4 mono",
+    "segment": "Офис",
+    "cartridges": [
+      "TK-1160"
+    ],
+    "yield": "7 200",
+    "chip": "Да",
+    "chipNote": "Офисный ресурсный тонер",
+    "demand": "B"
+  },
+  {
+    "rank": "85",
+    "brand": "Kyocera",
+    "model": "ECOSYS M2235dn / M2735dn / M2835dw",
+    "kind": "МФУ A4 mono",
+    "segment": "Офис",
+    "cartridges": [
+      "TK-1200"
+    ],
+    "yield": "3 000",
+    "chip": "Да",
+    "chipNote": "Проверять локальные версии аппарата",
+    "demand": "B"
+  },
+  {
+    "rank": "86",
+    "brand": "Kyocera",
+    "model": "ECOSYS P2335d / P2335dn / P2335dw",
+    "kind": "Принтер A4 mono",
+    "segment": "Офис",
+    "cartridges": [
+      "TK-1200"
+    ],
+    "yield": "3 000",
+    "chip": "Да",
+    "chipNote": "Модели новой линейки, ресурс 3К",
+    "demand": "B"
+  },
+  {
+    "rank": "87",
+    "brand": "Kyocera",
+    "model": "ECOSYS P3045dn / P3050dn / P3055dn / P3060dn",
+    "kind": "Принтер A4 mono",
+    "segment": "Средний офис",
+    "cartridges": [
+      "TK-3160",
+      "TK-3170",
+      "TK-3190"
+    ],
+    "yield": "12 500; 15 500; 25 000",
+    "chip": "Да",
+    "chipNote": "Высокоресурсная корпоративная линейка",
+    "demand": "C"
+  },
+  {
+    "rank": "88",
+    "brand": "Kyocera",
+    "model": "ECOSYS M3145dn / M3645dn / M3655idn / M3660idn",
+    "kind": "МФУ A4 mono",
+    "segment": "Средний офис",
+    "cartridges": [
+      "TK-3160",
+      "TK-3170",
+      "TK-3190"
+    ],
+    "yield": "12 500; 15 500; 25 000",
+    "chip": "Да",
+    "chipNote": "Подбирать по точной модели и ресурсу",
+    "demand": "C"
+  },
+  {
+    "rank": "89",
+    "brand": "Ricoh",
+    "model": "SP 150 / SP 150w / SP 150SU / SP 150SUw",
+    "kind": "Принтер/МФУ A4 mono",
+    "segment": "Дом/малый офис",
+    "cartridges": [
+      "SP 150LE",
+      "408010"
+    ],
+    "yield": "1 500",
+    "chip": "Да/уточнять",
+    "chipNote": "Бюджетные Ricoh; часто лучше замена картриджа",
+    "demand": "C"
+  },
+  {
+    "rank": "90",
+    "brand": "Ricoh",
+    "model": "SP 200 / SP 201 / SP 202 / SP 203",
+    "kind": "Принтер/МФУ A4 mono",
+    "segment": "Старый парк",
+    "cartridges": [
+      "SP 201HE",
+      "SP 200"
+    ],
+    "yield": "2 600",
+    "chip": "Да/уточнять",
+    "chipNote": "Остаточный спрос",
+    "demand": "C"
+  },
+  {
+    "rank": "91",
+    "brand": "HP",
+    "model": "Neverstop Laser 1000 / 1200",
+    "kind": "Принтер/МФУ A4 mono",
+    "segment": "Заправляемый тонер",
+    "cartridges": [
+      "W1103A",
+      "103A reload kit"
+    ],
+    "yield": "2 500",
+    "chip": "Нет/особый",
+    "chipNote": "Это не классический картридж; заправочный набор/тонер",
+    "demand": "B"
+  },
+  {
+    "rank": "92",
+    "brand": "Canon",
+    "model": "i-SENSYS LBP6030B / LBP6030w",
+    "kind": "Принтер A4 mono",
+    "segment": "Дом/малый офис",
+    "cartridges": [
+      "Canon 725",
+      "CRG-725"
+    ],
+    "yield": "1 600",
+    "chip": "Нет/не критично",
+    "chipNote": "Вынесено отдельно как очень частая модификация",
+    "demand": "A"
+  },
+  {
+    "rank": "93",
+    "brand": "HP",
+    "model": "LaserJet Pro MFP M26a / M26nw",
+    "kind": "МФУ A4 mono",
+    "segment": "Дом/малый офис",
+    "cartridges": [
+      "CF279A 79A"
+    ],
+    "yield": "1 000",
+    "chip": "Да/уточнять",
+    "chipNote": "Малый картридж, иногда совместим по корпусу с Canon 725/HP 83A аналоги нет — проверять",
+    "demand": "B"
+  },
+  {
+    "rank": "94",
+    "brand": "HP",
+    "model": "LaserJet Pro M12a / M12w",
+    "kind": "Принтер A4 mono",
+    "segment": "Дом/малый офис",
+    "cartridges": [
+      "CF279A 79A"
+    ],
+    "yield": "1 000",
+    "chip": "Да/уточнять",
+    "chipNote": "Встречается у малого бизнеса",
+    "demand": "B"
+  },
+  {
+    "rank": "95",
+    "brand": "HP",
+    "model": "LaserJet MFP M140w / M141w",
+    "kind": "МФУ A4 mono",
+    "segment": "Современный малый офис",
+    "cartridges": [
+      "W1420A 142A"
+    ],
+    "yield": "950",
+    "chip": "Да",
+    "chipNote": "Новый HP с чипом; осторожно с прошивками",
+    "demand": "B"
+  },
+  {
+    "rank": "96",
+    "brand": "HP",
+    "model": "LaserJet M110w / M111w",
+    "kind": "Принтер A4 mono",
+    "segment": "Современный малый офис",
+    "cartridges": [
+      "W1420A 142A"
+    ],
+    "yield": "950",
+    "chip": "Да",
+    "chipNote": "Актуальные HP, чип/регион важны",
+    "demand": "B"
+  },
+  {
+    "rank": "97",
+    "brand": "Pantum",
+    "model": "P2506W / P2516 / P2518 / P2500NW",
+    "kind": "Принтер A4 mono",
+    "segment": "Дом/малый офис",
+    "cartridges": [
+      "PC-211EV",
+      "PA-210"
+    ],
+    "yield": "1 600",
+    "chip": "Да/зависит",
+    "chipNote": "Расширение семейства PC-211EV",
+    "demand": "A"
+  },
+  {
+    "rank": "98",
+    "brand": "Brother",
+    "model": "HL-1223WR / DCP-1623WR",
+    "kind": "Принтер/МФУ A4 mono",
+    "segment": "Дом/малый офис",
+    "cartridges": [
+      "TN-1095",
+      "DR-1095"
+    ],
+    "yield": "1 500; DR 10 000",
+    "chip": "Счётчик/уточнять",
+    "chipNote": "Региональные модели Brother для РФ",
+    "demand": "B"
+  },
+  {
+    "rank": "99",
+    "brand": "Xerox",
+    "model": "B230 / B225 / B235",
+    "kind": "Принтер/МФУ A4 mono",
+    "segment": "Новый офис",
+    "cartridges": [
+      "006R04399",
+      "006R04400"
+    ],
+    "yield": "1 200; 3 000+",
+    "chip": "Да",
+    "chipNote": "Новые модели; уточнять поставку и региональный чип",
+    "demand": "C"
+  },
+  {
+    "rank": "100",
+    "brand": "OKI",
+    "model": "B412 / B432 / MB472 / MB492",
+    "kind": "Принтер/МФУ A4 mono",
+    "segment": "Офисный парк",
+    "cartridges": [
+      "45807111",
+      "45807116",
+      "drum 44574302"
+    ],
+    "yield": "3 000; 7 000; DR 25 000",
+    "chip": "Да/уточнять",
+    "chipNote": "Раздельный тонер и барабан; спрос ниже HP/Canon/Pantum",
+    "demand": "C"
+  },
+  {
+    "rank": "101",
+    "brand": "Epson",
+    "model": "EcoTank L120 / L121",
+    "kind": "Струйный принтер A4, СНПЧ",
+    "segment": "Дом, малый офис, массовый старый парк",
+    "cartridges": [
+      "664 BK",
+      "C",
+      "M",
+      "Y",
+      "у L121",
+      "L1210 часто 003",
+      "103 по рынку"
+    ],
+    "yield": "≈4 000–4 500 ч/б; ≈6 500–7 500 цвет",
+    "chip": "Нет",
+    "chipNote": "Бутылки без чипа; важны совместимость чернил и состояние памперса/головы",
+    "demand": "B"
+  },
+  {
+    "rank": "102",
+    "brand": "Epson",
+    "model": "EcoTank L132",
+    "kind": "Струйный принтер A4, СНПЧ",
+    "segment": "Дом, учеба, малый офис",
+    "cartridges": [
+      "664 BK",
+      "C",
+      "M",
+      "Y"
+    ],
+    "yield": "≈4 000 ч/б; ≈6 500 цвет",
+    "chip": "Нет",
+    "chipNote": "Без чипа на бутылках; часто обращаются по засохшей ПГ после простоя",
+    "demand": "B"
+  },
+  {
+    "rank": "103",
+    "brand": "Epson",
+    "model": "EcoTank L222",
+    "kind": "Струйное МФУ A4, СНПЧ",
+    "segment": "Дом, малый офис",
+    "cartridges": [
+      "664 BK",
+      "C",
+      "M",
+      "Y"
+    ],
+    "yield": "≈4 000 ч/б; ≈6 500 цвет",
+    "chip": "Нет",
+    "chipNote": "Без чипа; при полосах сначала диагностика дюз и капы",
+    "demand": "B"
+  },
+  {
+    "rank": "104",
+    "brand": "Epson",
+    "model": "EcoTank L310 / L312",
+    "kind": "Струйный принтер A4, СНПЧ",
+    "segment": "Дом, офис, документы",
+    "cartridges": [
+      "664 BK",
+      "C",
+      "M",
+      "Y"
+    ],
+    "yield": "≈4 000 ч/б; ≈6 500 цвет",
+    "chip": "Нет",
+    "chipNote": "На выезде часто: заправка, прокачка, чистка тракта",
+    "demand": "B"
+  },
+  {
+    "rank": "105",
+    "brand": "Epson",
+    "model": "EcoTank L365 / L366",
+    "kind": "Струйное МФУ A4 Wi‑Fi, СНПЧ",
+    "segment": "Дом/офис, сканер+печать",
+    "cartridges": [
+      "664 BK",
+      "C",
+      "M",
+      "Y"
+    ],
+    "yield": "≈4 000 ч/б; ≈6 500 цвет",
+    "chip": "Нет",
+    "chipNote": "Без чипа; частая услуга — чистка ПГ и сброс абсорбера",
+    "demand": "A"
+  },
+  {
+    "rank": "106",
+    "brand": "Epson",
+    "model": "EcoTank L386",
+    "kind": "Струйное МФУ A4 Wi‑Fi, СНПЧ",
+    "segment": "Дом, малый офис",
+    "cartridges": [
+      "664 BK",
+      "C",
+      "M",
+      "Y"
+    ],
+    "yield": "≈4 000 ч/б; ≈6 500 цвет",
+    "chip": "Нет",
+    "chipNote": "Без чипа; проверять воздушные пробки в СНПЧ",
+    "demand": "B"
+  },
+  {
+    "rank": "107",
+    "brand": "Epson",
+    "model": "EcoTank L456 / L486",
+    "kind": "Струйное МФУ A4, СНПЧ",
+    "segment": "Дом/малый офис, Wi‑Fi",
+    "cartridges": [
+      "664 BK",
+      "C",
+      "M",
+      "Y"
+    ],
+    "yield": "≈4 000 ч/б; ≈6 500 цвет",
+    "chip": "Нет",
+    "chipNote": "Без чипа; актуальны памперс, ролики, очистка печатающей головки",
+    "demand": "B"
+  },
+  {
+    "rank": "108",
+    "brand": "Epson",
+    "model": "EcoTank L1110 / L1210 / L1250",
+    "kind": "Струйный принтер A4, СНПЧ",
+    "segment": "Дом/офис, современные EcoTank",
+    "cartridges": [
+      "003 BK",
+      "C",
+      "M",
+      "Y",
+      "103 BK",
+      "C",
+      "M",
+      "Y в части рынков"
+    ],
+    "yield": "≈4 500 ч/б; ≈7 500 цвет",
+    "chip": "Нет",
+    "chipNote": "Бутылки без чипа; сверять код чернил по наклейке региона",
+    "demand": "A"
+  },
+  {
+    "rank": "109",
+    "brand": "Epson",
+    "model": "EcoTank L3100 / L3101",
+    "kind": "Струйное МФУ A4, СНПЧ",
+    "segment": "Дом, малый офис",
+    "cartridges": [
+      "103 BK",
+      "C",
+      "M",
+      "Y",
+      "003 BK",
+      "C",
+      "M",
+      "Y по региону"
+    ],
+    "yield": "≈4 500 ч/б; ≈7 500 цвет",
+    "chip": "Нет",
+    "chipNote": "Без чипа; важна совместимость чернил 103/003 по рынку",
+    "demand": "A"
+  },
+  {
+    "rank": "110",
+    "brand": "Epson",
+    "model": "EcoTank L3110 / L3111 / L3116",
+    "kind": "Струйное МФУ A4, СНПЧ",
+    "segment": "Дом, документы, фото базово",
+    "cartridges": [
+      "103 BK",
+      "C",
+      "M",
+      "Y",
+      "003 BK",
+      "C",
+      "M",
+      "Y по региону"
+    ],
+    "yield": "≈4 500 ч/б; ≈7 500 цвет",
+    "chip": "Нет",
+    "chipNote": "Без чипа; типовая работа — промывка после простоя, сброс памперса",
+    "demand": "A"
+  },
+  {
+    "rank": "111",
+    "brand": "Epson",
+    "model": "EcoTank L3150 / L3151 / L3156",
+    "kind": "Струйное МФУ A4 Wi‑Fi, СНПЧ",
+    "segment": "Дом/офис, очень массовая модель",
+    "cartridges": [
+      "103 BK",
+      "C",
+      "M",
+      "Y",
+      "003 BK",
+      "C",
+      "M",
+      "Y по региону"
+    ],
+    "yield": "≈4 500 ч/б; ≈7 500 цвет",
+    "chip": "Нет",
+    "chipNote": "Бутылки без чипа; частые услуги: заправка, Wi‑Fi, чистка ПГ, памперс",
+    "demand": "A"
+  },
+  {
+    "rank": "112",
+    "brand": "Epson",
+    "model": "EcoTank L3160",
+    "kind": "Струйное МФУ A4 Wi‑Fi, СНПЧ",
+    "segment": "Дом/офис, экран",
+    "cartridges": [
+      "103 BK",
+      "C",
+      "M",
+      "Y",
+      "003 BK",
+      "C",
+      "M",
+      "Y по региону"
+    ],
+    "yield": "≈4 500 ч/б; ≈7 500 цвет",
+    "chip": "Нет",
+    "chipNote": "Без чипа; сверять региональные бутылки 103/003",
+    "demand": "B"
+  },
+  {
+    "rank": "113",
+    "brand": "Epson",
+    "model": "EcoTank L3200 / L3210 / L3216",
+    "kind": "Струйное МФУ A4, СНПЧ",
+    "segment": "Дом/малый офис, новая массовая линейка",
+    "cartridges": [
+      "003 BK",
+      "C",
+      "M",
+      "Y"
+    ],
+    "yield": "≈4 500 ч/б; ≈7 500 цвет",
+    "chip": "Нет",
+    "chipNote": "Бутылки без чипа; 003 подтверждены для L3210/L3250/L5290",
+    "demand": "A"
+  },
+  {
+    "rank": "114",
+    "brand": "Epson",
+    "model": "EcoTank L3250 / L3251 / L3256",
+    "kind": "Струйное МФУ A4 Wi‑Fi, СНПЧ",
+    "segment": "Дом/офис, массовая актуальная модель",
+    "cartridges": [
+      "003 BK",
+      "C",
+      "M",
+      "Y"
+    ],
+    "yield": "≈4 500 ч/б; ≈7 500 цвет",
+    "chip": "Нет",
+    "chipNote": "Без чипа; часто нужны настройка Wi‑Fi, заправка, чистка ПГ",
+    "demand": "A"
+  },
+  {
+    "rank": "115",
+    "brand": "Epson",
+    "model": "EcoTank L3260",
+    "kind": "Струйное МФУ A4 Wi‑Fi, СНПЧ",
+    "segment": "Дом/офис, экран",
+    "cartridges": [
+      "003 BK",
+      "C",
+      "M",
+      "Y"
+    ],
+    "yield": "≈4 500 ч/б; ≈7 500 цвет",
+    "chip": "Нет",
+    "chipNote": "Без чипа; на выезде удобно держать полный комплект 003",
+    "demand": "B"
+  },
+  {
+    "rank": "116",
+    "brand": "Epson",
+    "model": "EcoTank L3550 / L3556",
+    "kind": "Струйное МФУ A4 Wi‑Fi, СНПЧ",
+    "segment": "Дом/офис, актуальная линейка",
+    "cartridges": [
+      "003 BK",
+      "C",
+      "M",
+      "Y"
+    ],
+    "yield": "≈4 500 ч/б; ≈7 500 цвет",
+    "chip": "Нет",
+    "chipNote": "Без чипа; сверять регион чернил, ПГ чувствительна к простоям",
+    "demand": "B"
+  },
+  {
+    "rank": "117",
+    "brand": "Epson",
+    "model": "EcoTank L5190",
+    "kind": "Струйное МФУ A4 ADF/Fax, СНПЧ",
+    "segment": "Малый офис",
+    "cartridges": [
+      "003 BK",
+      "C",
+      "M",
+      "Y",
+      "103 в части рынков"
+    ],
+    "yield": "≈4 500 ч/б; ≈7 500 цвет",
+    "chip": "Нет",
+    "chipNote": "Без чипа; кроме печати проверять ADF, ролики подачи, сканер",
+    "demand": "A"
+  },
+  {
+    "rank": "118",
+    "brand": "Epson",
+    "model": "EcoTank L5290",
+    "kind": "Струйное МФУ A4 ADF/Fax Wi‑Fi, СНПЧ",
+    "segment": "Малый офис, заявки с сайта",
+    "cartridges": [
+      "003 BK",
+      "C",
+      "M",
+      "Y"
+    ],
+    "yield": "≈4 500 ч/б; ≈7 500 цвет",
+    "chip": "Нет",
+    "chipNote": "Без чипа; актуальны заправка, чистка ПГ, ADF/ролики",
+    "demand": "A"
+  },
+  {
+    "rank": "119",
+    "brand": "Epson",
+    "model": "EcoTank L5590",
+    "kind": "Струйное МФУ A4 ADF/Fax, СНПЧ",
+    "segment": "Малый офис, современная модель",
+    "cartridges": [
+      "003 BK",
+      "C",
+      "M",
+      "Y"
+    ],
+    "yield": "≈4 500 ч/б; ≈7 500 цвет",
+    "chip": "Нет",
+    "chipNote": "Без чипа; держать 003 и сервисные расходники по головке/подаче",
+    "demand": "B"
+  },
+  {
+    "rank": "120",
+    "brand": "Epson",
+    "model": "EcoTank L4150 / L4160",
+    "kind": "Струйное МФУ A4 Wi‑Fi, СНПЧ",
+    "segment": "Дом/офис, двусторонняя печать у части моделей",
+    "cartridges": [
+      "001 BK",
+      "C",
+      "M",
+      "Y"
+    ],
+    "yield": "≈7 500 ч/б; ≈6 000 цвет",
+    "chip": "Нет",
+    "chipNote": "Без чипа; бутылки серии 001 для L4100/L6100/L6200/L14000 семейства",
+    "demand": "B"
+  },
+  {
+    "rank": "121",
+    "brand": "Epson",
+    "model": "EcoTank L4260 / L4266",
+    "kind": "Струйное МФУ A4 Wi‑Fi, СНПЧ",
+    "segment": "Дом/офис, duplex",
+    "cartridges": [
+      "001 BK",
+      "C",
+      "M",
+      "Y"
+    ],
+    "yield": "≈7 500 ч/б; ≈6 000 цвет",
+    "chip": "Нет",
+    "chipNote": "Без чипа; часто обслуживать duplex/подачу бумаги и ПГ",
+    "demand": "B"
+  },
+  {
+    "rank": "122",
+    "brand": "Epson",
+    "model": "EcoTank L6160 / L6170 / L6190",
+    "kind": "Струйное МФУ A4 офисное, СНПЧ",
+    "segment": "Офис, ADF/duplex",
+    "cartridges": [
+      "001 BK",
+      "C",
+      "M",
+      "Y"
+    ],
+    "yield": "≈7 500 ч/б; ≈6 000 цвет",
+    "chip": "Нет",
+    "chipNote": "Без чипа; следить за пигментным/водным типом чернил и офисной нагрузкой",
+    "demand": "A"
+  },
+  {
+    "rank": "123",
+    "brand": "Epson",
+    "model": "EcoTank L6260 / L6270 / L6290",
+    "kind": "Струйное МФУ A4 офисное, СНПЧ",
+    "segment": "Офис, актуальные модели",
+    "cartridges": [
+      "001 BK",
+      "C",
+      "M",
+      "Y"
+    ],
+    "yield": "≈7 500 ч/б; ≈6 000 цвет",
+    "chip": "Нет",
+    "chipNote": "Без чипа; частые работы: заправка, ролики, очистка ПГ, сетевые настройки",
+    "demand": "B"
+  },
+  {
+    "rank": "124",
+    "brand": "Epson",
+    "model": "EcoTank L14150",
+    "kind": "Струйное МФУ A3, СНПЧ",
+    "segment": "Малый офис, A3",
+    "cartridges": [
+      "001 BK",
+      "C",
+      "M",
+      "Y"
+    ],
+    "yield": "≈7 500 ч/б; ≈6 000 цвет",
+    "chip": "Нет",
+    "chipNote": "Без чипа; больше риск с подачей A3/ADF, лучше выездная диагностика",
+    "demand": "B"
+  },
+  {
+    "rank": "125",
+    "brand": "Epson",
+    "model": "EcoTank L800",
+    "kind": "Фотопринтер A4 6 цветов, СНПЧ",
+    "segment": "Фото, документы, старый парк",
+    "cartridges": [
+      "673 BK",
+      "C",
+      "M",
+      "Y",
+      "LC",
+      "LM"
+    ],
+    "yield": "≈1 800 фото 10×15; 70 мл",
+    "chip": "Нет",
+    "chipNote": "Без чипа; 6 цветов, важно не путать LC/LM; часто чистка ПГ",
+    "demand": "B"
+  },
+  {
+    "rank": "126",
+    "brand": "Epson",
+    "model": "EcoTank L805",
+    "kind": "Фотопринтер A4 6 цветов, СНПЧ",
+    "segment": "Фото, фотостудии, визитки",
+    "cartridges": [
+      "673 BK",
+      "C",
+      "M",
+      "Y",
+      "LC",
+      "LM"
+    ],
+    "yield": "≈1 800 фото 10×15; 70 мл",
+    "chip": "Нет",
+    "chipNote": "Без чипа; после простоя — дюзы/засор, нужна аккуратная промывка",
+    "demand": "A"
+  },
+  {
+    "rank": "127",
+    "brand": "Epson",
+    "model": "EcoTank L810",
+    "kind": "Фото МФУ A4 6 цветов, СНПЧ",
+    "segment": "Фото, сканер+печать",
+    "cartridges": [
+      "673 BK",
+      "C",
+      "M",
+      "Y",
+      "LC",
+      "LM"
+    ],
+    "yield": "≈1 800 фото 10×15; 70 мл",
+    "chip": "Нет",
+    "chipNote": "Без чипа; типовые работы — заправка 6 цветов и чистка ПГ",
+    "demand": "B"
+  },
+  {
+    "rank": "128",
+    "brand": "Epson",
+    "model": "EcoTank L850",
+    "kind": "Фото МФУ A4 6 цветов, СНПЧ",
+    "segment": "Фото, документы, сканер",
+    "cartridges": [
+      "673 BK",
+      "C",
+      "M",
+      "Y",
+      "LC",
+      "LM"
+    ],
+    "yield": "≈1 800 фото 10×15; 70 мл",
+    "chip": "Нет",
+    "chipNote": "Без чипа; важно проверить парковку/помпу перед глубокой промывкой",
+    "demand": "A"
+  },
+  {
+    "rank": "129",
+    "brand": "Epson",
+    "model": "EcoTank L1800",
+    "kind": "Фотопринтер A3+ 6 цветов, СНПЧ",
+    "segment": "Фото, дизайн, малые тиражи",
+    "cartridges": [
+      "673 BK",
+      "C",
+      "M",
+      "Y",
+      "LC",
+      "LM"
+    ],
+    "yield": "≈1 800 фото 10×15; 70 мл",
+    "chip": "Нет",
+    "chipNote": "Без чипа; дорогая ПГ, промывку делать осторожно; частая установка/обслуживание СНПЧ",
+    "demand": "A"
+  },
+  {
+    "rank": "130",
+    "brand": "Epson",
+    "model": "EcoTank L1300",
+    "kind": "Струйный принтер A3+ 4 цвета, СНПЧ",
+    "segment": "Чертежи, офис, учебные центры",
+    "cartridges": [
+      "664 BK",
+      "C",
+      "M",
+      "Y"
+    ],
+    "yield": "≈4 000 ч/б; ≈6 500 цвет",
+    "chip": "Нет",
+    "chipNote": "Без чипа; крупный формат, часто проблемы подачи/засыхание после простоя",
+    "demand": "B"
+  },
+  {
+    "rank": "131",
+    "brand": "Epson",
+    "model": "EcoTank L8050",
+    "kind": "Фотопринтер A4 6 цветов, СНПЧ",
+    "segment": "Фото, современная фотопечать",
+    "cartridges": [
+      "108 BK",
+      "C",
+      "M",
+      "Y",
+      "LC",
+      "LM",
+      "057 в части рынков"
+    ],
+    "yield": "70 мл; фотопечать, ресурс зависит от формата",
+    "chip": "Нет",
+    "chipNote": "Без чипа; серия 108 подтверждена для L8050/L18050; не смешивать с 673 без проверки",
+    "demand": "B"
+  },
+  {
+    "rank": "132",
+    "brand": "Epson",
+    "model": "EcoTank L18050",
+    "kind": "Фотопринтер A3+ 6 цветов, СНПЧ",
+    "segment": "Фото, дизайн, A3+",
+    "cartridges": [
+      "108 BK",
+      "C",
+      "M",
+      "Y",
+      "LC",
+      "LM",
+      "057 в части рынков"
+    ],
+    "yield": "70 мл; фотопечать, ресурс зависит от формата",
+    "chip": "Нет",
+    "chipNote": "Без чипа; актуальная замена L1800, важны оригинальный код чернил и качество промывки",
+    "demand": "B"
+  },
+  {
+    "rank": "133",
+    "brand": "Epson",
+    "model": "EcoTank M1120 / M1140 / M1170",
+    "kind": "Монохромный струйный принтер A4, СНПЧ",
+    "segment": "Офис, монохромная печать",
+    "cartridges": [
+      "005 Black",
+      "T774",
+      "774 у старых M-серий"
+    ],
+    "yield": "≈6 000 стр. у 005",
+    "chip": "Нет",
+    "chipNote": "Без чипа на бутылке; черные пигментные чернила, не смешивать с dye",
+    "demand": "B"
+  },
+  {
+    "rank": "134",
+    "brand": "Epson",
+    "model": "EcoTank M2140 / M2170",
+    "kind": "Монохромное струйное МФУ A4, СНПЧ",
+    "segment": "Офис, документы",
+    "cartridges": [
+      "005 Black"
+    ],
+    "yield": "≈6 000 стр.",
+    "chip": "Нет",
+    "chipNote": "Без чипа; пигмент, при засоре сложнее промывка, нужна осторожность",
+    "demand": "B"
+  },
+  {
+    "rank": "135",
+    "brand": "Epson",
+    "model": "EcoTank M3170 / M3180",
+    "kind": "Монохромное струйное МФУ A4 ADF, СНПЧ",
+    "segment": "Офис, документы",
+    "cartridges": [
+      "005 Black"
+    ],
+    "yield": "≈6 000 стр.",
+    "chip": "Нет",
+    "chipNote": "Без чипа; дополнительно проверять ADF, сетевые настройки, ролики",
+    "demand": "B"
+  },
+  {
+    "rank": "136",
+    "brand": "Epson",
+    "model": "WorkForce WF-2860DWF / XP-5100/5105",
+    "kind": "Струйное МФУ на картриджах",
+    "segment": "Дом/малый офис, картриджная струйная печать",
+    "cartridges": [
+      "502",
+      "502XL BK",
+      "C",
+      "M",
+      "Y"
+    ],
+    "yield": "Стандарт/XL зависит от картриджа",
+    "chip": "Да",
+    "chipNote": "Картриджи с чипами; СНПЧ/ПЗК возможны, но зависит от версии и клиента",
+    "demand": "C"
+  },
+  {
+    "rank": "137",
+    "brand": "Epson",
+    "model": "Expression Home XP-342 / XP-352 / XP-355",
+    "kind": "Струйное МФУ на картриджах",
+    "segment": "Дом, старый парк",
+    "cartridges": [
+      "29",
+      "29XL BK",
+      "C",
+      "M",
+      "Y"
+    ],
+    "yield": "Стандарт/XL зависит от картриджа",
+    "chip": "Да",
+    "chipNote": "Картриджи с чипами; часто выгоднее ПЗК/СНПЧ или замена принтера",
+    "demand": "C"
+  },
+  {
+    "rank": "138",
+    "brand": "Epson",
+    "model": "Stylus Photo T50 / P50 / R270 / R290",
+    "kind": "Фотопринтер A4 6 цветов на картриджах",
+    "segment": "Фото, старый парк, часто СНПЧ",
+    "cartridges": [
+      "T0811–T0816",
+      "совместимые ПЗК",
+      "СНПЧ"
+    ],
+    "yield": "Зависит от картриджа/СНПЧ",
+    "chip": "Да",
+    "chipNote": "Картриджи с чипами; в сервисе чаще СНПЧ, ПЗК, промывка ПГ",
+    "demand": "C"
+  }
+]

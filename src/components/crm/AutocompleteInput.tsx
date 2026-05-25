@@ -32,8 +32,13 @@ export function AutocompleteInput({
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  // Подсказки не должны срабатывать, пока пользователь не начнёт
+  // взаимодействовать с полем — иначе при открытии заявки с уже
+  // заполненным адресом выпадашка моментально предлагает варианты.
+  const [touched, setTouched] = useState(false);
 
   useEffect(() => {
+    if (!touched) return;
     const q = value.trim();
     if (q.length < minLength) {
       setSuggestions([]);
@@ -61,15 +66,20 @@ export function AutocompleteInput({
       clearTimeout(timeout);
       controller.abort();
     };
-  }, [endpoint, minLength, value]);
+  }, [endpoint, minLength, value, touched]);
 
   return (
     <div className="relative">
       <input
         className={className}
         value={value}
-        onChange={(event) => onChange(event.target.value)}
-        onFocus={() => setOpen(suggestions.length > 0)}
+        onChange={(event) => {
+          setTouched(true);
+          onChange(event.target.value);
+        }}
+        onFocus={() => {
+          if (touched) setOpen(suggestions.length > 0);
+        }}
         onBlur={() => window.setTimeout(() => setOpen(false), 120)}
         placeholder={placeholder}
         autoComplete="off"
