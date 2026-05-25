@@ -198,6 +198,22 @@ export async function seedPrintersAndCartridges(prisma: PrismaClient) {
               data: { hasChip: true, chipPrice: CHIP_PRICE_DEFAULT * 100 },
             });
           }
+          // Бэкфилл: если у уже существующего картриджа нет цены заправки —
+          // ставим дефолт (иначе он не показывается в публичном прайсе).
+          const hasRefillPrice = await prisma.price.findFirst({
+            where: { serviceId: refillService.id, cartridgeId: existing.id },
+          });
+          if (!hasRefillPrice) {
+            const refillPrice = defaultRefillPrice(existing.brand, existing.model, existing.type);
+            await prisma.price.create({
+              data: {
+                serviceId: refillService.id,
+                cartridgeId: existing.id,
+                amount: refillPrice * 100,
+              },
+            });
+            pricesCreated++;
+          }
         } else {
           const pageYield = yields[yieldIdx] ?? null;
           const created = await prisma.cartridge.create({
@@ -242,7 +258,27 @@ export async function seedPrintersAndCartridges(prisma: PrismaClient) {
     }
   }
 
-  console.log(`  ✓ принтеров: ${printersUpserted}, новых картриджей: ${cartridgesCreated}, новых цен: ${pricesCreated}, связей: ${linksCreated}`);
+  // Финальная подметалка: для каждого картриджа в базе, у которого нет цены
+  // заправки, ставим дефолт. Покрывает картриджи, добавленные руками в CRM.
+  const allCartridges = await prisma.cartridge.findMany();
+  let backfilled = 0;
+  for (const c of allCartridges) {
+    const hasPrice = await prisma.price.findFirst({
+      where: { serviceId: refillService.id, cartridgeId: c.id },
+    });
+    if (!hasPrice) {
+      const refillPrice = defaultRefillPrice(c.brand, c.model, c.type);
+      await prisma.price.create({
+        data: { serviceId: refillService.id, cartridgeId: c.id, amount: refillPrice * 100 },
+      });
+      backfilled++;
+    }
+  }
+
+  console.log(
+    `  ✓ принтеров: ${printersUpserted}, новых картриджей: ${cartridgesCreated}, ` +
+    `новых цен: ${pricesCreated}, связей: ${linksCreated}, бэкфилл-цен: ${backfilled}`,
+  );
 }
 
 // CLI-режим: запуск напрямую через `npm run seed:printers`
