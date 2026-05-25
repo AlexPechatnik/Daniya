@@ -35,14 +35,6 @@ type Sort =
   | { key: "amount"; dir: "asc" | "desc" }
   | { key: "yield"; dir: "asc" | "desc" };
 
-const SERVICE_TABS = [
-  { slug: "all", label: "Все услуги" },
-  { slug: "zapravka", label: "Заправка" },
-  { slug: "zamena", label: "Замена" },
-  { slug: "diagnostika", label: "Диагностика" },
-  { slug: "remont", label: "Ремонт" },
-];
-
 function formatRub(amount: number) {
   return `${amount.toLocaleString("ru-RU")} ₽`;
 }
@@ -59,6 +51,15 @@ export function PriceCatalog({ rows }: { rows: PriceRow[] }) {
   const [brandsOn, setBrandsOn] = useState<Set<string>>(new Set());
   const [sort, setSort] = useState<Sort>({ key: "brand", dir: "asc" });
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const serviceTabs = useMemo(() => {
+    const map = new Map<string, string>();
+    rows.forEach((r) => map.set(r.serviceSlug, r.serviceName));
+    return [
+      { slug: "all", label: "Все услуги" },
+      ...Array.from(map, ([slug, label]) => ({ slug, label })),
+    ];
+  }, [rows]);
 
   const brands = useMemo(() => {
     const set = new Set<string>();
@@ -135,8 +136,8 @@ export function PriceCatalog({ rows }: { rows: PriceRow[] }) {
           />
         </div>
 
-        <div className="inline-flex rounded-full bg-bg-2 p-1 text-sm">
-          {SERVICE_TABS.map((t) => (
+        <div className="flex flex-wrap rounded-2xl bg-bg-2 p-1 text-sm">
+          {serviceTabs.map((t) => (
             <button
               key={t.slug}
               type="button"

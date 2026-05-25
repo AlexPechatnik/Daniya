@@ -23,9 +23,10 @@ export async function POST(req: NextRequest) {
 
   let cartridgeId: string | null = null;
   if (brand && model) {
+    const cartridgeType = service.kind.startsWith("INKJET") || service.slug === "chernila" ? "струйный" : "лазерный";
     const cart = await prisma.cartridge.upsert({
       where: { brand_model: { brand: String(brand).trim(), model: String(model).trim() } },
-      create: { brand: String(brand).trim(), model: String(model).trim(), type: "лазерный" },
+      create: { brand: String(brand).trim(), model: String(model).trim(), type: cartridgeType },
       update: {},
     });
     cartridgeId = cart.id;

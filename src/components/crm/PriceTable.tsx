@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Loader2, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Loader2, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 
 export type CrmPriceRow = {
   id: string;
@@ -15,6 +15,7 @@ export type CrmPriceRow = {
 };
 
 type Service = { id: string; slug: string; name: string };
+const PAGE_SIZE = 40;
 
 /**
  * Inline-редактор прайса для админа CRM.
@@ -32,6 +33,7 @@ export function PriceTable({ initialRows, services }: { initialRows: CrmPriceRow
   const [draft, setDraft] = useState<{ amount: string; note: string }>({ amount: "", note: "" });
   const [busyId, setBusyId] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -48,6 +50,10 @@ export function PriceTable({ initialRows, services }: { initialRows: CrmPriceRow
         return hay.includes(q);
       });
   }, [rows, query, serviceSlug]);
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const paged = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   function startEdit(row: CrmPriceRow) {
     setEditingId(row.id);
@@ -91,14 +97,20 @@ export function PriceTable({ initialRows, services }: { initialRows: CrmPriceRow
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-fg" />
           <input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPage(1);
+            }}
             placeholder="Поиск по бренду, модели, услуге…"
             className="input h-10 w-full pl-10"
           />
         </div>
         <select
           value={serviceSlug}
-          onChange={(e) => setServiceSlug(e.target.value)}
+          onChange={(e) => {
+            setServiceSlug(e.target.value);
+            setPage(1);
+          }}
           className="input h-10 w-44"
         >
           <option value="all">Все услуги</option>
@@ -125,7 +137,7 @@ export function PriceTable({ initialRows, services }: { initialRows: CrmPriceRow
           {filtered.length === 0 && (
             <li className="px-4 py-10 text-center text-sm text-muted-fg">Ничего не найдено.</li>
           )}
-          {filtered.map((row) => {
+          {paged.map((row) => {
             const editing = editingId === row.id;
             const busy = busyId === row.id;
             return (
@@ -226,8 +238,34 @@ export function PriceTable({ initialRows, services }: { initialRows: CrmPriceRow
       </div>
 
       <div className="text-xs text-muted-fg">
-        Показано {filtered.length} из {rows.length}. Кликните на цену — она станет редактируемой.
+        Показано {filtered.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1}–
+        {Math.min(currentPage * PAGE_SIZE, filtered.length)} из {filtered.length} найденных, всего {rows.length}.
+        Кликните на цену — она станет редактируемой.
       </div>
+
+      {pageCount > 1 && (
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card px-3 py-2">
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="inline-flex h-9 items-center gap-2 rounded-full border border-border px-3 text-sm disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <ChevronLeft className="h-4 w-4" /> Назад
+          </button>
+          <div className="text-sm text-muted-fg">
+            Страница <span className="font-medium text-fg">{currentPage}</span> из {pageCount}
+          </div>
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+            disabled={currentPage === pageCount}
+            className="inline-flex h-9 items-center gap-2 rounded-full border border-border px-3 text-sm disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Вперёд <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       {showAdd && (
         <AddPriceDialog
