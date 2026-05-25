@@ -147,6 +147,18 @@ export async function seedPrintersAndCartridges(prisma: PrismaClient) {
   const refillService = await prisma.service.findUnique({ where: { slug: "zapravka" } });
   if (!refillService) throw new Error("Сервис 'zapravka' не найден — сначала запусти основной seed");
 
+  // Очистка legacy: «чернила» Epson/HP/Canon, которые когда-то сидились как
+  // картриджи лазерной модели — теперь не наш расходник. Сначала чистим Price,
+  // потом Cartridge: onDelete на Price.cartridge — SetNull, без удаления.
+  const inkCartridges = await prisma.cartridge.findMany({ where: { type: "струйный" } });
+  if (inkCartridges.length > 0) {
+    const ids = inkCartridges.map((c) => c.id);
+    await prisma.price.deleteMany({ where: { cartridgeId: { in: ids } } });
+    await prisma.printerCartridge.deleteMany({ where: { cartridgeId: { in: ids } } });
+    await prisma.cartridge.deleteMany({ where: { id: { in: ids } } });
+    console.log(`  ↳ удалено legacy-чернил: ${inkCartridges.length}`);
+  }
+
   let printersUpserted = 0;
   let cartridgesCreated = 0;
   let pricesCreated = 0;
@@ -189,6 +201,12 @@ export async function seedPrintersAndCartridges(prisma: PrismaClient) {
     for (const code of allCodes) {
       const cartBrand = inferBrand(code, brand);
       const type = detectType(cartBrand, code, r.kind);
+      // Струйные «чернила» больше не создаём как картриджи — для inkjet
+      // используется отдельный сценарий (форма заявки → услуги обслуживания).
+      if (type === "струйный") {
+        yieldIdx++;
+        continue;
+      }
       const cacheKey = `${cartBrand}|${code}`;
       let cartridgeId = cartridgeCache.get(cacheKey);
 

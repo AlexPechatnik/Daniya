@@ -12,6 +12,9 @@ const leadSchema = z.object({
   phone: z.string().min(10, "Укажите телефон"),
   address: z.string().optional(),
   serviceKind: z.enum(["REFILL", "REPLACE", "DIAGNOSTIC", "REPAIR"]).optional(),
+  // Для inkjet передаётся точный slug услуги (inkjet-diagnostics / head-cleaning / ...).
+  // Если задан — приоритетнее serviceKind при привязке Service к заявке.
+  serviceSlug: z.string().optional(),
   printer: z.string().optional(),
   cartridge: z.string().optional(),
   comment: z.string().optional(),
@@ -25,6 +28,7 @@ export async function submitLead(_prev: LeadFormState, formData: FormData): Prom
     phone: String(formData.get("phone") || ""),
     address: String(formData.get("address") || "") || undefined,
     serviceKind: (formData.get("serviceKind") as string) || undefined,
+    serviceSlug: String(formData.get("serviceSlug") || "") || undefined,
     printer: String(formData.get("printer") || "") || undefined,
     cartridge: String(formData.get("cartridge") || "") || undefined,
     comment: String(formData.get("comment") || "") || undefined,
@@ -45,9 +49,14 @@ export async function submitLead(_prev: LeadFormState, formData: FormData): Prom
     });
   }
 
-  // Привязываем сервис из формы (REFILL/REPLACE/DIAGNOSTIC/REPAIR → slug)
+  // Привязываем сервис. Приоритет — точный slug (для inkjet это inkjet-diagnostics
+  // и т.п.), иначе мапим общий kind (REFILL/REPLACE/DIAGNOSTIC/REPAIR) на slug.
   let serviceId: string | null = null;
-  if (parsed.data.serviceKind) {
+  if (parsed.data.serviceSlug) {
+    const service = await prisma.service.findUnique({ where: { slug: parsed.data.serviceSlug } });
+    serviceId = service?.id || null;
+  }
+  if (!serviceId && parsed.data.serviceKind) {
     const slugMap: Record<string, string> = {
       REFILL: "zapravka",
       REPLACE: "zamena",

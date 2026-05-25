@@ -1,19 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { detectPrintType, INKJET_SERVICE_SLUGS, INKJET_PRICING_NOTE } from "@/lib/printerType";
 
 /**
  * GET /api/public/cartridges-for-printer?q=HP+LaserJet+M404dn
  *
- * Клиент не знает картридж — пишет модель принтера. Мы возвращаем
- * подходящие картриджи из каталога (по совпадению brand/family/aliases).
+ * Лазерный принтер → подходящие картриджи и их цены.
+ * Струйный принтер  → НЕ возвращаем «чернила» как картриджи (это не наша
+ *   модель прайса), вместо этого отдаём список услуг струйного сервиса
+ *   и пометку, что цена уточняется после диагностики.
  *
  * Ответ:
- *   { printer: { brand, family, kind } | null,
- *     cartridges: [{ brand, model, hasChip }] }
+ *   { printer, printType: "laser" | "inkjet" | null,
+ *     cartridges: [...],        // только для лазерных
+ *     services: [...],          // только для струйных
+ *     pricingNote?: string }
  */
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q")?.trim() || "";
-  if (q.length < 2) return NextResponse.json({ printer: null, cartridges: [] });
+  if (q.length < 2) {
+    return NextResponse.json({ printer: null, printType: null, cartridges: [], services: [] });
+  }
 
   const query = normalize(q);
   const tokens = query.split(/\s+/).filter((t) => t.length >= 2);
@@ -52,20 +59,53 @@ export async function GET(req: NextRequest) {
     .filter((item) => item.score > 0)
     .sort((a, b) => b.score - a.score)[0]?.candidate;
 
-  if (!printer) return NextResponse.json({ printer: null, cartridges: [] });
+  if (!printer) {
+    return NextResponse.json({ printer: null, printType: null, cartridges: [], services: [] });
+  }
 
+  const printType = detectPrintType(printer.kind);
+  const printerPayload = {
+    brand: printer.brand,
+    family: printer.family,
+    kind: printer.kind,
+    chipNote: printer.chipNote,
+  };
+
+  // Для струйных — другая модель работы: набор услуг + «уточняется».
+  if (printType === "inkjet") {
+    const inkjetServices = await prisma.service.findMany({
+      where: { slug: { in: [...INKJET_SERVICE_SLUGS] } },
+      include: { prices: { where: { cartridgeId: null }, take: 1 } },
+    });
+    const ordered = INKJET_SERVICE_SLUGS
+      .map((slug) => inkjetServices.find((s) => s.slug === slug))
+      .filter((s): s is NonNullable<typeof s> => !!s)
+      .map((s) => ({
+        slug: s.slug,
+        name: s.name,
+        fromAmount: s.prices[0]?.amount ?? null, // ₽ в копейках, «от ...»
+      }));
+    return NextResponse.json({
+      printer: printerPayload,
+      printType,
+      cartridges: [],
+      services: ordered,
+      pricingNote: INKJET_PRICING_NOTE,
+    });
+  }
+
+  // Лазер: классический ответ с картриджами (струйных среди связей не пускаем).
   return NextResponse.json({
-    printer: {
-      brand: printer.brand,
-      family: printer.family,
-      kind: printer.kind,
-      chipNote: printer.chipNote,
-    },
-    cartridges: printer.cartridges.map((pc: any) => ({
-      brand: pc.cartridge.brand,
-      model: pc.cartridge.model,
-      hasChip: pc.cartridge.hasChip,
-    })),
+    printer: printerPayload,
+    printType,
+    cartridges: printer.cartridges
+      .filter((pc: any) => pc.cartridge.type !== "струйный")
+      .map((pc: any) => ({
+        brand: pc.cartridge.brand,
+        model: pc.cartridge.model,
+        hasChip: pc.cartridge.hasChip,
+      })),
+    services: [],
   });
 }
 

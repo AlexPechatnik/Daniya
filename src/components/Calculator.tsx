@@ -1,8 +1,7 @@
 "use client";
-import { useEffect, useMemo, useState, useTransition } from "react";
-import { Search, Sparkles, Check, Plus, X, Cpu, Info, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Search, Sparkles, Check, Plus, Cpu, Info, Trash2, ArrowRight } from "lucide-react";
 import { formatRub } from "@/lib/utils";
-import Link from "next/link";
 import { Reveal } from "./Reveal";
 
 type Service = { id: string; name: string; kind: string; slug: string };
@@ -15,7 +14,9 @@ type Cartridge = {
   isOriginal: boolean;
   hasChip: boolean;
   chipPrice: number | null; // копейки
-  price: number | null;     // копейки за заправку
+  // serviceId → цена этой услуги для этого картриджа (копейки). Общий
+  // источник с /price и CRM — данные приходят из prisma.price.
+  priceByService: Record<string, number>;
 };
 
 interface CartItem {
@@ -29,9 +30,32 @@ interface CartItem {
 
 const DEFAULT_CHIP_PRICE = 15000; // копейки = 150 ₽
 
-export function Calculator({ services, cartridges }: { services: Service[]; cartridges: Cartridge[] }) {
+/**
+ * Ключ sessionStorage для передачи корзины калькулятора в форму заявки.
+ * Форма читает на маунте, подставляет картриджи + сводку и стирает ключ.
+ */
+export const CALCULATOR_CART_KEY = "printcare:calculator:cart";
+
+export function Calculator({
+  services,
+  cartridges,
+  baseByService,
+}: {
+  services: Service[];
+  cartridges: Cartridge[];
+  // Базовая ставка услуги (Price без cartridgeId) — фолбэк, когда у картриджа
+  // нет персональной цены за выбранную услугу. Тот же источник, что и в /price.
+  baseByService: Record<string, number>;
+}) {
+  // В калькуляторе картриджей оставляем только те услуги, которые применимы
+  // per cartridge: заправка и замена. Ремонт принтера / СНПЧ / промывка ПГ —
+  // не подбираются «по картриджу» и в этом виджете только шумят.
+  const cartridgeServices = useMemo(
+    () => services.filter((s) => s.kind === "REFILL" || s.kind === "REPLACE"),
+    [services],
+  );
   const [activeServiceId, setActiveServiceId] = useState(
-    services.find((s) => s.slug === "zapravka")?.id || services[0]?.id || ""
+    cartridgeServices.find((s) => s.slug === "zapravka")?.id || cartridgeServices[0]?.id || ""
   );
   const [query, setQuery] = useState("");
   const [brand, setBrand] = useState<string>("all");
@@ -49,10 +73,13 @@ export function Calculator({ services, cartridges }: { services: Service[]; cart
     list.sort((a, b) => {
       if (sort === "popular") return Number(b.isPopular) - Number(a.isPopular) || a.model.localeCompare(b.model);
       if (sort === "brand") return a.brand.localeCompare(b.brand) || a.model.localeCompare(b.model);
-      return (a.price ?? Infinity) - (b.price ?? Infinity);
+      // Сортировка по цене активной услуги — не фиксированно по заправке.
+      const ap = a.priceByService[activeServiceId] ?? baseByService[activeServiceId] ?? Infinity;
+      const bp = b.priceByService[activeServiceId] ?? baseByService[activeServiceId] ?? Infinity;
+      return ap - bp;
     });
-    return list.slice(0, 30);
-  }, [cartridges, query, brand, sort]);
+    return list.slice(0, 50);
+  }, [cartridges, query, brand, sort, activeServiceId, baseByService]);
 
   function addToCart(c: Cartridge) {
     setCart((arr) => [
@@ -75,11 +102,22 @@ export function Calculator({ services, cartridges }: { services: Service[]; cart
     setCart((arr) => arr.map((i) => (i.key === key ? { ...i, ...patch } : i)));
   }
 
-  // Расчёт цены строки
+  // Цена услуги для конкретного картриджа: персональная цена картриджа
+  // (если есть) → иначе базовая ставка услуги → иначе 0. Это та же логика,
+  // по которой считает /api/price и CRM-расчёт.
+  function priceFor(c: Cartridge, serviceId: string): number {
+    return c.priceByService[serviceId] ?? baseByService[serviceId] ?? 0;
+  }
+
+  function chipPriceFor(c: Cartridge): number {
+    return c.chipPrice ?? DEFAULT_CHIP_PRICE;
+  }
+
+  // Расчёт цены одной строки корзины
   function itemTotal(it: CartItem) {
-    const refill = it.cartridge.price ?? 0;
-    const chip = it.withChip ? (it.cartridge.chipPrice ?? DEFAULT_CHIP_PRICE) : 0;
-    return (refill + chip) * it.quantity;
+    const work = priceFor(it.cartridge, it.serviceId);
+    const chip = it.withChip ? chipPriceFor(it.cartridge) : 0;
+    return (work + chip) * it.quantity;
   }
 
   const subtotal = cart.reduce((s, it) => s + itemTotal(it), 0);
@@ -108,24 +146,28 @@ export function Calculator({ services, cartridges }: { services: Service[]; cart
         <div className="card overflow-hidden relative">
           <div className="grid lg:grid-cols-[1fr,420px]">
             <div className="p-6 lg:p-8 space-y-7">
-              <Step n={1} title="Услуга">
-                <div className="grid grid-cols-2 gap-2">
-                  {services.map((s) => (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => setActiveServiceId(s.id)}
-                      className={`group relative rounded-xl border px-4 py-3 text-sm text-left transition-all ${
-                        activeServiceId === s.id
-                          ? "border-primary bg-primary/10 text-fg"
-                          : "border-border bg-card/40 hover:bg-card"
-                      }`}
-                    >
-                      {activeServiceId === s.id && <Check className="absolute right-3 top-3 h-3.5 w-3.5 text-primary" />}
-                      {s.name}
-                    </button>
-                  ))}
+              <Step n={1} title="Что нужно сделать с картриджем">
+                {/* Сегментированный контрол в духе iOS: только применимые к картриджу услуги. */}
+                <div className="inline-flex rounded-full bg-bg-2 p-1 text-sm">
+                  {cartridgeServices.map((s) => {
+                    const active = activeServiceId === s.id;
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => setActiveServiceId(s.id)}
+                        className={`rounded-full px-4 py-2 transition-colors ${
+                          active ? "bg-card text-fg shadow-sm" : "text-muted-fg hover:text-fg"
+                        }`}
+                      >
+                        {s.name}
+                      </button>
+                    );
+                  })}
                 </div>
+                <p className="mt-2 text-xs text-muted-fg">
+                  Выбор применяется к следующему добавленному картриджу. У каждой строки в расчёте можно поменять позже.
+                </p>
               </Step>
 
               <Step n={2} title="Картриджи">
@@ -156,6 +198,7 @@ export function Calculator({ services, cartridges }: { services: Service[]; cart
                   )}
                   {filtered.map((c) => {
                     const inCart = cart.some((it) => it.cartridge.id === c.id);
+                    const activePrice = priceFor(c, activeServiceId);
                     return (
                       <div key={c.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm hover:bg-muted/30 transition">
                         <div className="min-w-0">
@@ -174,7 +217,9 @@ export function Calculator({ services, cartridges }: { services: Service[]; cart
                           </div>
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
-                          {c.price != null && <div className="text-sm tabular-nums text-fg">{formatRub(c.price)}</div>}
+                          {activePrice > 0 && (
+                            <div className="text-sm tabular-nums text-fg">{formatRub(activePrice)}</div>
+                          )}
                           <button
                             type="button"
                             onClick={() => addToCart(c)}
@@ -196,7 +241,7 @@ export function Calculator({ services, cartridges }: { services: Service[]; cart
 
             <CartAside
               cart={cart}
-              services={services}
+              services={cartridgeServices}
               subtotal={subtotal}
               chipsTotal={chipsTotal}
               updateItem={updateItem}
@@ -307,12 +352,43 @@ function CartAside({
         <div className="text-4xl font-semibold tabular-nums tracking-tight">{formatRub(subtotal)}</div>
       </div>
 
-      <Link
-        href="#request"
-        className={`btn-primary btn-glow mt-5 py-3 ${cart.length === 0 ? "opacity-50 pointer-events-none" : ""}`}
+      <button
+        type="button"
+        onClick={() => {
+          if (cart.length === 0) return;
+          // Сохраняем корзину для формы заявки — она прочтёт на маунте и
+          // подставит первый картридж + соберёт многострочную сводку в комментарий.
+          const payload = cart.map((it) => {
+            const service = services.find((s) => s.id === it.serviceId);
+            return {
+              brand: it.cartridge.brand,
+              model: it.cartridge.model,
+              serviceName: service?.name || "Услуга",
+              serviceKind: service?.kind || "REFILL",
+              quantity: it.quantity,
+              withChip: it.withChip,
+              total: itemTotal(it),
+            };
+          });
+          try {
+            sessionStorage.setItem(
+              CALCULATOR_CART_KEY,
+              JSON.stringify({ items: payload, subtotal, ts: Date.now() }),
+            );
+          } catch {
+            // приватный режим / квота — не критично, форма просто покажется пустой
+          }
+          // Уведомляем форму, если она уже отрендерилась на странице
+          window.dispatchEvent(new CustomEvent("printcare:calculator:apply"));
+          // Плавно скроллим к секции заявки
+          const target = document.getElementById("request");
+          target?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }}
+        disabled={cart.length === 0}
+        className="btn-primary btn-glow mt-5 inline-flex items-center justify-center gap-2 py-3 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        Оставить заявку
-      </Link>
+        Оставить заявку <ArrowRight className="h-4 w-4" />
+      </button>
 
       <div className="mt-4 rounded-lg border border-border bg-bg/40 p-3 text-xs text-muted-fg leading-relaxed">
         <span className="text-fg font-medium">Подмена быстрее</span> — можем привезти уже заправленный, а ваш забрать в сервис. Та же цена, офис продолжает печатать через 5 минут.

@@ -1,11 +1,13 @@
 "use client";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { submitLead, type LeadFormState, getUpcomingHolidays } from "@/app/actions";
-import { Send, CheckCircle2, ArrowRight, CalendarOff } from "lucide-react";
+import { CheckCircle2, ArrowRight, CalendarOff, Calculator as CalcIcon, X, Droplet, Info } from "lucide-react";
 import { Reveal } from "./Reveal";
 import { format, parseISO } from "date-fns";
 import { ru } from "date-fns/locale";
 import { AutocompleteInput } from "./crm/AutocompleteInput";
+import { CALCULATOR_CART_KEY } from "./Calculator";
+import { formatRub } from "@/lib/utils";
 
 const services = [
   { value: "REFILL", label: "Заправка" },
@@ -15,6 +17,25 @@ const services = [
 ];
 
 type CartridgeHint = { brand: string; model: string; hasChip: boolean };
+type InkjetService = { slug: string; name: string; fromAmount: number | null };
+type FinderResponse = {
+  printer: { brand: string; family: string; kind?: string | null } | null;
+  printType: "laser" | "inkjet" | null;
+  cartridges: CartridgeHint[];
+  services: InkjetService[];
+  pricingNote?: string;
+};
+
+type CalculatorItem = {
+  brand: string;
+  model: string;
+  serviceName: string;
+  serviceKind: string;
+  quantity: number;
+  withChip: boolean;
+  total: number; // копейки
+};
+type CalculatorPayload = { items: CalculatorItem[]; subtotal: number; ts: number };
 
 export function RequestForm() {
   const [state, formAction, pending] = useActionState<LeadFormState, FormData>(submitLead, {});
@@ -22,23 +43,123 @@ export function RequestForm() {
   const [address, setAddress] = useState("Санкт-Петербург, ");
   const [printer, setPrinter] = useState("");
   const [cartridge, setCartridge] = useState("");
+  const [comment, setComment] = useState("");
+  const [serviceKind, setServiceKind] = useState("REFILL");
   const [hints, setHints] = useState<CartridgeHint[]>([]);
   const [hintsLoading, setHintsLoading] = useState(false);
+  const [fromCalc, setFromCalc] = useState<CalculatorPayload | null>(null);
+  // Inkjet-режим: когда введён струйный принтер, прячем поле «Картридж»,
+  // показываем список услуг струйного сервиса и пометку про уточнение цены.
+  const [inkjet, setInkjet] = useState<FinderResponse | null>(null);
+  // Slug выбранной услуги (для inkjet) — передаётся в action.
+  const [serviceSlug, setServiceSlug] = useState<string | null>(null);
+  const userTouchedComment = useRef(false);
+  const userTouchedCartridge = useRef(false);
 
-  // Подтягиваем подходящие картриджи, когда клиент выбрал/ввёл принтер.
-  // Это работает и если он не выбирал из выпадашки — лишь бы написал что-то распознаваемое.
+  // Чтение корзины калькулятора: предзаполняет картридж, услугу и
+  // собирает в комментарий читаемую сводку. Срабатывает на маунте и
+  // на event 'printcare:calculator:apply' (когда корзину сохранили
+  // только что и мы прямо сейчас на странице).
+  useEffect(() => {
+    function applyFromStorage() {
+      let raw: string | null = null;
+      try {
+        raw = sessionStorage.getItem(CALCULATOR_CART_KEY);
+      } catch {
+        return;
+      }
+      if (!raw) return;
+      let payload: CalculatorPayload | null = null;
+      try {
+        payload = JSON.parse(raw);
+      } catch {
+        sessionStorage.removeItem(CALCULATOR_CART_KEY);
+        return;
+      }
+      if (!payload?.items?.length) return;
+      setFromCalc(payload);
+      const first = payload.items[0];
+      setCartridge(`${first.brand} ${first.model}`);
+      setServiceKind(first.serviceKind || "REFILL");
+      // В комментарий аккуратно собираем что выбрано, чтобы мастер видел всё
+      if (!userTouchedComment.current) {
+        const lines = payload.items.map((it) => {
+          const qty = it.quantity > 1 ? ` × ${it.quantity}` : "";
+          const chip = it.withChip ? " · с заменой чипа" : "";
+          return `• ${it.brand} ${it.model}${qty} — ${it.serviceName.toLowerCase()}${chip} · ${formatRub(it.total)}`;
+        });
+        const summary = `Из калькулятора:\n${lines.join("\n")}\nИтого ориентировочно: ${formatRub(payload.subtotal)}`;
+        setComment(summary);
+      }
+      // Сразу же удаляем — повторное открытие страницы не должно дублировать
+      sessionStorage.removeItem(CALCULATOR_CART_KEY);
+    }
+    applyFromStorage();
+    window.addEventListener("printcare:calculator:apply", applyFromStorage);
+    return () => window.removeEventListener("printcare:calculator:apply", applyFromStorage);
+  }, []);
+
+  // Передача из inkjet-блока на странице прайса: туда нажали «услугу»,
+  // тут подставляем принтер + предлагаемую услугу.
+  useEffect(() => {
+    function applyInkjet() {
+      let raw: string | null = null;
+      try { raw = sessionStorage.getItem("printcare:inkjet:request"); } catch { return; }
+      if (!raw) return;
+      try {
+        const data = JSON.parse(raw) as { printer: string; serviceSlug: string; serviceName: string };
+        setPrinter(data.printer);
+        setServiceSlug(data.serviceSlug);
+        setServiceKind("DIAGNOSTIC");
+        if (!userTouchedComment.current) {
+          setComment(`Струйный принтер: ${data.printer}. Запрос — ${data.serviceName.toLowerCase()}.`);
+        }
+        sessionStorage.removeItem("printcare:inkjet:request");
+      } catch {
+        sessionStorage.removeItem("printcare:inkjet:request");
+      }
+    }
+    applyInkjet();
+    window.addEventListener("printcare:inkjet:apply", applyInkjet);
+    return () => window.removeEventListener("printcare:inkjet:apply", applyInkjet);
+  }, []);
+
+  // Подтягиваем подходящие картриджи или режим струйного сервиса по введённой
+  // модели принтера. Для inkjet картриджи в форме не нужны — показываем услуги.
   useEffect(() => {
     const q = printer.trim();
-    if (q.length < 2) { setHints([]); return; }
+    if (q.length < 2) {
+      setHints([]);
+      setInkjet(null);
+      return;
+    }
     const controller = new AbortController();
     const t = setTimeout(async () => {
       setHintsLoading(true);
       try {
-        const res = await fetch(`/api/public/cartridges-for-printer?q=${encodeURIComponent(q)}`, { signal: controller.signal });
-        const data = await res.json();
-        setHints(data.cartridges || []);
+        const res = await fetch(`/api/public/cartridges-for-printer?q=${encodeURIComponent(q)}`, {
+          signal: controller.signal,
+        });
+        const data: FinderResponse = await res.json();
+        if (data.printType === "inkjet") {
+          setInkjet(data);
+          setHints([]);
+          // Авто-подсказка: выставим slug первой услуги (диагностика).
+          if (data.services[0] && !serviceSlug) setServiceSlug(data.services[0].slug);
+          // Дропдаун «Услуга» переключим в DIAGNOSTIC — он ближайший по смыслу
+          // из «крупных» категорий; точная услуга при этом передаётся через serviceSlug.
+          setServiceKind("DIAGNOSTIC");
+          // Сбрасываем картриджное поле, если клиент его не правил
+          if (!userTouchedCartridge.current) setCartridge("");
+        } else {
+          setInkjet(null);
+          setHints(data.cartridges || []);
+        }
       } catch (e: any) {
-        if (e?.name !== "AbortError") setHints([]);
+        if (e?.name !== "AbortError") {
+          setHints([]);
+          setInkjet(null);
+        }
       } finally {
         setHintsLoading(false);
       }
@@ -124,9 +245,47 @@ export function RequestForm() {
                   className="input"
                 />
               </Field>
+              {/* Баннер о том, что данные пришли из калькулятора — Apple HIG: continuity. */}
+              {fromCalc && (
+                <div className="rounded-xl border border-primary/30 bg-primary/[0.06] p-3 text-xs">
+                  <div className="flex items-start gap-2.5">
+                    <CalcIcon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                    <div className="flex-1 leading-relaxed">
+                      <div className="font-medium text-fg">
+                        Из калькулятора подставлено: {fromCalc.items.length} {fromCalc.items.length === 1 ? "позиция" : "позиций"}
+                        {" · "}итого ≈ {formatRub(fromCalc.subtotal)}
+                      </div>
+                      <div className="mt-0.5 text-muted-fg">
+                        Картридж и услуга предзаполнены, остальное — в комментарии.
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFromCalc(null);
+                        setCartridge("");
+                        setComment("");
+                        userTouchedComment.current = false;
+                      }}
+                      className="rounded-full p-1 text-muted-fg hover:bg-muted/40 hover:text-fg"
+                      aria-label="Сбросить данные калькулятора"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="grid sm:grid-cols-2 gap-4">
                 <Field label="Услуга">
-                  <select name="serviceKind" className="input">{services.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}</select>
+                  <select
+                    name="serviceKind"
+                    value={serviceKind}
+                    onChange={(e) => setServiceKind(e.target.value)}
+                    className="input"
+                  >
+                    {services.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                  </select>
                 </Field>
                 <Field label="Модель принтера">
                   <AutocompleteInput
@@ -140,35 +299,97 @@ export function RequestForm() {
                   />
                 </Field>
               </div>
-              <Field label="Картридж (если знаете)">
-                <input
-                  name="cartridge"
-                  value={cartridge}
-                  onChange={(e) => setCartridge(e.target.value)}
-                  className="input"
-                  placeholder="CF283A, 725, TN-1075… — или оставьте пустым"
-                />
-                {hints.length > 0 && (
-                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                    <span className="text-muted-fg">Подходят к этому принтеру:</span>
-                    {hints.map((h) => (
-                      <button
-                        type="button"
-                        key={`${h.brand}-${h.model}`}
-                        onClick={() => setCartridge(`${h.brand} ${h.model}`)}
-                        className="rounded-full border border-border bg-bg-2 px-2.5 py-1 font-medium hover:border-primary hover:text-primary"
-                      >
-                        {h.brand} {h.model}{h.hasChip ? " · чип" : ""}
-                      </button>
-                    ))}
+              {/* Скрытое поле slug услуги — для inkjet передаётся конкретная услуга
+                  (диагностика/чистка/СНПЧ), не общий REFILL/DIAGNOSTIC. */}
+              {serviceSlug && <input type="hidden" name="serviceSlug" value={serviceSlug} />}
+
+              {inkjet ? (
+                <div className="rounded-xl border border-sky-500/30 bg-sky-500/[0.06] p-4">
+                  <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-sky-600 dark:text-sky-400">
+                    <Droplet className="h-3.5 w-3.5" /> Струйный принтер
                   </div>
-                )}
-                {hintsLoading && printer.trim().length >= 2 && hints.length === 0 && (
-                  <div className="mt-2 text-xs text-muted-fg">ищем подходящие картриджи…</div>
-                )}
-              </Field>
+                  <div className="mt-1 text-sm font-medium">
+                    {inkjet.printer?.brand} {inkjet.printer?.family}
+                    {inkjet.printer?.kind && (
+                      <span className="ml-2 text-xs font-normal text-muted-fg">· {inkjet.printer.kind}</span>
+                    )}
+                  </div>
+                  {inkjet.pricingNote && (
+                    <div className="mt-2 flex items-start gap-1.5 text-xs text-muted-fg leading-relaxed">
+                      <Info className="mt-0.5 h-3 w-3 shrink-0" />
+                      <span>{inkjet.pricingNote}</span>
+                    </div>
+                  )}
+                  <div className="mt-3 text-xs uppercase tracking-wider text-muted-fg">Тип работ</div>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {inkjet.services.map((s) => {
+                      const active = serviceSlug === s.slug;
+                      return (
+                        <button
+                          key={s.slug}
+                          type="button"
+                          onClick={() => setServiceSlug(s.slug)}
+                          className={`rounded-full border px-2.5 py-1 text-xs font-medium transition ${
+                            active
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-border bg-card hover:border-primary/40 hover:text-fg"
+                          }`}
+                        >
+                          {s.name}
+                          <span className="ml-1.5 text-[10px] text-muted-fg">
+                            {s.fromAmount ? `от ${formatRub(s.fromAmount)}` : "уточнить"}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <Field label="Картридж (если знаете)">
+                  <input
+                    name="cartridge"
+                    value={cartridge}
+                    onChange={(e) => {
+                      userTouchedCartridge.current = true;
+                      setCartridge(e.target.value);
+                    }}
+                    className="input"
+                    placeholder="CF283A, 725, TN-1075… — или оставьте пустым"
+                  />
+                  {hints.length > 0 && (
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                      <span className="text-muted-fg">Подходят к этому принтеру:</span>
+                      {hints.map((h) => (
+                        <button
+                          type="button"
+                          key={`${h.brand}-${h.model}`}
+                          onClick={() => {
+                            userTouchedCartridge.current = true;
+                            setCartridge(`${h.brand} ${h.model}`);
+                          }}
+                          className="rounded-full border border-border bg-bg-2 px-2.5 py-1 font-medium hover:border-primary hover:text-primary"
+                        >
+                          {h.brand} {h.model}{h.hasChip ? " · чип" : ""}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {hintsLoading && printer.trim().length >= 2 && hints.length === 0 && (
+                    <div className="mt-2 text-xs text-muted-fg">ищем подходящие картриджи…</div>
+                  )}
+                </Field>
+              )}
               <Field label="Комментарий">
-                <textarea name="comment" className="input min-h-[88px]" placeholder="Что случилось, удобное время и т.п." />
+                <textarea
+                  name="comment"
+                  value={comment}
+                  onChange={(e) => {
+                    userTouchedComment.current = true;
+                    setComment(e.target.value);
+                  }}
+                  className="input min-h-[88px]"
+                  placeholder="Что случилось, удобное время и т.п."
+                />
               </Field>
               {state.error && <div className="text-sm text-danger">{state.error}</div>}
               <button type="submit" disabled={pending} className="btn-primary btn-glow w-full text-base py-3.5">

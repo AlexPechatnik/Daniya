@@ -11,18 +11,40 @@ import { RequestForm } from "@/components/RequestForm";
 import { prisma } from "@/lib/db";
 
 export default async function HomePage() {
-  const services = await prisma.service.findMany({ orderBy: { name: "asc" } });
-  const cartridges = await prisma.cartridge.findMany({
-    include: { prices: { where: { service: { kind: "REFILL" } }, take: 1 } },
-    orderBy: [{ isPopular: "desc" }, { brand: "asc" }, { model: "asc" }],
-    take: 80,
+  // Источник правды — общий с /price и CRM: prisma.service + prisma.price.
+  // Загружаем все картриджи (без take), сразу все их цены + базовые ставки
+  // услуг (Price без cartridgeId), чтобы калькулятор честно считал по любому
+  // выбранному сегменту, а не подменял заправкой.
+  const [services, cartridges, basePrices] = await Promise.all([
+    prisma.service.findMany({ orderBy: { name: "asc" } }),
+    prisma.cartridge.findMany({
+      // В калькулятор не пускаем «чернила» — для струйки используется
+      // отдельный сценарий (форма заявки → услуга обслуживания).
+      where: { NOT: { type: "струйный" } },
+      include: { prices: { select: { serviceId: true, amount: true } } },
+      orderBy: [{ isPopular: "desc" }, { brand: "asc" }, { model: "asc" }],
+    }),
+    prisma.price.findMany({ where: { cartridgeId: null }, select: { serviceId: true, amount: true } }),
+  ]);
+
+  const baseByService: Record<string, number> = {};
+  for (const p of basePrices) baseByService[p.serviceId] = p.amount;
+
+  const cartridgesPlain = cartridges.map((c) => {
+    const priceByService: Record<string, number> = {};
+    for (const p of c.prices) priceByService[p.serviceId] = p.amount;
+    return {
+      id: c.id,
+      brand: c.brand,
+      model: c.model,
+      type: c.type,
+      isPopular: c.isPopular,
+      isOriginal: c.isOriginal,
+      hasChip: c.hasChip,
+      chipPrice: c.chipPrice,
+      priceByService, // serviceId → ₽ (копейки), как в /price и CRM
+    };
   });
-  const cartridgesPlain = cartridges.map((c) => ({
-    id: c.id, brand: c.brand, model: c.model, type: c.type,
-    isPopular: c.isPopular, isOriginal: c.isOriginal,
-    hasChip: c.hasChip, chipPrice: c.chipPrice,
-    price: c.prices[0]?.amount ?? null,
-  }));
 
   return (
     <>
@@ -33,7 +55,11 @@ export default async function HomePage() {
       <HowItWorks />
       <WhyUs />
       <UnderTheHood />
-      <Calculator services={services.map((s) => ({ id: s.id, name: s.name, kind: s.kind, slug: s.slug }))} cartridges={cartridgesPlain} />
+      <Calculator
+        services={services.map((s) => ({ id: s.id, name: s.name, kind: s.kind, slug: s.slug }))}
+        cartridges={cartridgesPlain}
+        baseByService={baseByService}
+      />
       <ContactChannels />
       <RequestForm />
     </>

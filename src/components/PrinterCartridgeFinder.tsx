@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Search, Printer, Zap, ArrowRight, X } from "lucide-react";
+import { Search, Printer, Zap, ArrowRight, X, Droplet, Info } from "lucide-react";
+import { formatRub } from "@/lib/utils";
 
 /**
  * Главный инструмент страницы прайса: клиент пишет модель принтера —
@@ -15,9 +16,13 @@ import { Search, Printer, Zap, ArrowRight, X } from "lucide-react";
  *  • если не нашли — мягкая ссылка на форму заявки, без жирного CTA.
  */
 type FoundCartridge = { brand: string; model: string; hasChip: boolean };
+type FoundService = { slug: string; name: string; fromAmount: number | null };
 type Found = {
   printer: { brand: string; family: string; kind?: string | null; chipNote?: string | null } | null;
+  printType: "laser" | "inkjet" | null;
   cartridges: FoundCartridge[];
+  services: FoundService[];
+  pricingNote?: string;
 };
 
 type Suggestion = { value: string; title: string; subtitle?: string; kind?: string };
@@ -119,7 +124,8 @@ export function PrinterCartridgeFinder() {
   }
 
   const showMiss = !loading && query.trim().length >= 2 && result && !result.printer;
-  const showHit = result?.printer && result.cartridges.length > 0;
+  const showLaserHit = result?.printer && result.printType === "laser" && result.cartridges.length > 0;
+  const showInkjetHit = result?.printer && result.printType === "inkjet";
 
   return (
     <div className="rounded-3xl border border-border bg-card p-6 lg:p-8">
@@ -191,10 +197,10 @@ export function PrinterCartridgeFinder() {
             )}
           </div>
 
-          {/* Результат: модель + чипы картриджей */}
-          {showHit && (
+          {/* Лазерный результат: модель + чипы картриджей */}
+          {showLaserHit && (
             <div className="mt-5 rounded-2xl border border-border bg-bg-2 p-4">
-              <div className="text-xs uppercase tracking-wider text-muted-fg">Найдено</div>
+              <div className="text-xs uppercase tracking-wider text-muted-fg">Найдено · лазерный</div>
               <div className="mt-1 font-semibold">
                 {result!.printer!.brand} {result!.printer!.family}
                 {result!.printer!.kind && (
@@ -222,8 +228,58 @@ export function PrinterCartridgeFinder() {
             </div>
           )}
 
+          {/* Струйный результат: услуги (без чернил), цена «от» и уточнение */}
+          {showInkjetHit && (
+            <div className="mt-5 rounded-2xl border border-sky-500/30 bg-sky-500/[0.06] p-4">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-sky-600 dark:text-sky-400">
+                <Droplet className="h-3.5 w-3.5" /> Найдено · струйный
+              </div>
+              <div className="mt-1 font-semibold">
+                {result!.printer!.brand} {result!.printer!.family}
+                {result!.printer!.kind && (
+                  <span className="ml-2 text-xs font-normal text-muted-fg">· {result!.printer!.kind}</span>
+                )}
+              </div>
+              {result!.pricingNote && (
+                <div className="mt-2 flex items-start gap-1.5 text-xs text-muted-fg leading-relaxed">
+                  <Info className="mt-0.5 h-3 w-3 shrink-0" />
+                  <span>{result!.pricingNote}</span>
+                </div>
+              )}
+              <div className="mt-4 grid gap-1.5 sm:grid-cols-2">
+                {result!.services.slice(0, 6).map((s) => (
+                  <a
+                    key={s.slug}
+                    href="/#request"
+                    onClick={() => {
+                      // Передаём подсказку форме: модель + рекомендуемая услуга.
+                      try {
+                        sessionStorage.setItem(
+                          "printcare:inkjet:request",
+                          JSON.stringify({
+                            printer: `${result!.printer!.brand} ${result!.printer!.family}`,
+                            serviceSlug: s.slug,
+                            serviceName: s.name,
+                            ts: Date.now(),
+                          }),
+                        );
+                        window.dispatchEvent(new CustomEvent("printcare:inkjet:apply"));
+                      } catch {}
+                    }}
+                    className="group flex items-center justify-between gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm transition hover:border-primary hover:text-primary"
+                  >
+                    <span className="truncate">{s.name}</span>
+                    <span className="shrink-0 text-xs text-muted-fg group-hover:text-primary">
+                      {s.fromAmount ? `от ${formatRub(s.fromAmount)}` : "уточнить"}
+                    </span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Loading-индикатор — деликатный, не дёргает раскладку */}
-          {loading && !showHit && query.trim().length >= 2 && (
+          {loading && !showLaserHit && !showInkjetHit && query.trim().length >= 2 && (
             <div className="mt-3 text-xs text-muted-fg">ищем модель…</div>
           )}
 

@@ -74,7 +74,13 @@ export function PriceCatalog({ rows }: { rows: PriceRow[] }) {
   const categoryTabs = useMemo(() => {
     const used = new Set(rows.map((r) => priceCategoryForSlug(r.serviceSlug).id));
     return PRICE_CATEGORIES.filter((item) => used.has(item.id)).map((item) => {
-      const sectionRows = rows.filter((row) => priceCategoryForSlug(row.serviceSlug).id === item.id);
+      const isCartridgeCat = item.id === "laser_refill" || item.id === "cartridge_replacement";
+      const sectionRows = rows.filter((row) => {
+        if (priceCategoryForSlug(row.serviceSlug).id !== item.id) return false;
+        // Те же фильтры, что и в основной выдаче: не считаем чернила как картриджи.
+        if (isCartridgeCat && row.cartridge?.type === "струйный") return false;
+        return true;
+      });
       const min = sectionRows.length > 0 ? Math.min(...sectionRows.map((row) => row.amount)) : 0;
       return {
         ...item,
@@ -119,6 +125,10 @@ export function PriceCatalog({ rows }: { rows: PriceRow[] }) {
       allCategoryRows.filter((row) => {
         // В картриджной категории прячем «фантомную» базовую услугу без модели.
         if (isCartridgeCategory && !row.cartridge) return false;
+        // Струйные «картриджи» (чернила Epson 003/103/664 и т.п.) — это не наш
+        // расходник: для струйки ведём услуги, не заправку. Скрываем их из
+        // основной табличной выдачи прайса.
+        if (isCartridgeCategory && row.cartridge?.type === "струйный") return false;
         return true;
       }),
     [allCategoryRows, isCartridgeCategory],
