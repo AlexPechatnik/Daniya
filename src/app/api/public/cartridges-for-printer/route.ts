@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
       kind: printer.kind,
       chipNote: printer.chipNote,
     },
-    cartridges: printer.cartridges.map((pc) => ({
+    cartridges: printer.cartridges.map((pc: any) => ({
       brand: pc.cartridge.brand,
       model: pc.cartridge.model,
       hasChip: pc.cartridge.hasChip,
