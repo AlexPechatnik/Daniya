@@ -121,7 +121,8 @@ async function main() {
           // не перетираем hasChip/compatible, если уже задано вручную
         },
       });
-      if (cart.createdAt && cart.createdAt.getTime() > Date.now() - 5000) cartridgesCreated++;
+      // Точный счётчик «новых» нам не нужен — на повторном запуске будут upsert-обновления.
+      cartridgesCreated++;
 
       // Связка M:N — идемпотентно
       try {
