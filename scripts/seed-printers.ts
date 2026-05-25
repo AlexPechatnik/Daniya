@@ -128,9 +128,15 @@ function defaultRefillPrice(brand: string, code: string, type: string): number {
   }
 }
 
+function shouldAppearInRefillPrice(type: string): boolean {
+  return type === "лазерный";
+}
+
 function parseYields(raw?: string): number[] {
   if (!raw) return [];
-  return raw.split(/[;,/]+/).map((s) => Number(s.replace(/[^\d]/g, ""))).filter((n) => n > 0);
+  return Array.from(raw.matchAll(/\d[\d\s]{0,5}/g))
+    .map((m) => Number(m[0].replace(/\s/g, "")))
+    .filter((n) => n > 0);
 }
 
 export async function seedPrintersAndCartridges(prisma: PrismaClient) {
@@ -203,7 +209,7 @@ export async function seedPrintersAndCartridges(prisma: PrismaClient) {
           const hasRefillPrice = await prisma.price.findFirst({
             where: { serviceId: refillService.id, cartridgeId: existing.id },
           });
-          if (!hasRefillPrice) {
+          if (!hasRefillPrice && shouldAppearInRefillPrice(existing.type)) {
             const refillPrice = defaultRefillPrice(existing.brand, existing.model, existing.type);
             await prisma.price.create({
               data: {
@@ -232,15 +238,17 @@ export async function seedPrintersAndCartridges(prisma: PrismaClient) {
           cartridgesCreated++;
 
           // Дефолтная цена заправки — без неё картридж не появится в публичном прайсе
-          const refillPrice = defaultRefillPrice(cartBrand, code, type);
-          await prisma.price.create({
-            data: {
-              serviceId: refillService.id,
-              cartridgeId: created.id,
-              amount: refillPrice * 100,
-            },
-          });
-          pricesCreated++;
+          if (shouldAppearInRefillPrice(type)) {
+            const refillPrice = defaultRefillPrice(cartBrand, code, type);
+            await prisma.price.create({
+              data: {
+                serviceId: refillService.id,
+                cartridgeId: created.id,
+                amount: refillPrice * 100,
+              },
+            });
+            pricesCreated++;
+          }
         }
         cartridgeCache.set(cacheKey, cartridgeId);
       }
@@ -260,7 +268,14 @@ export async function seedPrintersAndCartridges(prisma: PrismaClient) {
 
   // Финальная подметалка: для каждого картриджа в базе, у которого нет цены
   // заправки, ставим дефолт. Покрывает картриджи, добавленные руками в CRM.
-  const allCartridges = await prisma.cartridge.findMany();
+  const removedNonRefillPrices = await prisma.price.deleteMany({
+    where: {
+      serviceId: refillService.id,
+      cartridge: { is: { type: { not: "лазерный" } } },
+    },
+  });
+
+  const allCartridges = await prisma.cartridge.findMany({ where: { type: "лазерный" } });
   let backfilled = 0;
   for (const c of allCartridges) {
     const hasPrice = await prisma.price.findFirst({
@@ -277,7 +292,8 @@ export async function seedPrintersAndCartridges(prisma: PrismaClient) {
 
   console.log(
     `  ✓ принтеров: ${printersUpserted}, новых картриджей: ${cartridgesCreated}, ` +
-    `новых цен: ${pricesCreated}, связей: ${linksCreated}, бэкфилл-цен: ${backfilled}`,
+    `новых цен: ${pricesCreated}, связей: ${linksCreated}, бэкфилл-цен: ${backfilled}, ` +
+    `убрано не-лазерных цен: ${removedNonRefillPrices.count}`,
   );
 }
 

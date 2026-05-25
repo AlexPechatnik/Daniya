@@ -47,6 +47,17 @@ const cartridges: CartridgeSeed[] = [
   { brand: "HP", model: "Q2612A", type: "лазерный",                                refill: 500, pageYield: 2000, compatible: "LaserJet 1010, 1020, 3050" },
   { brand: "HP", model: "Q7553A", type: "лазерный",                                refill: 600, pageYield: 3000, compatible: "LaserJet P2014, P2015" },
   { brand: "HP", model: "CF226A", type: "лазерный",                hasChip: true,  refill: 800, pageYield: 3100, compatible: "LaserJet M402, M426" },
+  { brand: "HP", model: "CE278A", type: "лазерный",                                refill: 600, pageYield: 2100, compatible: "LaserJet Pro P1566, P1606, M1536" },
+  { brand: "HP", model: "CF280A", type: "лазерный",                                refill: 700, pageYield: 2700, compatible: "LaserJet Pro 400 M401, M425" },
+  { brand: "HP", model: "CF280X", type: "лазерный",                                refill: 900, pageYield: 6900, compatible: "LaserJet Pro 400 M401, M425" },
+  { brand: "HP", model: "CF400A", type: "лазерный",                hasChip: true,  refill: 800, pageYield: 1500, compatible: "Color LaserJet Pro M252, M277" },
+  { brand: "HP", model: "CF401A", type: "лазерный",                hasChip: true,  refill: 800, pageYield: 1400, compatible: "Color LaserJet Pro M252, M277" },
+  { brand: "HP", model: "CF402A", type: "лазерный",                hasChip: true,  refill: 800, pageYield: 1400, compatible: "Color LaserJet Pro M252, M277" },
+  { brand: "HP", model: "CF403A", type: "лазерный",                hasChip: true,  refill: 800, pageYield: 1400, compatible: "Color LaserJet Pro M252, M277" },
+  { brand: "HP", model: "CF500A", type: "лазерный",                hasChip: true,  refill: 850, pageYield: 1400, compatible: "Color LaserJet Pro M254, M280, M281" },
+  { brand: "HP", model: "CF501A", type: "лазерный",                hasChip: true,  refill: 850, pageYield: 1300, compatible: "Color LaserJet Pro M254, M280, M281" },
+  { brand: "HP", model: "CF502A", type: "лазерный",                hasChip: true,  refill: 850, pageYield: 1300, compatible: "Color LaserJet Pro M254, M280, M281" },
+  { brand: "HP", model: "CF503A", type: "лазерный",                hasChip: true,  refill: 850, pageYield: 1300, compatible: "Color LaserJet Pro M254, M280, M281" },
   // ─── Canon лазер ──────────────────────────────────────────────────────────
   { brand: "Canon", model: "725",   type: "лазерный", popular: true, hasChip: true, refill: 600, pageYield: 1600, compatible: "LBP6000, LBP6020, MF3010" },
   { brand: "Canon", model: "728",   type: "лазерный", popular: true, hasChip: true, refill: 650, pageYield: 2100, compatible: "MF4410, MF4570, MF4730" },
@@ -55,19 +66,27 @@ const cartridges: CartridgeSeed[] = [
   { brand: "Canon", model: "703",   type: "лазерный",                               refill: 550, pageYield: 2000, compatible: "LBP2900, LBP3000" },
   { brand: "Canon", model: "712",   type: "лазерный",                               refill: 550, pageYield: 1500, compatible: "LBP3010, LBP3100" },
   { brand: "Canon", model: "FX-10", type: "лазерный",                               refill: 550, pageYield: 2000, compatible: "MF4018, MF4140, L100" },
+  { brand: "Canon", model: "052",   type: "лазерный",                hasChip: true, refill: 800, pageYield: 3100, compatible: "LBP212dw, LBP214dw, MF421dw, MF426dw" },
+  { brand: "Canon", model: "052H",  type: "лазерный",                hasChip: true, refill: 1000, pageYield: 9200, compatible: "LBP212dw, LBP214dw, MF421dw, MF426dw" },
+  { brand: "Canon", model: "055",   type: "лазерный",                hasChip: true, refill: 900, pageYield: 2300, compatible: "LBP663Cdw, MF742Cdw, MF744Cdw" },
+  { brand: "Canon", model: "055H",  type: "лазерный",                hasChip: true, refill: 1100, pageYield: 5900, compatible: "LBP663Cdw, MF742Cdw, MF744Cdw" },
   // ─── Samsung — почти все с чипами ─────────────────────────────────────────
   { brand: "Samsung", model: "MLT-D101S", type: "лазерный", popular: true, hasChip: true, refill: 650, pageYield: 1500, compatible: "ML-2160, ML-2165, SCX-3400" },
   { brand: "Samsung", model: "MLT-D104S", type: "лазерный",                hasChip: true, refill: 650, pageYield: 1500, compatible: "ML-1660, ML-1860, SCX-3200" },
   { brand: "Samsung", model: "MLT-D111S", type: "лазерный", popular: true, hasChip: true, refill: 700, pageYield: 1000, compatible: "M2020, M2070" },
   { brand: "Samsung", model: "MLT-D108S", type: "лазерный",                hasChip: true, refill: 650, pageYield: 1500, compatible: "ML-1640, ML-2240" },
   { brand: "Samsung", model: "MLT-D205L", type: "лазерный",                hasChip: true, refill: 800, pageYield: 5000, compatible: "ML-3310, ML-3710, SCX-4833" },
+  { brand: "Samsung", model: "MLT-D115L", type: "лазерный",                hasChip: true, refill: 750, pageYield: 3000, compatible: "Xpress M2620, M2670, M2820, M2870" },
+  { brand: "Samsung", model: "MLT-D116L", type: "лазерный",                hasChip: true, refill: 750, pageYield: 3000, compatible: "Xpress M2625, M2675, M2825, M2875" },
   // ─── Brother ──────────────────────────────────────────────────────────────
   { brand: "Brother", model: "TN-1075", type: "лазерный", popular: true,                  refill: 600, pageYield: 1000, compatible: "HL-1110, DCP-1510, MFC-1815" },
   { brand: "Brother", model: "TN-2080", type: "лазерный",                                 refill: 700, pageYield: 700,  compatible: "HL-2130, DCP-7055" },
   { brand: "Brother", model: "TN-2275", type: "лазерный",                hasChip: true,   refill: 700, pageYield: 2600, compatible: "HL-2240, MFC-7860" },
+  { brand: "Brother", model: "TN-3380", type: "лазерный",                                 refill: 900, pageYield: 8000, compatible: "HL-5440D, HL-5450DN, DCP-8110DN" },
   // ─── Xerox ────────────────────────────────────────────────────────────────
   { brand: "Xerox", model: "106R02773", type: "лазерный",              hasChip: true, refill: 700, pageYield: 1500, compatible: "Phaser 3020, WC 3025" },
   { brand: "Xerox", model: "106R01487", type: "лазерный",              hasChip: true, refill: 750, pageYield: 4100, compatible: "WorkCentre 3210, 3220" },
+  { brand: "Xerox", model: "106R03532", type: "лазерный",              hasChip: true, refill: 800, pageYield: 3000, compatible: "Phaser 3330, WorkCentre 3335, 3345" },
   // ─── Kyocera ──────────────────────────────────────────────────────────────
   { brand: "Kyocera", model: "TK-1110", type: "лазерный",              hasChip: true, refill: 800, pageYield: 2500, compatible: "FS-1040, FS-1020, FS-1120" },
   { brand: "Kyocera", model: "TK-1120", type: "лазерный",              hasChip: true, refill: 850, pageYield: 3000, compatible: "FS-1025, FS-1060, FS-1125" },
@@ -114,7 +133,7 @@ async function main() {
         pageYield: c.pageYield ?? null,
       },
     });
-    if (refillService) {
+    if (refillService && c.type === "лазерный") {
       const existing = await prisma.price.findFirst({ where: { serviceId: refillService.id, cartridgeId: cart.id } });
       if (existing) {
         await prisma.price.update({ where: { id: existing.id }, data: { amount: c.refill * 100 } });
