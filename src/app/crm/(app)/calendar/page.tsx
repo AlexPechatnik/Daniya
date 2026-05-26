@@ -1,61 +1,67 @@
 import { prisma } from "@/lib/db";
 import { CalendarTimeline } from "@/components/crm/CalendarTimeline";
-import { startOfWeek, addDays } from "date-fns";
+import { startOfWeek, addDays, startOfMonth, endOfMonth } from "date-fns";
 import { findFreeSlots } from "@/lib/scheduling";
 import { shortenSpbAddress } from "@/lib/address";
 
 export const dynamic = "force-dynamic";
 
+type View = "day" | "week" | "month";
+
 export default async function CalendarPage({ searchParams }: { searchParams: Promise<{ from?: string; view?: string }> }) {
-  const { from, view } = await searchParams;
+  const { from, view: viewRaw } = await searchParams;
+  const view: View = (viewRaw === "week" || viewRaw === "month") ? (viewRaw as View) : "day";
   const anchor = from ? parseLocalDay(from) : new Date();
-  // Загружаем неделю вокруг якоря (для view=day всё равно есть запас)
-  const start = startOfWeek(anchor, { weekStartsOn: 1 });
-  const end = addDays(start, 7);
+
+  // Диапазон загрузки заявок зависит от вида:
+  //   day  → ближайшие 7 дней (для верхней полосы контекста)
+  //   week → ровно неделя
+  //   month → весь месяц + хвосты до полной сетки 7×6
+  const weekStart = startOfWeek(anchor, { weekStartsOn: 1 });
+  let rangeStart: Date;
+  let rangeEnd: Date;
+  if (view === "month") {
+    rangeStart = startOfWeek(startOfMonth(anchor), { weekStartsOn: 1 });
+    rangeEnd = addDays(startOfWeek(endOfMonth(anchor), { weekStartsOn: 1 }), 7);
+  } else {
+    rangeStart = weekStart;
+    rangeEnd = addDays(weekStart, 7);
+  }
 
   const [requests, unscheduled, holidays] = await Promise.all([
     prisma.request.findMany({
-      where: { scheduledAt: { gte: start, lt: end }, status: { not: "CANCELLED" } },
+      where: { scheduledAt: { gte: rangeStart, lt: rangeEnd }, status: { not: "CANCELLED" } },
       include: { client: true, service: true, address: true, assignedTo: true },
       orderBy: { scheduledAt: "asc" },
     }),
     prisma.request.findMany({
-      where: {
-        scheduledAt: null,
-        status: { in: ["NEW", "ACCEPTED"] },
-      },
+      where: { scheduledAt: null, status: { in: ["NEW", "ACCEPTED"] } },
       include: { client: true, service: true, address: true, assignedTo: true },
       orderBy: [{ createdAt: "desc" }],
       take: 30,
     }),
-    prisma.holiday.findMany({
-      where: { date: { gte: start, lt: end } },
-    }),
+    prisma.holiday.findMany({ where: { date: { gte: rangeStart, lt: rangeEnd } } }),
   ]);
 
-  const days = Array.from({ length: 7 }).map((_, i) => addDays(start, i));
+  // Карта (день → массив заявок) — даём в компонент готовое, чтобы не парсить там
+  const days: string[] = [];
+  for (let d = new Date(rangeStart); d < rangeEnd; d = addDays(d, 1)) days.push(toDateKey(d));
 
-  // Свободные слоты на каждый день недели — для отображения в agenda как «дырки»
+  // Свободные слоты считаем только для дня в режиме «день» — это дорого, не нужно
+  // обсчитывать все 30+ дней месяца.
+  const visibleSlotDays = view === "day" ? [anchor] : [];
   const freeSlotsPerDay = await Promise.all(
-    days.map(async (d) => {
-      const slots = await findFreeSlots(d);
-      return {
-        date: toDateKey(d),
-        slots: slots.map((s) => s.start.toISOString()),
-      };
-    }),
+    visibleSlotDays.map(async (d) => ({ date: toDateKey(d), slots: (await findFreeSlots(d)).map((s) => s.start.toISOString()) })),
   );
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">План выездов</h1>
-          <p className="mt-1 text-sm text-muted-fg">Кто куда едет, какие заявки без времени и где есть окно.</p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">План выездов</h1>
+        <p className="mt-1 text-sm text-muted-fg">Кто куда едет, какие заявки без времени и где есть окно.</p>
       </div>
       <CalendarTimeline
-        days={days.map(toDateKey)}
+        days={days}
         requests={requests.map((r) => ({
           id: r.id,
           number: r.number,
@@ -90,7 +96,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
         holidays={holidays.map((h) => ({ date: h.date.toISOString().slice(0, 10), reason: h.reason || "Выходной" }))}
         freeSlots={freeSlotsPerDay}
         anchor={toDateKey(anchor)}
-        view={(view as any) || "day"}
+        view={view}
       />
     </div>
   );
