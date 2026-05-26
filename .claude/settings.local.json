@@ -45,7 +45,13 @@
       "PowerShell($env:PYTHONIOENCODING=\"utf-8\"; & \"C:\\\\Users\\\\user\\\\AppData\\\\Local\\\\Python\\\\bin\\\\python.exe\" -c \"import pandas as pd; xl = pd.ExcelFile\\(r'E:\\\\Users\\\\Nigulak\\\\Загрузки\\\\top100_printers_cartridges_spb_russia_with_epson_inkjet.xlsx'\\); print\\('Sheets:', xl.sheet_names\\)\")",
       "Bash(mkdir -p C:/danya/.claude)",
       "mcp__Claude_Preview__preview_start",
-      "Bash(curl -s \"http://localhost:53633/api/public/cartridges-for-printer?q=HP+M404\")"
+      "Bash(curl -s \"http://localhost:53633/api/public/cartridges-for-printer?q=HP+M404\")",
+      "Bash(npx next *)",
+      "Bash(PORT=53999 npm run start)",
+      "Bash(curl -sS -m 10 -o /tmp/page.html -w \"%{http_code}\" \"http://localhost:53999/\")",
+      "Read(//tmp/**)",
+      "Bash(pkill -f \"next start\")",
+      "Bash(pkill -f \"next-server\")"
     ]
   }
 }
