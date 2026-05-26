@@ -99,6 +99,46 @@ export function RequestForm() {
     return () => window.removeEventListener("printcare:calculator:apply", applyFromStorage);
   }, []);
 
+  // Передача из таблицы прайса: пользователь нажал «Заказать ...» на строке.
+  // Подставляем картридж + услугу, в комментарий — название и стартовую цену.
+  useEffect(() => {
+    function applyPricePick() {
+      let raw: string | null = null;
+      try { raw = sessionStorage.getItem("printcare:price:pick"); } catch { return; }
+      if (!raw) return;
+      try {
+        const data = JSON.parse(raw) as {
+          cartridge: string | null;
+          compatible: string | null;
+          serviceSlug: string;
+          serviceName: string;
+          amount: number;
+        };
+        if (data.cartridge && !userTouchedCartridge.current) setCartridge(data.cartridge);
+        if (data.compatible && !printer) setPrinter(data.compatible.split(",")[0]?.trim() || "");
+        setServiceSlug(data.serviceSlug);
+        // Маппинг slug → kind для совместимости с дропдауном «Услуга»
+        const slugToKind: Record<string, string> = {
+          zapravka: "REFILL",
+          zamena: "REPLACE",
+          diagnostika: "DIAGNOSTIC",
+          remont: "REPAIR",
+        };
+        setServiceKind(slugToKind[data.serviceSlug] || "DIAGNOSTIC");
+        if (!userTouchedComment.current) {
+          const priceLine = data.amount ? ` (от ${data.amount.toLocaleString("ru-RU")} ₽)` : "";
+          setComment(`Из прайса: ${data.serviceName.toLowerCase()}${priceLine}${data.cartridge ? ` · ${data.cartridge}` : ""}`);
+        }
+        sessionStorage.removeItem("printcare:price:pick");
+      } catch {
+        sessionStorage.removeItem("printcare:price:pick");
+      }
+    }
+    applyPricePick();
+    window.addEventListener("printcare:price:apply", applyPricePick);
+    return () => window.removeEventListener("printcare:price:apply", applyPricePick);
+  }, []);
+
   // Передача из inkjet-блока на странице прайса: туда нажали «услугу»,
   // тут подставляем принтер + предлагаемую услугу.
   useEffect(() => {

@@ -542,12 +542,7 @@ function ServiceRows({
                     <Fact icon={Layers} label="Техника" value={serviceAppliesTo(row)} />
                     <Fact icon={Star} label="Цена" value="точная после осмотра" />
                   </div>
-                  <a
-                    href="/#request"
-                    className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-fg shadow-sm transition hover:opacity-90"
-                  >
-                    Заказать «{row.serviceName.toLowerCase()}»
-                  </a>
+                  <OrderButton row={row} />
                 </div>
               )}
             </li>
@@ -574,13 +569,44 @@ function ExpandedCartridge({ row }: { row: PriceRow }) {
         </div>
       )}
       {row.note && <div className="mt-3 text-xs text-muted-fg">{row.note}</div>}
-      <a
-        href="/#request"
-        className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-fg shadow-sm transition hover:opacity-90"
-      >
-        Заказать «{row.serviceName.toLowerCase()}»
-      </a>
+      <OrderButton row={row} />
     </div>
+  );
+}
+
+/**
+ * Кнопка «Заказать ...» на раскрытой строке прайса.
+ * Перед переходом на /#request сохраняет в sessionStorage картридж и услугу —
+ * RequestForm на главной читает payload и предзаполняет соответствующие поля.
+ */
+const PRICE_PICK_KEY = "printcare:price:pick";
+function OrderButton({ row }: { row: PriceRow }) {
+  const c = row.cartridge;
+  return (
+    <a
+      href="/#request"
+      onClick={() => {
+        try {
+          sessionStorage.setItem(
+            PRICE_PICK_KEY,
+            JSON.stringify({
+              cartridge: c ? `${c.brand} ${c.model}` : null,
+              compatible: c?.compatible || null,
+              serviceSlug: row.serviceSlug,
+              serviceName: row.serviceName,
+              amount: row.amount,
+              ts: Date.now(),
+            }),
+          );
+          window.dispatchEvent(new CustomEvent("printcare:price:apply"));
+        } catch {
+          // приватный режим / квота — не критично, форма просто откроется пустой
+        }
+      }}
+      className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-fg shadow-sm transition hover:opacity-90"
+    >
+      Заказать «{row.serviceName.toLowerCase()}»
+    </a>
   );
 }
 
