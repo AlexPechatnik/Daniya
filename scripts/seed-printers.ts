@@ -164,7 +164,15 @@ export async function seedPrintersAndCartridges(prisma: PrismaClient) {
   let cartridgesCreated = 0;
   let pricesCreated = 0;
   let linksCreated = 0;
+  let printTypeFixed = 0;
   const cartridgeCache = new Map<string, string>(); // brand|model → id
+
+  /** Определение типа печати по источнику (kind + brand). */
+  const detectType = (kind: string | undefined, brand: string): "laser" | "inkjet" =>
+    /струй|ecotank|inktank|смарт\s*танк|smart\s*tank|megatank|снпч|deskjet|officejet|inkjet/i.test(kind || "") ||
+    brand === "Epson"
+      ? "inkjet"
+      : "laser";
 
   for (const r of rows) {
     const { family, aliases } = parseFamily(r.model);
@@ -174,7 +182,7 @@ export async function seedPrintersAndCartridges(prisma: PrismaClient) {
 
     // printType — явное поле в БД, а не regex на лету. Дефолтим из kind,
     // но дальше CRM может переопределить вручную через xlsx.
-    const printType = /струй|EcoTank|InkTank|снпч/i.test(r.kind || "") || brand === "Epson" ? "inkjet" : "laser";
+    const printType = detectType(r.kind, brand);
 
     const printer = await prisma.printerModel.upsert({
       where: { brand_family: { brand, family } },
@@ -292,6 +300,27 @@ export async function seedPrintersAndCartridges(prisma: PrismaClient) {
     }
   }
 
+  // Бэкфилл printType: исправляем ошибочные «laser» там, где источник
+  // уверенно говорит «inkjet» (Epson EcoTank и т.п.). Делаем только в
+  // направлении laser → inkjet, чтобы не затирать осознанные ручные правки
+  // через xlsx. Обратные кейсы (Epson, кейс «лазерный») админ правит руками.
+  for (const r of rows) {
+    const { family } = parseFamily(r.model);
+    const expected = detectType(r.kind, r.brand.trim());
+    if (expected !== "inkjet") continue;
+    const current = await prisma.printerModel.findUnique({
+      where: { brand_family: { brand: r.brand.trim(), family } },
+      select: { id: true, printType: true },
+    });
+    if (current && current.printType === "laser") {
+      await prisma.printerModel.update({
+        where: { id: current.id },
+        data: { printType: "inkjet" },
+      });
+      printTypeFixed++;
+    }
+  }
+
   // Финальная подметалка: для каждого картриджа в базе, у которого нет цены
   // заправки, ставим дефолт. Покрывает картриджи, добавленные руками в CRM.
   const removedNonRefillPrices = await prisma.price.deleteMany({
@@ -337,7 +366,8 @@ export async function seedPrintersAndCartridges(prisma: PrismaClient) {
   console.log(
     `  ✓ принтеров: ${printersUpserted}, новых картриджей: ${cartridgesCreated}, ` +
     `новых цен: ${pricesCreated}, связей: ${linksCreated}, бэкфилл-цен: ${backfilled}, ` +
-    `убрано не-лазерных цен: ${removedNonRefillPrices.count}, адресов сокращено: ${shortened}`,
+    `убрано не-лазерных цен: ${removedNonRefillPrices.count}, адресов сокращено: ${shortened}, ` +
+    `исправлено printType: ${printTypeFixed}`,
   );
 }
 

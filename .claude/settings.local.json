@@ -58,7 +58,12 @@
       "Bash(curl -s -b /tmp/cookies.txt \"http://localhost:3000/api/public/cartridges-for-printer?q=Epson+L805\")",
       "Bash(curl -s -b /tmp/cookies.txt \"http://localhost:3000/api/public/cartridges-for-printer?q=HP+M404\")",
       "Bash(git update-index *)",
-      "Bash(chmod +x scripts/deploy.sh)"
+      "Bash(chmod +x scripts/deploy.sh)",
+      "Bash(cat)",
+      "Bash(node /tmp/all_inkjet.mjs)",
+      "Bash(npx tsx *)",
+      "Bash(cp /tmp/check.ts C:/danya/scripts/check-types.ts)",
+      "Bash(rm C:/danya/scripts/check-types.ts)"
     ]
   }
 }
