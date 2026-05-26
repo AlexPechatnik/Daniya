@@ -42,6 +42,7 @@ export default async function HomePage() {
       isOriginal: c.isOriginal,
       hasChip: c.hasChip,
       chipPrice: c.chipPrice,
+      compatible: c.compatible || null, // чтобы поиск ловил «M404» и т.п.
       priceByService, // serviceId → ₽ (копейки), как в /price и CRM
     };
   });

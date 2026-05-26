@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Sparkles, Check, Plus, Cpu, Info, Trash2, ArrowRight } from "lucide-react";
+import { Search, Sparkles, Check, Plus, Cpu, Info, Trash2, ArrowRight, Droplet } from "lucide-react";
 import { formatRub } from "@/lib/utils";
 import { Reveal } from "./Reveal";
 
@@ -14,6 +14,9 @@ type Cartridge = {
   isOriginal: boolean;
   hasChip: boolean;
   chipPrice: number | null; // копейки
+  // Текстовый список совместимых принтеров — нужен для поиска
+  // («M404» → находит CF259A/CF259X у которых это в compatible).
+  compatible?: string | null;
   // serviceId → цена этой услуги для этого картриджа (копейки). Общий
   // источник с /price и CRM — данные приходят из prisma.price.
   priceByService: Record<string, number>;
@@ -62,6 +65,14 @@ export function Calculator({
   const [brand, setBrand] = useState<string>("all");
   const [sort, setSort] = useState<"popular" | "brand" | "price">("popular");
   const [cart, setCart] = useState<CartItem[]>([]);
+  // Fallback-подсказка: когда в локальной выборке 0 совпадений, спрашиваем
+  // API «принтер → картридж». Для лазера предлагаем картриджи, для струйника
+  // показываем «это струйка, оставьте заявку».
+  const [printerHint, setPrinterHint] = useState<
+    | null
+    | { printType: "laser"; printer: string; cartridges: { brand: string; model: string }[] }
+    | { printType: "inkjet"; printer: string }
+  >(null);
 
   const brands = useMemo(() => Array.from(new Set(cartridges.map((c) => c.brand))).sort(), [cartridges]);
   const filtered = useMemo(() => {
@@ -69,7 +80,13 @@ export function Calculator({
     let list = cartridges.filter((c) => {
       if (brand !== "all" && c.brand !== brand) return false;
       if (!q) return true;
-      return c.model.toLowerCase().includes(q) || c.brand.toLowerCase().includes(q);
+      // Ищем и по картриджу, и по модели принтера в compatible — тогда
+      // запрос «M404» находит CF259A/CF259X, у которых это в совместимости.
+      return (
+        c.model.toLowerCase().includes(q) ||
+        c.brand.toLowerCase().includes(q) ||
+        (c.compatible || "").toLowerCase().includes(q)
+      );
     });
     list.sort((a, b) => {
       if (sort === "popular") return Number(b.isPopular) - Number(a.isPopular) || a.model.localeCompare(b.model);
@@ -81,6 +98,49 @@ export function Calculator({
     });
     return list.slice(0, 50);
   }, [cartridges, query, brand, sort, activeServiceId, baseByService]);
+
+  // Когда локальный поиск ничего не нашёл — пробуем как «модель принтера».
+  // Это даёт две полезные подсказки:
+  //   • лазер с подходящими картриджами → чипы для добавления в расчёт
+  //   • струйный принтер → сообщение, что калькулятор не подходит, ссылка на заявку
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2 || filtered.length > 0) {
+      setPrinterHint(null);
+      return;
+    }
+    const ctrl = new AbortController();
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/public/cartridges-for-printer?q=${encodeURIComponent(q)}`, {
+          signal: ctrl.signal,
+        });
+        const data = await res.json();
+        if (!data.printer) {
+          setPrinterHint(null);
+          return;
+        }
+        const printerName = `${data.printer.brand} ${data.printer.family}`;
+        if (data.printType === "inkjet") {
+          setPrinterHint({ printType: "inkjet", printer: printerName });
+        } else if (Array.isArray(data.cartridges) && data.cartridges.length > 0) {
+          setPrinterHint({
+            printType: "laser",
+            printer: printerName,
+            cartridges: data.cartridges.map((c: any) => ({ brand: c.brand, model: c.model })),
+          });
+        } else {
+          setPrinterHint(null);
+        }
+      } catch (e: any) {
+        if (e?.name !== "AbortError") setPrinterHint(null);
+      }
+    }, 300);
+    return () => {
+      clearTimeout(t);
+      ctrl.abort();
+    };
+  }, [query, filtered.length]);
 
   function addToCart(c: Cartridge) {
     setCart((arr) => [
@@ -194,8 +254,73 @@ export function Calculator({
                 </div>
 
                 <div className="max-h-80 overflow-auto rounded-xl border border-border divide-y divide-border bg-bg/40">
-                  {filtered.length === 0 && (
-                    <div className="p-6 text-center text-sm text-muted-fg">Не нашли — впишите модель в комментарий к заявке.</div>
+                  {filtered.length === 0 && !printerHint && (
+                    <div className="p-6 text-center text-sm text-muted-fg">
+                      Не нашли — впишите модель в комментарий к заявке.
+                    </div>
+                  )}
+
+                  {/* Лазерный принтер найден по введённой модели — предлагаем картриджи */}
+                  {filtered.length === 0 && printerHint?.printType === "laser" && (
+                    <div className="p-4 text-sm">
+                      <div className="text-muted-fg">
+                        Это <span className="text-fg">{printerHint.printer}</span> — подходят картриджи:
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {printerHint.cartridges.map((sug) => {
+                          const found = cartridges.find(
+                            (c) => c.brand === sug.brand && c.model === sug.model,
+                          );
+                          if (!found) return null;
+                          return (
+                            <button
+                              key={`${sug.brand}-${sug.model}`}
+                              type="button"
+                              onClick={() => addToCart(found)}
+                              className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-medium text-primary hover:bg-primary/20"
+                            >
+                              <Plus className="h-3 w-3" />
+                              {sug.brand} {sug.model}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Струйный принтер — калькулятор картриджей не подходит */}
+                  {filtered.length === 0 && printerHint?.printType === "inkjet" && (
+                    <div className="p-5 text-sm">
+                      <div className="flex items-center gap-2 text-sky-400">
+                        <Droplet className="h-4 w-4" />
+                        <span className="font-medium">{printerHint.printer}</span>
+                        <span className="text-xs text-muted-fg">· струйный</span>
+                      </div>
+                      <p className="mt-2 text-xs text-muted-fg leading-relaxed">
+                        Калькулятор считает заправку лазерных картриджей. Для струйных моделей
+                        цена зависит от состояния головки и СНПЧ — нужна диагностика мастером.
+                      </p>
+                      <a
+                        href="#request"
+                        onClick={() => {
+                          try {
+                            sessionStorage.setItem(
+                              "printcare:inkjet:request",
+                              JSON.stringify({
+                                printer: printerHint.printer,
+                                serviceSlug: "inkjet-diagnostics",
+                                serviceName: "Диагностика струйного принтера",
+                                ts: Date.now(),
+                              }),
+                            );
+                            window.dispatchEvent(new CustomEvent("printcare:inkjet:apply"));
+                          } catch {}
+                        }}
+                        className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-fg hover:opacity-90"
+                      >
+                        Оставить заявку на диагностику <ArrowRight className="h-3 w-3" />
+                      </a>
+                    </div>
                   )}
                   {filtered.map((c) => {
                     const inCart = cart.some((it) => it.cartridge.id === c.id);

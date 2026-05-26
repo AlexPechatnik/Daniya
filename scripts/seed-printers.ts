@@ -167,8 +167,9 @@ export async function seedPrintersAndCartridges(prisma: PrismaClient) {
   let printTypeFixed = 0;
   const cartridgeCache = new Map<string, string>(); // brand|model → id
 
-  /** Определение типа печати по источнику (kind + brand). */
-  const detectType = (kind: string | undefined, brand: string): "laser" | "inkjet" =>
+  /** Определение типа печати по источнику (kind + brand). Не путать с detectType
+   *  ниже — та про тип _картриджа_ (лазерный/струйный), эта про тип _принтера_. */
+  const detectPrinterType = (kind: string | undefined, brand: string): "laser" | "inkjet" =>
     /струй|ecotank|inktank|смарт\s*танк|smart\s*tank|megatank|снпч|deskjet|officejet|inkjet/i.test(kind || "") ||
     brand === "Epson"
       ? "inkjet"
@@ -182,7 +183,7 @@ export async function seedPrintersAndCartridges(prisma: PrismaClient) {
 
     // printType — явное поле в БД, а не regex на лету. Дефолтим из kind,
     // но дальше CRM может переопределить вручную через xlsx.
-    const printType = detectType(r.kind, brand);
+    const printType = detectPrinterType(r.kind, brand);
 
     const printer = await prisma.printerModel.upsert({
       where: { brand_family: { brand, family } },
@@ -306,7 +307,7 @@ export async function seedPrintersAndCartridges(prisma: PrismaClient) {
   // через xlsx. Обратные кейсы (Epson, кейс «лазерный») админ правит руками.
   for (const r of rows) {
     const { family } = parseFamily(r.model);
-    const expected = detectType(r.kind, r.brand.trim());
+    const expected = detectPrinterType(r.kind, r.brand.trim());
     if (expected !== "inkjet") continue;
     const current = await prisma.printerModel.findUnique({
       where: { brand_family: { brand: r.brand.trim(), family } },
