@@ -148,9 +148,53 @@ export async function seedPrintersAndCartridges(prisma: PrismaClient) {
   const refillService = await prisma.service.findUnique({ where: { slug: "zapravka" } });
   if (!refillService) throw new Error("Сервис 'zapravka' не найден — сначала запусти основной seed");
 
-  // Очистка legacy: «чернила» Epson/HP/Canon, которые когда-то сидились как
-  // картриджи лазерной модели — теперь не наш расходник. Сначала чистим Price,
-  // потом Cartridge: onDelete на Price.cartridge — SetNull, без удаления.
+  // 1. Нормализация типа картриджа. В БД исторически могут лежать «laser»/«inkjet»
+  // (после ранних импортов) — приводим к каноническим «лазерный»/«струйный».
+  const inkjetVariants = ["inkjet", "ink", "струйка", "ink-jet"];
+  const laserVariants = ["laser", "лазер"];
+  await prisma.cartridge.updateMany({
+    where: { type: { in: inkjetVariants } },
+    data: { type: "струйный" },
+  });
+  await prisma.cartridge.updateMany({
+    where: { type: { in: laserVariants } },
+    data: { type: "лазерный" },
+  });
+
+  // 2. Принудительная переклассификация: Epson чернила (исключительно цифровой код
+  // или T-серия) — это не картридж. Иногда они попадали в БД как «лазерный»
+  // (баг импорта/раннего сидинга), поэтому detection делаем по brand+model,
+  // а не только по полю type.
+  const epsonInks = await prisma.cartridge.findMany({
+    where: {
+      brand: "Epson",
+      OR: [
+        { model: { startsWith: "T" } }, // T0811, T774
+        // покрываем чисто-цифровые коды 001/003/005/057/103/108/664/673/774…
+        // через явный список в seed-данных тяжело, поэтому достаём всех Epson
+        // и фильтруем в JS ниже.
+      ],
+    },
+  });
+  const allEpson = await prisma.cartridge.findMany({ where: { brand: "Epson" } });
+  const inkjetSet = new Set([
+    ...epsonInks.map((c) => c.id),
+    // Epson струйные коды: чисто цифровые (001/057/664), XL-варианты (29XL),
+    // L-серия (L1210 — это вообще модель принтера, попавшая в картриджи),
+    // и Stylus T-серия. Всё это не наш расходник.
+    ...allEpson
+      .filter((c) => /^\d{2,4}(?:XL)?$/i.test(c.model) || /^L\d{3,5}$/i.test(c.model) || /^T\d{3,5}$/i.test(c.model))
+      .map((c) => c.id),
+  ]);
+  if (inkjetSet.size > 0) {
+    await prisma.cartridge.updateMany({
+      where: { id: { in: [...inkjetSet] } },
+      data: { type: "струйный" },
+    });
+  }
+
+  // 3. Удаление legacy: «чернила» больше не наш расходник. Сначала Price,
+  // потом связи PrinterCartridge, потом сами Cartridge.
   const inkCartridges = await prisma.cartridge.findMany({ where: { type: "струйный" } });
   if (inkCartridges.length > 0) {
     const ids = inkCartridges.map((c) => c.id);

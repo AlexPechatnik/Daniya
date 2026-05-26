@@ -18,9 +18,10 @@ export default async function HomePage() {
   const [services, cartridges, basePrices] = await Promise.all([
     prisma.service.findMany({ orderBy: { name: "asc" } }),
     prisma.cartridge.findMany({
-      // В калькулятор не пускаем «чернила» — для струйки используется
-      // отдельный сценарий (форма заявки → услуга обслуживания).
-      where: { NOT: { type: "струйный" } },
+      // Только лазерные картриджи. Whitelist надёжнее отрицания: если в БД
+      // случайно лежат записи с неканоническим type (напр. «laser» вместо
+      // «лазерный»), они не просочатся в калькулятор.
+      where: { type: "лазерный" },
       include: { prices: { select: { serviceId: true, amount: true } } },
       orderBy: [{ isPopular: "desc" }, { brand: "asc" }, { model: "asc" }],
     }),

@@ -105,7 +105,13 @@ export async function POST(req: NextRequest) {
         if (!brand || !model) { r.skipped++; continue; }
         const chipRub = numOrNull(row["Цена чипа"]);
         const data = {
-          type: trim(row["Тип"]) || "лазерный",
+          // Нормализуем тип: принимаем русский и английский варианты,
+          // на выходе всегда «лазерный»/«струйный» (канон в БД).
+          type: (() => {
+            const t = trim(row["Тип"]).toLowerCase();
+            if (["струйный", "inkjet", "ink", "ink-jet"].includes(t)) return "струйный";
+            return "лазерный";
+          })(),
           isPopular: boolRu(row["Хит"]),
           isOriginal: boolRu(row["Оригинал"]),
           hasChip: boolRu(row["Чип"]),
