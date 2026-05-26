@@ -1,0 +1,4 @@
+# Shell-скрипты должны иметь LF, иначе bash на сервере падает с
+# "$'\r': command not found". Без этого Windows-git переводит LF в CRLF.
+*.sh text eol=lf
+*.mjs text eol=lf

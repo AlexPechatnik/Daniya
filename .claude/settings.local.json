@@ -56,7 +56,9 @@
       "Bash(curl -s -b /tmp/cookies.txt http://localhost:3000/api/price/export -o /tmp/price.xlsx -w \"export=%{http_code} size=%{size_download}\\\\n\")",
       "Bash(curl -s -b /tmp/cookies.txt -X POST http://localhost:3000/api/price/import -F file=@C:/Users/user/AppData/Local/Temp/price-edited.xlsx)",
       "Bash(curl -s -b /tmp/cookies.txt \"http://localhost:3000/api/public/cartridges-for-printer?q=Epson+L805\")",
-      "Bash(curl -s -b /tmp/cookies.txt \"http://localhost:3000/api/public/cartridges-for-printer?q=HP+M404\")"
+      "Bash(curl -s -b /tmp/cookies.txt \"http://localhost:3000/api/public/cartridges-for-printer?q=HP+M404\")",
+      "Bash(git update-index *)",
+      "Bash(chmod +x scripts/deploy.sh)"
     ]
   }
 }
