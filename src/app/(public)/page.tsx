@@ -56,7 +56,10 @@ export default async function HomePage() {
       <WhyUs />
       <UnderTheHood />
       <Calculator
-        services={services.map((s) => ({ id: s.id, name: s.name, kind: s.kind, slug: s.slug }))}
+        services={services.map((s) => ({
+          id: s.id, name: s.name, kind: s.kind, slug: s.slug,
+          cartridgeBased: s.cartridgeBased,
+        }))}
         cartridges={cartridgesPlain}
         baseByService={baseByService}
       />

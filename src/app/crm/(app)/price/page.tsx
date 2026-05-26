@@ -61,14 +61,21 @@ export default async function PriceAdminPage() {
 
       {/* Импорт — в свёрнутом блоке, чтобы не отвлекать от таблицы */}
       <details className="card rounded-2xl p-5">
-        <summary className="cursor-pointer text-sm font-semibold">Импорт прайса из Excel</summary>
-        <div className="mt-4 space-y-2 text-sm text-muted-fg">
+        <summary className="cursor-pointer text-sm font-semibold">Импорт прайс-системы из Excel</summary>
+        <div className="mt-4 space-y-3 text-sm text-muted-fg">
           <p>
-            Колонки: <code>Услуга</code> (slug), <code>Бренд</code>, <code>Модель</code>, <code>Цена</code> (₽), <code>Заметка</code> (опционально).
+            Сначала нажмите <b>«Скачать xlsx»</b> — это полный экспорт системы.
+            В файле 5 листов, любой из них можно редактировать и грузить обратно:
           </p>
-          <p>Доступные slug услуг: {services.map((s) => s.slug).join(", ")}</p>
+          <ul className="ml-4 list-disc space-y-1 text-xs">
+            <li><b>Услуги</b> — каталог услуг: категория, тип принтера, базовая цена, заметка</li>
+            <li><b>Картриджи</b> — расходники: тип, чип, ресурс, совместимость</li>
+            <li><b>Принтеры</b> — модели: <code>laser</code> или <code>inkjet</code></li>
+            <li><b>Совместимость</b> — связи принтер ↔ картридж</li>
+            <li><b>Цены</b> — итоговый прайс: услуга × картридж</li>
+          </ul>
           <p className="text-xs">
-            Совет: сначала «Скачать xlsx» — получите готовый шаблон со всеми текущими ценами. Поправьте в Excel и загрузите обратно.
+            Можно загружать частично — отсутствующие листы просто пропускаются. Изменения идемпотентны: ничего не дублируется.
           </p>
         </div>
         <div className="mt-4">

@@ -172,17 +172,24 @@ export async function seedPrintersAndCartridges(prisma: PrismaClient) {
     const chipFlag = r.chip === "Да";
     const yields = parseYields(r.yield);
 
+    // printType — явное поле в БД, а не regex на лету. Дефолтим из kind,
+    // но дальше CRM может переопределить вручную через xlsx.
+    const printType = /струй|EcoTank|InkTank|снпч/i.test(r.kind || "") || brand === "Epson" ? "inkjet" : "laser";
+
     const printer = await prisma.printerModel.upsert({
       where: { brand_family: { brand, family } },
       create: {
         brand, family,
         aliases: JSON.stringify(aliases),
+        printType,
         kind: r.kind || null,
         segment: r.segment || null,
         demand: r.demand || null,
         chipNote: r.chipNote || null,
       },
       update: {
+        // НЕ перетираем printType при обновлении — админ мог поменять его
+        // через xlsx-импорт, и повторный seed не должен этого затирать.
         aliases: JSON.stringify(aliases),
         kind: r.kind || null,
         segment: r.segment || null,

@@ -4,7 +4,7 @@ import { Search, Sparkles, Check, Plus, Cpu, Info, Trash2, ArrowRight } from "lu
 import { formatRub } from "@/lib/utils";
 import { Reveal } from "./Reveal";
 
-type Service = { id: string; name: string; kind: string; slug: string };
+type Service = { id: string; name: string; kind: string; slug: string; cartridgeBased?: boolean };
 type Cartridge = {
   id: string;
   brand: string;
@@ -47,11 +47,12 @@ export function Calculator({
   // нет персональной цены за выбранную услугу. Тот же источник, что и в /price.
   baseByService: Record<string, number>;
 }) {
-  // В калькуляторе картриджей оставляем только те услуги, которые применимы
-  // per cartridge: заправка и замена. Ремонт принтера / СНПЧ / промывка ПГ —
-  // не подбираются «по картриджу» и в этом виджете только шумят.
+  // В калькуляторе картриджей оставляем только услуги с флагом «по картриджу»
+  // (Service.cartridgeBased = true в CRM). Это даёт админу полный контроль над
+  // тем, какие услуги попадают в виджет — никаких хардкодов по kind.
+  // Фолбэк по kind на случай, если флаг не проставлен.
   const cartridgeServices = useMemo(
-    () => services.filter((s) => s.kind === "REFILL" || s.kind === "REPLACE"),
+    () => services.filter((s) => s.cartridgeBased || s.kind === "REFILL" || s.kind === "REPLACE"),
     [services],
   );
   const [activeServiceId, setActiveServiceId] = useState(

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { detectPrintType, INKJET_SERVICE_SLUGS, INKJET_PRICING_NOTE } from "@/lib/printerType";
+import { detectPrintType } from "@/lib/printerType";
 
 /**
  * GET /api/public/cartridges-for-printer?q=HP+LaserJet+M404dn
@@ -63,7 +63,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ printer: null, printType: null, cartridges: [], services: [] });
   }
 
-  const printType = detectPrintType(printer.kind);
+  // Источник правды для типа — поле БД; detectPrintType остаётся фолбэком
+  // для редких принтеров без printType (например, добавленных вручную).
+  const printType: "laser" | "inkjet" = printer.printType === "inkjet"
+    ? "inkjet"
+    : printer.printType === "laser"
+      ? "laser"
+      : detectPrintType(printer.kind);
   const printerPayload = {
     brand: printer.brand,
     family: printer.family,
@@ -73,24 +79,31 @@ export async function GET(req: NextRequest) {
 
   // Для струйных — другая модель работы: набор услуг + «уточняется».
   if (printType === "inkjet") {
+    // Список и порядок услуг струйного сервиса теперь полностью управляется
+    // из CRM через xlsx (поля appliesTo + sortOrder + archived в Service).
     const inkjetServices = await prisma.service.findMany({
-      where: { slug: { in: [...INKJET_SERVICE_SLUGS] } },
+      where: {
+        archived: false,
+        OR: [{ appliesTo: "inkjet" }, { appliesTo: "both" }, { appliesTo: null }],
+      },
       include: { prices: { where: { cartridgeId: null }, take: 1 } },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     });
-    const ordered = INKJET_SERVICE_SLUGS
-      .map((slug) => inkjetServices.find((s) => s.slug === slug))
-      .filter((s): s is NonNullable<typeof s> => !!s)
-      .map((s) => ({
-        slug: s.slug,
-        name: s.name,
-        fromAmount: s.prices[0]?.amount ?? null, // ₽ в копейках, «от ...»
-      }));
+    // pricingNote — берём с услуги-диагностики, если задана; иначе общий дефолт.
+    const diag = inkjetServices.find((s) => s.slug === "inkjet-diagnostics");
+    const pricingNote =
+      diag?.priceNote ||
+      "Цена зависит от состояния печатающей головки, СНПЧ и результата диагностики. Уточняется мастером на месте.";
     return NextResponse.json({
       printer: printerPayload,
       printType,
       cartridges: [],
-      services: ordered,
-      pricingNote: INKJET_PRICING_NOTE,
+      services: inkjetServices.map((s) => ({
+        slug: s.slug,
+        name: s.name,
+        fromAmount: s.prices[0]?.amount ?? null,
+      })),
+      pricingNote,
     });
   }
 

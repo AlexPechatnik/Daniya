@@ -12,21 +12,70 @@ const prisma = new PrismaClient();
 //   Замена картриджа (только работа выезда) — 500–800 ₽, медиана 700 ₽.
 //   Диагностика на месте — 500–1000 ₽, медиана 700 ₽ (бесплатно при заказе ремонта).
 //   Ремонт принтера от 1500 ₽; чистка струйной головки 1000–2000 ₽; СНПЧ 2500–4500 ₽.
-const services: { name: string; slug: string; kind: string; base?: number }[] = [
-  { name: "Заправка лазерного картриджа", slug: "zapravka",    kind: "REFILL",     base: 600 },
-  { name: "Установка СНПЧ",              slug: "ciss-install", kind: "INKJET_REPAIR", base: 2500 },
-  { name: "Прочистка печатающей головки", slug: "head-cleaning", kind: "INKJET_REPAIR", base: 1000 },
-  { name: "Промывка печатающей головки", slug: "head-flush",   kind: "INKJET_REPAIR", base: 1800 },
-  { name: "Обслуживание СНПЧ",           slug: "ciss-service", kind: "INKJET_REPAIR", base: 1500 },
-  { name: "Обслуживание системы подачи чернил", slug: "ink-system-service", kind: "INKJET_REPAIR", base: 1200 },
-  { name: "Ремонт подачи бумаги",        slug: "paper-feed",   kind: "REPAIR",     base: 1200 },
-  { name: "Сброс памперса / абсорбера",  slug: "waste-ink-reset", kind: "INKJET_REPAIR", base: 900 },
-  { name: "Диагностика струйного принтера", slug: "inkjet-diagnostics", kind: "INKJET_REPAIR", base: 700 },
-  { name: "Ремонт струйного принтера",   slug: "inkjet-repair", kind: "INKJET_REPAIR", base: 1500 },
-  { name: "Настройка качества печати",   slug: "print-quality-setup", kind: "INKJET_REPAIR", base: 800 },
-  { name: "Замена картриджа (работа)",   slug: "zamena",       kind: "REPLACE",    base: 700 },
-  { name: "Диагностика принтера",        slug: "diagnostika",  kind: "DIAGNOSTIC", base: 700 },
-  { name: "Ремонт принтера",             slug: "remont",       kind: "REPAIR",     base: 1500 },
+// Базовый каталог услуг с метаинформацией. После сидинга админ управляет
+// этими полями через xlsx-экспорт/импорт в CRM (Прайс).
+type ServiceSeed = {
+  name: string;
+  slug: string;
+  kind: string;
+  base?: number;
+  category: string;
+  appliesTo: "laser" | "inkjet" | "both";
+  cartridgeBased?: boolean;
+  priceNote?: string;
+  description?: string;
+  sortOrder: number;
+};
+
+const services: ServiceSeed[] = [
+  // ── Картриджные услуги ────────────────────────────────────────────────
+  { name: "Заправка лазерного картриджа", slug: "zapravka", kind: "REFILL", base: 500,
+    category: "laser_refill", appliesTo: "laser", cartridgeBased: true,
+    description: "Цена по модели картриджа, ресурсу и необходимости чипа.", sortOrder: 10 },
+  { name: "Замена картриджа (работа)", slug: "zamena", kind: "REPLACE", base: 900,
+    category: "cartridge_replacement", appliesTo: "laser", cartridgeBased: true,
+    description: "Замена пустого картриджа на готовый или новый.", sortOrder: 20 },
+
+  // ── Диагностика и ремонт ──────────────────────────────────────────────
+  { name: "Диагностика принтера", slug: "diagnostika", kind: "DIAGNOSTIC", base: 500,
+    category: "visit_diagnostics", appliesTo: "both",
+    description: "Выезд и первичная проверка. При заказе ремонта — бесплатно.", sortOrder: 30 },
+  { name: "Ремонт принтера", slug: "remont", kind: "REPAIR", base: 1500,
+    category: "printer_repair", appliesTo: "laser",
+    description: "Лазерные узлы: печка, муфты, ролик подхвата.", sortOrder: 40 },
+  { name: "Ремонт подачи бумаги", slug: "paper-feed", kind: "REPAIR", base: 1200,
+    category: "printer_repair", appliesTo: "both",
+    description: "Ролики, тормозная площадка, захват, перекос и замятия.", sortOrder: 50 },
+
+  // ── Струйный сервис ───────────────────────────────────────────────────
+  { name: "Диагностика струйного принтера", slug: "inkjet-diagnostics", kind: "INKJET_REPAIR", base: 700,
+    category: "ciss_inkjet_service", appliesTo: "inkjet",
+    priceNote: "Цена зависит от состояния головки, СНПЧ и результата диагностики. Уточняется мастером.",
+    description: "Печатающая головка, СНПЧ, памперс, подача, качество печати.", sortOrder: 60 },
+  { name: "Прочистка печатающей головки", slug: "head-cleaning", kind: "INKJET_REPAIR", base: 1000,
+    category: "ciss_inkjet_service", appliesTo: "inkjet",
+    description: "Штатные и сервисные режимы без разборки.", sortOrder: 70 },
+  { name: "Промывка печатающей головки", slug: "head-flush", kind: "INKJET_REPAIR", base: 1800,
+    category: "ciss_inkjet_service", appliesTo: "inkjet",
+    description: "При засорах, полосах и пропусках цвета.", sortOrder: 80 },
+  { name: "Обслуживание СНПЧ", slug: "ciss-service", kind: "INKJET_REPAIR", base: 1500,
+    category: "ciss_inkjet_service", appliesTo: "inkjet",
+    description: "Воздух в шлейфе, доноры, трубки, герметичность, прокачка.", sortOrder: 90 },
+  { name: "Установка СНПЧ", slug: "ciss-install", kind: "INKJET_REPAIR", base: 2500,
+    category: "ciss_inkjet_service", appliesTo: "inkjet",
+    description: "Подключение доноров, прокачка и проверка стабильной подачи.", sortOrder: 100 },
+  { name: "Обслуживание системы подачи чернил", slug: "ink-system-service", kind: "INKJET_REPAIR", base: 1200,
+    category: "ciss_inkjet_service", appliesTo: "inkjet",
+    description: "Шлейф, воздушные пробки, прокачка, герметичность.", sortOrder: 110 },
+  { name: "Сброс памперса / абсорбера", slug: "waste-ink-reset", kind: "INKJET_REPAIR", base: 900,
+    category: "ciss_inkjet_service", appliesTo: "inkjet",
+    description: "Сброс памперса и обслуживание абсорбера.", sortOrder: 120 },
+  { name: "Настройка качества печати", slug: "print-quality-setup", kind: "INKJET_REPAIR", base: 800,
+    category: "ciss_inkjet_service", appliesTo: "inkjet",
+    description: "Калибровка, тест дюз, профили, параметры драйвера.", sortOrder: 130 },
+  { name: "Ремонт струйного принтера", slug: "inkjet-repair", kind: "INKJET_REPAIR", base: 1500,
+    category: "ciss_inkjet_service", appliesTo: "inkjet",
+    description: "Ремонт по неисправности и модели, запчасти отдельно.", sortOrder: 140 },
 ];
 
 // hasChip — у картриджа есть антизаправочный чип, требует замены при каждой заправке.
@@ -128,8 +177,18 @@ async function main() {
   for (const s of services) {
     await prisma.service.upsert({
       where: { slug: s.slug },
-      create: { name: s.name, slug: s.slug, kind: s.kind },
-      update: { name: s.name, kind: s.kind },
+      create: {
+        name: s.name, slug: s.slug, kind: s.kind,
+        category: s.category, appliesTo: s.appliesTo,
+        cartridgeBased: s.cartridgeBased || false,
+        priceNote: s.priceNote || null,
+        description: s.description || null,
+        sortOrder: s.sortOrder,
+      },
+      // НЕ перетираем поля при update — если админ поменял что-то через xlsx,
+      // повторный seed не должен это затирать. Сидер только создаёт стартовые
+      // записи; дальше системой управляет CRM (xlsx-импорт).
+      update: {},
     });
   }
 

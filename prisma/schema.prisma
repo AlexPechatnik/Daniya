@@ -117,6 +117,9 @@ model PrinterModel {
   brand      String   // HP / Canon / Brother / Epson / ...
   family     String   // "LaserJet Pro M404dn" — первый вариант из строки таблицы
   aliases    String   // JSON-массив строк-вариантов: ["M404dn","M404dw","M404n"]
+  // Тип печати: laser | inkjet. Раньше определялся regex по kind — теперь хранится
+  // явно, чтобы CRM мог переопределить вручную при ошибке автодетекта.
+  printType  String   @default("laser")
   kind       String?  // "Принтер A4 mono" / "МФУ A4 mono" / "Струйный" / ...
   segment    String?  // "Офис", "Малый офис", "Дом"
   demand     String?  // A | B | C — рейтинг сервисной популярности (A = массовый)
@@ -140,11 +143,26 @@ model PrinterCartridge {
 
 model Service {
   id       String    @id @default(cuid())
-  kind     String    // REFILL | REPLACE | DIAGNOSTIC | REPAIR
+  kind     String    // REFILL | REPLACE | DIAGNOSTIC | REPAIR | INKJET_REPAIR
   name     String
   slug     String    @unique
-  prices   Price[]
-  requests Request[]
+  // Категория группировки на странице прайса. Простая строка, чтобы не плодить таблицу:
+  // visit_diagnostics | laser_refill | cartridge_replacement | printer_repair | ciss_inkjet_service | maintenance
+  category       String?
+  // Применимость к типу принтера: laser | inkjet | both. null = both.
+  appliesTo      String?
+  // Услуга считается «по картриджу» (заправка, замена) — для калькулятора.
+  // Услуги ремонта/диагностики/СНПЧ — нет.
+  cartridgeBased Boolean  @default(false)
+  // Текст-уточнение для прайса/формы: «уточняется после диагностики» и т.п.
+  priceNote      String?
+  // Подсказка под названием услуги (заменяет хардкоды CATEGORY_HINTS / SERVICE_FACTS).
+  description    String?
+  sortOrder      Int      @default(0)
+  // Soft-delete: услугу не удаляем (на неё ссылаются заявки), а архивируем.
+  archived       Boolean  @default(false)
+  prices         Price[]
+  requests       Request[]
 }
 
 model Price {

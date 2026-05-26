@@ -51,7 +51,12 @@
       "Bash(curl -sS -m 10 -o /tmp/page.html -w \"%{http_code}\" \"http://localhost:53999/\")",
       "Read(//tmp/**)",
       "Bash(pkill -f \"next start\")",
-      "Bash(pkill -f \"next-server\")"
+      "Bash(pkill -f \"next-server\")",
+      "Bash(curl -s -c /tmp/cookies.txt -X POST http://localhost:3000/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"admin@example.ru\",\"password\":\"admin123\"}' -o /dev/null -w \"login=%{http_code}\\\\n\")",
+      "Bash(curl -s -b /tmp/cookies.txt http://localhost:3000/api/price/export -o /tmp/price.xlsx -w \"export=%{http_code} size=%{size_download}\\\\n\")",
+      "Bash(curl -s -b /tmp/cookies.txt -X POST http://localhost:3000/api/price/import -F file=@C:/Users/user/AppData/Local/Temp/price-edited.xlsx)",
+      "Bash(curl -s -b /tmp/cookies.txt \"http://localhost:3000/api/public/cartridges-for-printer?q=Epson+L805\")",
+      "Bash(curl -s -b /tmp/cookies.txt \"http://localhost:3000/api/public/cartridges-for-printer?q=HP+M404\")"
     ]
   }
 }
