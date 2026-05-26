@@ -3,6 +3,7 @@ import { subDays } from "date-fns";
 import { Phone, MapPin, Clock, UserRound } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { formatRub } from "@/lib/utils";
+import { shortenSpbAddress } from "@/lib/address";
 import { StatusBadge } from "@/components/crm/StatusBadge";
 import { QuickActionButton } from "@/components/crm/QuickActionButton";
 
@@ -93,7 +94,7 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
                   <a href={`tel:${request.client.phone}`} className="text-xs text-muted-fg hover:text-fg">{request.client.phone}</a>
                 </td>
                 <td className="max-w-[260px] px-4 py-3 text-muted-fg">
-                  <div className="truncate">{request.address?.address || "адрес не указан"}</div>
+                  <div className="truncate">{shortenSpbAddress(request.address?.address) || "адрес не указан"}</div>
                   {request.address?.district && <div className="text-xs">{request.address.district}</div>}
                 </td>
                 <td className="px-4 py-3">{request.assignedTo?.name || <span className="text-muted-fg">не назначен</span>}</td>
@@ -141,7 +142,7 @@ function RequestCard({ request }: { request: any }) {
           <Phone className="h-4 w-4" /> {request.client.phone}
         </a>
         <div className="inline-flex items-center gap-2">
-          <MapPin className="h-4 w-4" /> <span className="truncate">{request.address?.address || "адрес не указан"}</span>
+          <MapPin className="h-4 w-4" /> <span className="truncate">{shortenSpbAddress(request.address?.address) || "адрес не указан"}</span>
         </div>
         <div className="inline-flex items-center gap-2">
           <Clock className="h-4 w-4" />

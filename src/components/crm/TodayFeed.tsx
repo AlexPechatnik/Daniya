@@ -6,6 +6,7 @@ import { AlertCircle, ArrowRight, CalendarDays, Clock, CreditCard, MapPin, Phone
 import { StatusBadge } from "./StatusBadge";
 import { QuickActionButton } from "./QuickActionButton";
 import { formatRub } from "@/lib/utils";
+import { shortenSpbAddress } from "@/lib/address";
 
 const ACTIVE_STATUSES = ["ACCEPTED", "SCHEDULED", "EN_ROUTE", "ON_SITE", "IN_PROGRESS"];
 
@@ -263,7 +264,7 @@ function MetaLine({ request }: { request: RequestCardData }) {
       {request.address?.address && (
         <span className="inline-flex min-w-0 items-center gap-1">
           <MapPin className="h-3.5 w-3.5 shrink-0" />
-          <span className="truncate">{request.address.address}</span>
+          <span className="truncate">{shortenSpbAddress(request.address.address) || request.address.address}</span>
         </span>
       )}
       {request.scheduledAt && (

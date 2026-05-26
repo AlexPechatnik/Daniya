@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { KanbanBoard } from "@/components/crm/KanbanBoard";
+import { shortenSpbAddress } from "@/lib/address";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,7 @@ export default async function BoardPage() {
           clientPhone: r.client.phone,
           serviceName: r.service?.name || "—",
           printerInfo: r.printerInfo,
-          address: r.address?.address || "",
+          address: shortenSpbAddress(r.address?.address) || "",
           scheduledAt: r.scheduledAt?.toISOString() || null,
           status: r.status,
           price: r.price,

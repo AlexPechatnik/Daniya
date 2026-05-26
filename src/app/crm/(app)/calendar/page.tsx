@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { CalendarTimeline } from "@/components/crm/CalendarTimeline";
 import { startOfWeek, addDays } from "date-fns";
 import { findFreeSlots } from "@/lib/scheduling";
+import { shortenSpbAddress } from "@/lib/address";
 
 export const dynamic = "force-dynamic";
 
@@ -60,7 +61,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
           number: r.number,
           clientName: r.client.name,
           serviceName: r.service?.name || "—",
-          address: r.address?.address || "",
+          address: shortenSpbAddress(r.address?.address) || "",
           district: r.address?.district || null,
           lat: r.address?.lat || null,
           lng: r.address?.lng || null,
@@ -76,7 +77,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
           number: r.number,
           clientName: r.client.name,
           serviceName: r.service?.name || "—",
-          address: r.address?.address || "",
+          address: shortenSpbAddress(r.address?.address) || "",
           district: r.address?.district || null,
           lat: r.address?.lat || null,
           lng: r.address?.lng || null,

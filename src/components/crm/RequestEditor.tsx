@@ -21,6 +21,7 @@ import { addDays, format, isSameDay, setHours, setMinutes } from "date-fns";
 import { ru } from "date-fns/locale";
 import { AutocompleteInput } from "./AutocompleteInput";
 import { StatusBadge } from "./StatusBadge";
+import { shortenSpbAddress } from "@/lib/address";
 
 const statuses = [
   { value: "NEW", label: "Новая" },
@@ -67,7 +68,7 @@ export function RequestEditor({
     scheduledAt: request.scheduledAt ? toLocalDateTimeInputValue(new Date(request.scheduledAt)) : "",
     durationMin: request.durationMin,
     printerInfo: request.printerInfo || "",
-    address: request.address?.address || "",
+    address: shortenSpbAddress(request.address?.address) || request.address?.address || "",
     price: request.price ? Math.round(request.price / 100) : 0,
     comment: request.comment || "",
   });

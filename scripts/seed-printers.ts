@@ -13,6 +13,7 @@
 import { PrismaClient } from "@prisma/client";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { shortenSpbAddress } from "../src/lib/address";
 
 type Row = {
   rank: string;
@@ -308,10 +309,28 @@ export async function seedPrintersAndCartridges(prisma: PrismaClient) {
     }
   }
 
+  // Бэкфилл: укорачиваем уже сохранённые адреса. Старые записи лежат в виде
+  // «Россия, Санкт-Петербург, …» — теперь храним и показываем коротко.
+  const allAddresses = await prisma.address.findMany({
+    select: { id: true, address: true, formattedAddress: true },
+  });
+  let shortened = 0;
+  for (const a of allAddresses) {
+    const shortAddr = shortenSpbAddress(a.address);
+    const shortFmt = shortenSpbAddress(a.formattedAddress);
+    const data: { address?: string; formattedAddress?: string } = {};
+    if (shortAddr && shortAddr !== a.address) data.address = shortAddr;
+    if (a.formattedAddress && shortFmt && shortFmt !== a.formattedAddress) data.formattedAddress = shortFmt;
+    if (Object.keys(data).length > 0) {
+      await prisma.address.update({ where: { id: a.id }, data });
+      shortened++;
+    }
+  }
+
   console.log(
     `  ✓ принтеров: ${printersUpserted}, новых картриджей: ${cartridgesCreated}, ` +
     `новых цен: ${pricesCreated}, связей: ${linksCreated}, бэкфилл-цен: ${backfilled}, ` +
-    `убрано не-лазерных цен: ${removedNonRefillPrices.count}`,
+    `убрано не-лазерных цен: ${removedNonRefillPrices.count}, адресов сокращено: ${shortened}`,
   );
 }
 

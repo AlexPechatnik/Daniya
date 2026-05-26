@@ -7,6 +7,7 @@ import { ru } from "date-fns/locale";
 import { notifyAdminsNewRequest, notifyAdminsNewMessage } from "./notify";
 import { proposeNextSlots, formatSlotLabel } from "../scheduling";
 import { enrichAddress } from "../districts";
+import { shortenSpbAddress } from "../address";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Главные обработчики
@@ -834,7 +835,7 @@ async function finalizeRequest(ctx: BotContext, data: any) {
       (items.length
         ? `Картриджи:\n${detailLines.map((l) => "  " + l).join("\n")}\n${total ? `\n<b>Итого ~${formatRub(total)}</b>\n` : ""}`
         : printerInfo ? `Картридж: ${printerInfo}\n` : "") +
-      (request.address ? `Адрес: ${request.address.address}\n` : "") +
+      (request.address ? `Адрес: ${shortenSpbAddress(request.address.address) || request.address.address}\n` : "") +
       (request.scheduledAt
         ? `Время: ${format(request.scheduledAt, "d MMMM, HH:mm", { locale: ru })}\n`
         : "Время: согласуем\n") +
@@ -937,7 +938,7 @@ async function adminToday(ctx: BotContext) {
       `<b>#${r.number}</b> · ${statusEmoji(r.status)} ${statusLabel(r.status)}`,
       `${time} · ${r.service?.name || "услуга"}`,
       `${r.client.name} · ${r.client.phone}`,
-      r.address?.address,
+      r.address ? (shortenSpbAddress(r.address.address) || r.address.address) : null,
       r.assignedTo ? `Мастер: ${r.assignedTo.name}` : null,
     ].filter(Boolean).join("\n");
   });
@@ -1431,7 +1432,7 @@ async function sendMasterCard(ctx: BotContext, r: any) {
     `👤 ${r.client.name}`,
     `📞 ${r.client.phone}`,
   ];
-  if (r.address) lines.push(`📍 ${r.address.address}`);
+  if (r.address) lines.push(`📍 ${shortenSpbAddress(r.address.address) || r.address.address}`);
   if (r.printerInfo) lines.push(`🖨 ${r.printerInfo}`);
   if (r.comment) lines.push(`💬 ${r.comment}`);
 

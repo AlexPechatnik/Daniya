@@ -8,6 +8,7 @@ import { requireUser } from "@/lib/auth";
 import { StatusBadge } from "./StatusBadge";
 import { QuickActionButton } from "./QuickActionButton";
 import { formatRub } from "@/lib/utils";
+import { shortenSpbAddress } from "@/lib/address";
 
 type MasterTab = "new" | "mine" | "active" | "done" | "profile";
 
@@ -167,7 +168,7 @@ function MasterJobCard({ request }: { request: MasterRequest }) {
         <div className="mt-3 rounded-xl border border-border bg-card p-3 shadow-sm">
           <div className="flex items-start gap-2 text-sm leading-snug">
             <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#0369A1]" />
-            <span>{request.address.address}</span>
+            <span>{shortenSpbAddress(request.address.address) || request.address.address}</span>
           </div>
         </div>
       )}

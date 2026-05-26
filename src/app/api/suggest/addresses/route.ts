@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
-import { suggestYandexAddresses } from "@/lib/geocoder";
+import { suggestYandexAddresses, shortenSpbAddress } from "@/lib/geocoder";
 
 export async function GET(req: NextRequest) {
   await requireUser();
@@ -25,16 +25,21 @@ export async function GET(req: NextRequest) {
   const seen = new Set<string>();
 
   const suggestions = [
-    ...addresses.map((address) => ({
-      value: address.address,
-      title: address.formattedAddress || address.address,
-      subtitle: [
-        address.district,
-        address.client?.name,
-        address.client?.phone,
-      ].filter(Boolean).join(" · "),
-      kind: "CRM",
-    })),
+    ...addresses.map((address) => {
+      // Сокращаем сохранённые адреса при показе в подсказках — старые записи
+      // хранят полную форму с «Россия, Санкт-Петербург, …».
+      const short = shortenSpbAddress(address.address) || address.address;
+      return {
+        value: short,
+        title: shortenSpbAddress(address.formattedAddress || address.address) || short,
+        subtitle: [
+          address.district,
+          address.client?.name,
+          address.client?.phone,
+        ].filter(Boolean).join(" · "),
+        kind: "CRM",
+      };
+    }),
     ...yandexSuggestions.map((address) => ({
       value: address.value,
       title: address.title,

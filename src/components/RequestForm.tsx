@@ -40,7 +40,9 @@ type CalculatorPayload = { items: CalculatorItem[]; subtotal: number; ts: number
 export function RequestForm() {
   const [state, formAction, pending] = useActionState<LeadFormState, FormData>(submitLead, {});
   const [holidays, setHolidays] = useState<{ date: string; reason: string }[]>([]);
-  const [address, setAddress] = useState("Санкт-Петербург, ");
+  // Без префикса «Санкт-Петербург, » — он лишний шум, заявки и так только
+  // по СПб/ЛО. Клиент пишет с улицы; подсказки покажут полный матч.
+  const [address, setAddress] = useState("");
   const [printer, setPrinter] = useState("");
   const [cartridge, setCartridge] = useState("");
   const [comment, setComment] = useState("");
@@ -279,7 +281,7 @@ export function RequestForm() {
                   endpoint="/api/public/suggest/addresses"
                   value={address}
                   onChange={setAddress}
-                  placeholder="Город, улица, дом, офис"
+                  placeholder="Улица, дом, корпус, офис"
                   minLength={3}
                   name="address"
                   className="input"

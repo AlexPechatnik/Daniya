@@ -26,6 +26,9 @@ export interface AddressSuggestion {
   district: string | null;
 }
 
+import { shortenSpbAddress } from "./address";
+export { shortenSpbAddress };
+
 const GEOCODE_URL = "https://geocode-maps.yandex.ru/1.x/";
 const REQUEST_TIMEOUT_MS = 4000;
 
@@ -131,9 +134,12 @@ export async function suggestYandexAddresses(text: string, limit = 8): Promise<A
         ? String(districtComponent.name).replace(/\s+район$/i, "").trim()
         : null;
 
+      // В value подставляем сокращённый адрес — клиенту в поле попадает
+      // только то, что реально полезно: «Мурино, улица Шоссе в Лаврики, 59к1».
+      const short = shortenSpbAddress(formatted);
       suggestions.push({
-        value: formatted,
-        title: [street, house].filter(Boolean).join(", ") || geo.name || formatted,
+        value: short || formatted,
+        title: [street, house].filter(Boolean).join(", ") || short || geo.name || formatted,
         subtitle: [locality, district ? `${district} район` : null].filter(Boolean).join(" · "),
         lat: isFinite(lat) ? lat : null,
         lng: isFinite(lng) ? lng : null,

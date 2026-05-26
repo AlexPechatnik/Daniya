@@ -1,6 +1,7 @@
 import { prisma } from "../db";
 import { getAdapter } from "../messengers";
 import { company } from "../company";
+import { shortenSpbAddress } from "../address";
 
 const CLIENT_TEMPLATES: Record<string, (req: any) => string> = {
   ACCEPTED: (r) =>
@@ -63,7 +64,7 @@ export async function notifyAdminsNewRequest(requestId: string) {
     `Телефон: ${request.client.phone}`,
     `Услуга: ${request.service?.name || "не указана"}`,
     request.printerInfo ? `Техника: ${request.printerInfo}` : null,
-    request.address ? `Адрес: ${request.address.address}` : null,
+    request.address ? `Адрес: ${shortenSpbAddress(request.address.address) || request.address.address}` : null,
     request.scheduledAt ? `Когда: ${formatDate(request.scheduledAt)}` : "Когда: не назначено",
     request.assignedTo ? `Мастер: ${request.assignedTo.name}` : null,
     request.comment ? `Комментарий: ${request.comment}` : null,

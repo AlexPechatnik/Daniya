@@ -404,7 +404,7 @@ export function QuickAddModal({
                     endpoint="/api/suggest/addresses"
                     value={address}
                     onChange={setAddress}
-                    placeholder="Санкт-Петербург, ..."
+                    placeholder="Улица, дом, корпус, офис"
                     minLength={3}
                     className="input h-12 md:h-11"
                   />
