@@ -324,4 +324,16 @@
     from { background-position: -200% 0; }
     to { background-position: 200% 0; }
   }
+
+  /* Chat-bump — лёгкое подёргивание floating-кнопки при новом сообщении */
+  @keyframes chat-bump {
+    0%   { transform: translateY(0) scale(1); }
+    30%  { transform: translateY(-6px) scale(1.06); }
+    60%  { transform: translateY(0) scale(0.98); }
+    100% { transform: translateY(0) scale(1); }
+  }
+  .animate-chat-bump { animation: chat-bump 420ms ease-out; }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-chat-bump { animation: none; }
+  }
 }

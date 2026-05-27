@@ -16,6 +16,7 @@ import {
   Inbox,
 } from "lucide-react";
 import { QuickAddTrigger } from "@/components/crm/QuickAddTrigger";
+import { ChatSidebar, ChatSidebarProvider } from "@/components/crm/ChatSidebar";
 import { prisma } from "@/lib/db";
 
 export default async function CrmLayout({ children }: { children: React.ReactNode }) {
@@ -58,6 +59,7 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
     : masterNav;
 
   return (
+    <ChatSidebarProvider>
     <div className="crm-light min-h-screen grid lg:grid-cols-[240px,1fr] text-fg">
       <aside className="hidden lg:flex border-r border-border bg-card flex-col">
         <div className="px-5 py-4 border-b border-border"><Logo /></div>
@@ -123,6 +125,10 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
 
       {/* Плавающая «+» — на мобильном поверх всего */}
       {isAdmin && <QuickAddTrigger services={services} masters={masters} variant="fab" />}
+
+      {/* Чаты — слайд-панель справа + floating-кнопка с бейджем */}
+      <ChatSidebar />
     </div>
+    </ChatSidebarProvider>
   );
 }
