@@ -43,6 +43,8 @@
   ::-webkit-scrollbar-track { background: transparent; }
 
   .crm-light {
+    /* Явный фон — иначе через прозрачный контейнер просвечивает тёмный градиент body */
+    background: hsl(214 33% 97%);
     --bg: 214 33% 97%;
     --bg-2: 210 40% 99%;
     --fg: 222 47% 11%;

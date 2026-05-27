@@ -62,8 +62,9 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
   return (
     <ChatSidebarProvider>
     {/* overflow-x-clip — чтобы скрытая (translate-x-full) панель чата справа
-        не давала прокручивать страницу вправо и не показывала тёмный фон body. */}
-    <div className="crm-light min-h-screen grid lg:grid-cols-[240px,1fr] overflow-x-clip text-fg">
+        не давала прокручивать страницу вправо и не показывала тёмный фон body.
+        bg-bg — чтобы за пределами карточек был светлый фон CRM, а не тёмный градиент body. */}
+    <div className="crm-light min-h-screen grid lg:grid-cols-[240px,1fr] overflow-x-clip bg-bg text-fg">
       <aside className="hidden lg:flex border-r border-border bg-card flex-col">
         <div className="px-5 py-4 border-b border-border"><Logo /></div>
         <nav className="p-3 space-y-1">
