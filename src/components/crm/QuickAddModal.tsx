@@ -63,6 +63,10 @@ export function QuickAddModal({
 }) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  // Состояние свайпа-закрытия мобильной шторки
+  const [dragY, setDragY] = useState(0);
+  const dragStartY = useRef<number | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   useEffect(() => { setMounted(true); }, []);
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -202,6 +206,7 @@ export function QuickAddModal({
       onClick={onClose}
     >
       <form
+        ref={formRef}
         onClick={(e) => e.stopPropagation()}
         onSubmit={onSubmit}
         className="
@@ -211,9 +216,32 @@ export function QuickAddModal({
           flex flex-col
           animate-fade-up
         "
+        style={{
+          transform: dragY > 0 ? `translateY(${dragY}px)` : undefined,
+          transition: dragStartY.current == null ? "transform 200ms ease-out" : undefined,
+        }}
       >
-        {/* Drag handle для bottom-sheet */}
-        <div className="md:hidden flex justify-center pt-3 pb-1">
+        {/* Swipe-down handle: тащишь вниз — закрывается. На десктопе скрыт. */}
+        <div
+          className="md:hidden flex justify-center pt-3 pb-2 touch-none"
+          onTouchStart={(e) => {
+            dragStartY.current = e.touches[0].clientY;
+          }}
+          onTouchMove={(e) => {
+            if (dragStartY.current == null) return;
+            const delta = e.touches[0].clientY - dragStartY.current;
+            // Тянуть можно только вниз; добавляем «резинку» при сильном тяге
+            setDragY(delta > 0 ? delta : delta / 4);
+          }}
+          onTouchEnd={() => {
+            if (dragY > 100) {
+              // Достаточно далеко стащили — закрываем
+              onClose();
+            }
+            dragStartY.current = null;
+            setDragY(0);
+          }}
+        >
           <div className="h-1.5 w-12 rounded-full bg-muted-fg/30" />
         </div>
 
