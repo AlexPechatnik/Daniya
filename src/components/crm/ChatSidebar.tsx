@@ -57,6 +57,8 @@ type ChatSidebarContextValue = {
   openSidebar: () => void;
   close: () => void;
   selectClient: (clientId: string | null) => void;
+  /** Уменьшить глобальный счётчик локально (до следующего polling-такта). */
+  markRead: (count: number) => void;
 };
 
 const ChatSidebarContext = createContext<ChatSidebarContextValue | null>(null);
@@ -141,6 +143,7 @@ export function ChatSidebarProvider({ children }: { children: React.ReactNode })
     openSidebar: () => setOpen(true),
     close: () => setOpen(false),
     selectClient: setSelected,
+    markRead: (count) => setUnreadTotal((t) => Math.max(0, t - count)),
   };
 
   return (
@@ -278,6 +281,7 @@ function ConversationList({
   onSelectClient: (id: string) => void;
   onClose: () => void;
 }) {
+  const { markRead } = useChatSidebar();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -324,7 +328,15 @@ function ConversationList({
               <li key={c.clientId}>
                 <button
                   type="button"
-                  onClick={() => onSelectClient(c.clientId)}
+                  onClick={() => {
+                    // Оптимистично обнуляем счётчик у этого клиента —
+                    // сервер пометит как прочитанные в GET /api/inbox/[clientId].
+                    setConversations((prev) =>
+                      prev.map((x) => (x.clientId === c.clientId ? { ...x, unread: 0 } : x)),
+                    );
+                    if (c.unread > 0) markRead(c.unread);
+                    onSelectClient(c.clientId);
+                  }}
                   className="flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-muted/30"
                 >
                   <Avatar name={c.clientName} hasUnread={c.unread > 0} />
@@ -342,7 +354,7 @@ function ConversationList({
                     <div className="mt-0.5 flex items-baseline justify-between gap-2">
                       <span className={`truncate text-sm ${c.unread > 0 ? "text-fg" : "text-muted-fg"}`}>
                         {c.lastDirection === "out" && <span className="text-muted-fg/70">Вы: </span>}
-                        {c.lastText || "—"}
+                        {stripHtmlTags(c.lastText) || "—"}
                       </span>
                       {c.unread > 0 && (
                         <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-semibold leading-none text-white">
@@ -485,9 +497,9 @@ function ChatView({
                   send();
                 }
               }}
-              rows={1}
+              rows={3}
               placeholder="Написать клиенту… (Ctrl+Enter — отправить)"
-              className="input min-h-[40px] flex-1 resize-y py-2 text-sm"
+              className="input min-h-[88px] flex-1 resize-y py-2 text-sm leading-relaxed"
               disabled={sending}
             />
             <button
@@ -495,7 +507,7 @@ function ChatView({
               onClick={send}
               disabled={sending || !text.trim()}
               aria-label="Отправить"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-fg shadow-sm transition disabled:cursor-not-allowed disabled:opacity-40 hover:opacity-90"
+              className="inline-flex h-[88px] w-11 items-center justify-center rounded-xl bg-primary text-primary-fg shadow-sm transition disabled:cursor-not-allowed disabled:opacity-40 hover:opacity-90"
             >
               <Send className="h-4 w-4" />
             </button>
@@ -549,6 +561,9 @@ function Bubble({ m, prev }: { m: DialogMessage; prev?: DialogMessage }) {
   const showTime =
     !prev ||
     Math.abs(parseISO(m.createdAt).getTime() - parseISO(prev.createdAt).getTime()) > 5 * 60 * 1000;
+  // Чистим Telegram-разметку (<b>, <i>, <code>, &lt; и т.п.) — у нас бот шлёт
+  // её для parse_mode: HTML, и в логе клиент-видит её сырыми тегами.
+  const cleanText = stripHtmlTags(m.text);
   return (
     <div>
       {showTime && (
@@ -564,11 +579,23 @@ function Bubble({ m, prev }: { m: DialogMessage; prev?: DialogMessage }) {
               : "bg-primary text-primary-fg"
           }`}
         >
-          <div className="whitespace-pre-wrap break-words leading-snug">{m.text}</div>
+          <div className="whitespace-pre-wrap break-words leading-snug">{cleanText}</div>
         </div>
       </div>
     </div>
   );
+}
+
+function stripHtmlTags(text: string): string {
+  if (!text) return "";
+  return text
+    .replace(/<\/?[a-z][^>]*>/gi, "") // <b>, </b>, <i>, <code>, <a href=...>, …
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .trim();
 }
 
 /* ════════════════════════════════════════════════════════════════════════
