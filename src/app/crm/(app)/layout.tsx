@@ -101,7 +101,9 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
 
-      <div className="flex flex-col min-h-screen">
+      {/* min-w-0 — grid-/flex-item должен мочь сжиматься уже своего содержимого,
+          иначе горизонтальные скроллы (фильтры/таблицы) растягивают всю CRM. */}
+      <div className="flex flex-col min-h-screen min-w-0">
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-border bg-card/85 px-4 backdrop-blur lg:px-6">
           <div className="flex items-center gap-3">
             <div className="lg:hidden"><Logo compact /></div>

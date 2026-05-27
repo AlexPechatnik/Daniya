@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { subDays } from "date-fns";
-import { Phone, MapPin, Clock, UserRound, Inbox as InboxIcon } from "lucide-react";
+import { Phone, MapPin, Clock, UserRound, Inbox as InboxIcon, ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { formatRub } from "@/lib/utils";
 import { shortenSpbAddress } from "@/lib/address";
@@ -34,32 +34,40 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
   });
 
   return (
-    <div className="mx-auto max-w-[1280px] space-y-5">
+    <div className="mx-auto max-w-[1280px] space-y-4 lg:space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Заявки</h1>
-          <p className="mt-1 text-sm text-muted-fg">Рабочая очередь сервиса: от новой заявки до оплаты и закрытия.</p>
+          {/* Подзаголовок только для десктопа — на мобайле забирает место */}
+          <p className="mt-1 hidden text-sm text-muted-fg md:block">
+            Рабочая очередь сервиса: от новой заявки до оплаты и закрытия.
+          </p>
         </div>
-        <Link href="/crm" className="btn-outline h-10 px-4">Рабочий стол</Link>
+        <Link href="/crm" className="btn-outline hidden h-10 px-4 md:inline-flex">Рабочий стол</Link>
       </header>
 
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        {filters.map((filter) => (
-          <Link
-            key={filter.id}
-            href={`/crm/requests${filter.id === "attention" ? "" : `?queue=${filter.id}`}`}
-            className={`shrink-0 rounded-xl border px-3 py-2 text-sm transition ${
-              activeFilter === filter.id
-                ? "border-transparent bg-blue-50 text-primary shadow-inner"
-                : "border-border bg-card text-muted-fg hover:bg-muted hover:text-fg"
-            }`}
-          >
-            {filter.label}
-          </Link>
-        ))}
+      {/* Фильтры — горизонтальный скролл. Внешний div ОБЯЗАН быть не-flex
+          и иметь overflow-x-auto, иначе flex-container расширяет всё дерево
+          вверх до ширины всех чипов и ломает мобильную раскладку. */}
+      <div className="-mx-4 overflow-x-auto pb-1 md:mx-0 [&::-webkit-scrollbar]:hidden">
+        <div className="flex w-max gap-2 px-4 md:px-0">
+          {filters.map((filter) => (
+            <Link
+              key={filter.id}
+              href={`/crm/requests${filter.id === "attention" ? "" : `?queue=${filter.id}`}`}
+              className={`shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition ${
+                activeFilter === filter.id
+                  ? "border-primary bg-primary text-primary-fg shadow-sm"
+                  : "border-border bg-card text-muted-fg hover:bg-muted hover:text-fg"
+              }`}
+            >
+              {filter.label}
+            </Link>
+          ))}
+        </div>
       </div>
 
-      <div className="grid gap-3 md:hidden">
+      <div className="space-y-2.5 md:hidden">
         {requests.map((request) => <RequestCard key={request.id} request={request} />)}
         {requests.length === 0 && <Empty />}
       </div>
@@ -120,44 +128,65 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
 }
 
 function RequestCard({ request }: { request: any }) {
+  const scheduled = request.scheduledAt
+    ? request.scheduledAt.toLocaleString("ru-RU", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })
+    : "без времени";
+  const address = shortenSpbAddress(request.address?.address);
+
   return (
-    <article className="rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:border-primary/30 hover:shadow-md">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-xs text-muted-fg">#{request.number}</span>
-            <StatusBadge status={request.status} size="sm" />
+    <article className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition active:scale-[0.99]">
+      {/* Вся верхняя зона — тап-цель → карточка заявки */}
+      <Link
+        href={`/crm/requests/${request.id}`}
+        className="block px-4 py-4 active:bg-muted/40"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-mono text-xs text-muted-fg">#{request.number}</span>
+              <StatusBadge status={request.status} size="sm" />
+            </div>
+            <div className="mt-1 truncate text-base font-semibold">{request.client.name}</div>
+            <div className="truncate text-sm text-muted-fg">{request.service?.name || "Услуга не указана"}</div>
           </div>
-          <Link href={`/crm/requests/${request.id}`} className="mt-1 block truncate text-lg font-semibold">
-            {request.client.name}
-          </Link>
-          <div className="text-sm text-muted-fg">{request.service?.name || "Услуга не указана"}</div>
+          <div className="shrink-0 text-right">
+            <div className="font-semibold tabular-nums">{formatRub(request.price)}</div>
+            <div className="text-[11px] text-muted-fg">{paymentLabel(request.paymentStatus)}</div>
+            <ChevronRight className="ml-auto mt-1 h-4 w-4 text-muted-fg/60" />
+          </div>
         </div>
-        <div className="shrink-0 text-right">
-          <div className="font-semibold tabular-nums">{formatRub(request.price)}</div>
-          <div className="text-xs text-muted-fg">{paymentLabel(request.paymentStatus)}</div>
+
+        <div className="mt-3 grid gap-1 text-sm">
+          {address && (
+            <div className="flex items-start gap-2">
+              <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#DC2626]" />
+              <span className="truncate text-fg/85">{address}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-2 text-muted-fg">
+            <Clock className="h-3.5 w-3.5" />
+            <span>{scheduled}</span>
+            {request.assignedTo?.name && (
+              <>
+                <span aria-hidden>·</span>
+                <UserRound className="h-3.5 w-3.5" />
+                <span className="truncate">{request.assignedTo.name}</span>
+              </>
+            )}
+          </div>
         </div>
-      </div>
-      <div className="mt-3 grid gap-1.5 text-sm text-muted-fg">
-        <a href={`tel:${request.client.phone}`} className="inline-flex items-center gap-2 hover:text-fg">
-          <Phone className="h-4 w-4" /> {request.client.phone}
+      </Link>
+
+      {/* Быстрые действия — НЕ внутри Link, чтобы клики по ним не открывали карточку */}
+      <div className="flex items-center justify-between gap-2 border-t border-border bg-bg-2/40 px-3 py-2">
+        <a
+          href={`tel:${request.client.phone}`}
+          className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-fg active:bg-muted/40"
+          aria-label="Позвонить"
+        >
+          <Phone className="h-3.5 w-3.5 text-[#2563EB]" /> {request.client.phone}
         </a>
-        <div className="inline-flex items-center gap-2">
-          <MapPin className="h-4 w-4" /> <span className="truncate">{shortenSpbAddress(request.address?.address) || "адрес не указан"}</span>
-        </div>
-        <div className="inline-flex items-center gap-2">
-          <Clock className="h-4 w-4" />
-          {request.scheduledAt
-            ? request.scheduledAt.toLocaleString("ru-RU", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })
-            : "без времени"}
-        </div>
-        <div className="inline-flex items-center gap-2">
-          <UserRound className="h-4 w-4" /> {request.assignedTo?.name || "не назначен"}
-        </div>
-      </div>
-      <div className="mt-4 flex items-center justify-between gap-2">
-        <Link href={`/crm/requests/${request.id}`} className="btn-outline h-10 px-4 text-sm">Открыть</Link>
-        <QuickActionButton requestId={request.id} status={request.status} size="sm" showCancel={request.status === "NEW"} />
+        <QuickActionButton requestId={request.id} status={request.status} size="sm" showCancel={false} />
       </div>
     </article>
   );
