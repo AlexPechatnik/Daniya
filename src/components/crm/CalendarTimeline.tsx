@@ -30,6 +30,7 @@ import {
 import { ru } from "date-fns/locale";
 import { districtMeta } from "@/lib/districts";
 import { StatusBadge } from "./StatusBadge";
+import { EmptyState } from "./EmptyState";
 
 type View = "day" | "week" | "month";
 
@@ -410,7 +411,7 @@ function DayPlanner({
               )}
             </div>
           ) : (
-            <div className="p-4 text-sm text-muted-fg">Очередь пустая.</div>
+            <EmptyState icon={ListChecks} tone="green" compact title="Очередь пустая" hint="Все заявки уже распределены по дням." />
           )}
         </section>
 
@@ -709,7 +710,7 @@ function QueuePanel({ queue }: { queue: QueueReqLite[] }) {
           {queue.map((r) => <QueueCard key={r.id} request={r} draggable />)}
         </div>
       ) : (
-        <div className="p-4 text-sm text-muted-fg">Очередь пустая.</div>
+        <EmptyState icon={ListChecks} tone="green" compact title="Очередь пустая" hint="Все заявки уже распределены по дням." />
       )}
     </section>
   );
@@ -880,15 +881,12 @@ function DistrictChips({ districts }: { districts: [string, number][] }) {
 
 function EmptyPlan() {
   return (
-    <div className="px-5 py-10 text-center">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-bg/40 text-muted-fg">
-        <ListChecks className="h-5 w-5" />
-      </div>
-      <div className="mt-3 font-medium">На день пока ничего не поставлено</div>
-      <div className="mt-1 text-sm text-muted-fg">
-        Возьмите заявку из очереди или создайте новую в свободное окно.
-      </div>
-    </div>
+    <EmptyState
+      icon={ListChecks}
+      tone="purple"
+      title="На день пока ничего не поставлено"
+      hint="Возьмите заявку из очереди или создайте новую в свободное окно."
+    />
   );
 }
 

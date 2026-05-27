@@ -14,10 +14,12 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   ArrowLeft,
   ExternalLink,
+  Inbox as InboxIcon,
   MessageCircle,
   Send,
   X,
 } from "lucide-react";
+import { EmptyState } from "./EmptyState";
 import { format, isToday, isYesterday, parseISO } from "date-fns";
 import { ru } from "date-fns/locale";
 
@@ -209,7 +211,8 @@ function FloatingTrigger({
       aria-label={open ? "Закрыть чаты" : "Открыть чаты"}
       aria-expanded={open}
       aria-keyshortcuts="Control+/"
-      className={`fixed bottom-5 right-5 z-40 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-fg shadow-lg shadow-primary/30 ring-1 ring-primary/20 transition-all hover:scale-105 hover:shadow-xl motion-reduce:transition-none motion-reduce:hover:scale-100 ${
+      // Mobile: 84px (выше bottom-nav и safe-area). Desktop: 20px (обычный отступ).
+      className={`fixed bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] right-5 z-40 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-fg shadow-lg shadow-primary/30 ring-1 ring-primary/20 transition-all hover:scale-105 hover:shadow-xl motion-reduce:transition-none motion-reduce:hover:scale-100 lg:bottom-5 ${
         open ? "translate-x-[calc(-1*var(--chat-panel-w,400px))] sm:translate-x-[-400px]" : ""
       } ${bump ? "animate-chat-bump" : ""}`}
     >
@@ -319,9 +322,12 @@ function ConversationList({
         {loading && conversations.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-fg">Загружаем диалоги…</div>
         ) : conversations.length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted-fg">
-            Сообщений пока нет. Когда клиент напишет в Telegram или MAX, диалог появится здесь.
-          </div>
+          <EmptyState
+            icon={InboxIcon}
+            tone="teal"
+            title="Сообщений пока нет"
+            hint="Когда клиент напишет в Telegram или MAX, диалог появится здесь."
+          />
         ) : (
           <ul className="divide-y divide-border">
             {conversations.map((c) => (

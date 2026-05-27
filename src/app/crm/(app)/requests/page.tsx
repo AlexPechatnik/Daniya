@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { subDays } from "date-fns";
-import { Phone, MapPin, Clock, UserRound } from "lucide-react";
+import { Phone, MapPin, Clock, UserRound, Inbox as InboxIcon } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { formatRub } from "@/lib/utils";
 import { shortenSpbAddress } from "@/lib/address";
 import { StatusBadge } from "@/components/crm/StatusBadge";
 import { QuickActionButton } from "@/components/crm/QuickActionButton";
+import { EmptyState } from "@/components/crm/EmptyState";
 
 export const dynamic = "force-dynamic";
 
@@ -78,9 +79,9 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
           </thead>
           <tbody className="divide-y divide-border">
             {requests.map((request) => (
-              <tr key={request.id} className="transition hover:bg-muted/20">
+              <tr key={request.id} className="group transition-colors hover:bg-primary/[0.04]">
                 <td className="px-4 py-3">
-                  <Link href={`/crm/requests/${request.id}`} className="font-medium hover:text-primary">
+                  <Link href={`/crm/requests/${request.id}`} className="font-medium transition group-hover:text-primary">
                     #{request.number} · {request.service?.name || "Без услуги"}
                   </Link>
                   <div className="text-xs text-muted-fg">
@@ -120,7 +121,7 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
 
 function RequestCard({ request }: { request: any }) {
   return (
-    <article className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+    <article className="rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:border-primary/30 hover:shadow-md">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -163,7 +164,14 @@ function RequestCard({ request }: { request: any }) {
 }
 
 function Empty() {
-  return <div className="px-4 py-10 text-center text-sm text-muted-fg">Заявок в этой очереди нет.</div>;
+  return (
+    <EmptyState
+      icon={InboxIcon}
+      tone="blue"
+      title="Заявок в этой очереди нет"
+      hint="Когда заявка попадёт под выбранный фильтр, она появится здесь."
+    />
+  );
 }
 
 function normalizeQueue(queue?: string) {

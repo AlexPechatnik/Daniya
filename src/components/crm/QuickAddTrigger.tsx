@@ -21,11 +21,9 @@ export function QuickAddTrigger({
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setInitialScheduledAt(undefined);
-        setOpen(true);
-      }
+      // Хоткей на «Новую заявку» убран: Ctrl+K теперь поиск (CrmTopBar),
+      // Ctrl+N перехватывает браузер (новое окно). Кнопка «+» в шапке
+      // и плавающая кнопка на мобайле достаточны.
       if (e.key === "Escape") setOpen(false);
     }
     function onQuickAdd(e: Event) {
@@ -50,26 +48,18 @@ export function QuickAddTrigger({
   return (
     <>
       {variant === "header" ? (
-        <>
-          <button onClick={openManually} className="btn-primary hidden md:inline-flex">
-            <Plus className="h-4 w-4" />
-            Новая заявка
-            <kbd className="ml-2 hidden text-[10px] text-white/90 lg:inline">Ctrl+K</kbd>
-          </button>
-          <button
-            onClick={openManually}
-            aria-label="Новая заявка"
-            className="md:hidden h-10 w-10 rounded-full btn-primary !p-0 shadow-lg shadow-primary/30"
-          >
-            <Plus className="h-5 w-5" />
-          </button>
-        </>
+        // На мобайле кнопка «+» только плавающая (variant="fab"), здесь только десктоп.
+        <button onClick={openManually} className="btn-primary hidden md:inline-flex">
+          <Plus className="h-4 w-4" />
+          Новая заявка
+        </button>
       ) : (
         <button
           onClick={openManually}
           aria-label="Новая заявка"
-          className="md:hidden fixed right-4 z-40 h-14 w-14 rounded-full btn-primary btn-glow !p-0 shadow-2xl shadow-primary/40 active:scale-95 transition-transform"
-          style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 5.25rem)" }}
+          className="md:hidden fixed right-5 z-40 h-14 w-14 rounded-2xl btn-primary btn-glow !p-0 shadow-2xl shadow-primary/40 active:scale-95 transition-transform"
+          // Стек снизу-вверх: bottom-nav → чат-FAB (~84px) → +FAB (~152px)
+          style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 9.5rem)" }}
         >
           <Plus className="h-6 w-6" />
         </button>

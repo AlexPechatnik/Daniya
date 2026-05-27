@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { QuickAddTrigger } from "@/components/crm/QuickAddTrigger";
 import { ChatSidebar, ChatSidebarProvider } from "@/components/crm/ChatSidebar";
+import { CrmTopBar } from "@/components/crm/CrmTopBar";
 import { prisma } from "@/lib/db";
 
 export default async function CrmLayout({ children }: { children: React.ReactNode }) {
@@ -98,9 +99,11 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
       </aside>
 
       <div className="flex flex-col min-h-screen">
-        <header className="h-14 border-b border-border bg-card/85 backdrop-blur flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30">
-          <div className="lg:hidden"><Logo compact /></div>
-          <div className="hidden lg:block text-sm text-muted-fg">CRM</div>
+        <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-border bg-card/85 px-4 backdrop-blur lg:px-6">
+          <div className="flex items-center gap-3">
+            <div className="lg:hidden"><Logo compact /></div>
+            <CrmTopBar userName={user.name} />
+          </div>
           {isAdmin && <QuickAddTrigger services={services} masters={masters} variant="header" />}
         </header>
 
