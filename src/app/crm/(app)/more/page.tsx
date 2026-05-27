@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, Bot, CalendarOff, Clock, FileSpreadsheet, History, LayoutGrid, Users } from "lucide-react";
+import { BarChart3, Bot, CalendarOff, Clock, FileSpreadsheet, History, Users } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +11,6 @@ const items = [
   { href: "/crm/settings/schedule", icon: Clock, title: "График", text: "Рабочие часы и длительность визитов." },
   { href: "/crm/settings/holidays", icon: CalendarOff, title: "Нерабочие дни", text: "Выходные, отпуска и исключения." },
   { href: "/crm/settings/bot", icon: Bot, title: "Боты", text: "Telegram, Max, роли и уведомления." },
-  { href: "/crm/board", icon: LayoutGrid, title: "Доска статусов", text: "Дополнительный обзор заявок по статусам." },
 ];
 
 export default function MorePage() {
