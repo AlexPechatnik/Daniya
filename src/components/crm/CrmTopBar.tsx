@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Search, X, Phone, FileSearch } from "lucide-react";
+import { Search, X, Phone, FileSearch, UserCog, LayoutDashboard, LogOut } from "lucide-react";
 
 /**
  * Топ-бар CRM: динамический заголовок раздела + ⌘K-поиск + аватар админа.
@@ -31,9 +31,25 @@ function sectionTitle(pathname: string): string {
   return SECTION_TITLES.find((s) => s.match.test(pathname))?.title || "CRM";
 }
 
-export function CrmTopBar({ userName }: { userName: string }) {
+export function CrmTopBar({ userName, userRole }: { userName: string; userRole?: string }) {
   const pathname = usePathname() || "/crm";
   const [searchOpen, setSearchOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Закрытие меню при клике вне
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    if (menuOpen) document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [menuOpen]);
+
+  const isMasterView = pathname.startsWith("/crm/mobile");
+  const isAdmin = userRole === "ADMIN";
 
   // ⌘K / Ctrl+K — открыть поиск
   useEffect(() => {
@@ -78,13 +94,70 @@ export function CrmTopBar({ userName }: { userName: string }) {
           <Search className="h-4 w-4" />
         </button>
 
-        {/* Аватар админа */}
-        <div
-          className="hidden h-9 w-9 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary md:flex"
-          title={userName}
-          aria-label={`Профиль: ${userName}`}
-        >
-          {initial}
+        {/* Аватар с меню — переключатель режима + выход */}
+        <div ref={menuRef}>
+          <button
+            type="button"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            aria-label={`Меню профиля: ${userName}`}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary transition hover:bg-primary/25"
+            title={userName}
+          >
+            {initial}
+          </button>
+          {menuOpen && (
+            // fixed позиция — стабильно у правого края экрана, не зависит
+            // от ширины родительского flex-контейнера.
+            <div
+              role="menu"
+              className="fixed right-3 top-14 z-50 w-60 overflow-hidden rounded-2xl border border-border bg-card shadow-xl"
+            >
+              <div className="border-b border-border px-4 py-3">
+                <div className="text-sm font-medium">{userName}</div>
+                <div className="text-xs text-muted-fg">
+                  {isAdmin ? "Администратор" : "Мастер"}
+                  {isMasterView && isAdmin && " · режим мастера"}
+                </div>
+              </div>
+
+              {isAdmin && (
+                isMasterView ? (
+                  <Link
+                    href="/crm"
+                    onClick={() => setMenuOpen(false)}
+                    role="menuitem"
+                    className="flex items-center gap-3 px-4 py-3 text-sm transition hover:bg-muted/40"
+                  >
+                    <LayoutDashboard className="h-4 w-4 text-primary" />
+                    Вернуться в админ
+                  </Link>
+                ) : (
+                  <Link
+                    href="/crm/mobile?tab=mine"
+                    onClick={() => setMenuOpen(false)}
+                    role="menuitem"
+                    className="flex items-center gap-3 px-4 py-3 text-sm transition hover:bg-muted/40"
+                  >
+                    <UserCog className="h-4 w-4 text-primary" />
+                    Открыть как мастер
+                  </Link>
+                )
+              )}
+
+              <form action="/api/auth/logout" method="POST" className="border-t border-border">
+                <button
+                  type="submit"
+                  role="menuitem"
+                  className="flex w-full items-center gap-3 px-4 py-3 text-sm text-muted-fg transition hover:bg-muted/40 hover:text-fg"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Выйти
+                </button>
+              </form>
+            </div>
+          )}
         </div>
       </div>
 
