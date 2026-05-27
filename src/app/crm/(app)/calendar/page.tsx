@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { CalendarTimeline } from "@/components/crm/CalendarTimeline";
+import { CalendarPageMobile } from "@/components/crm/mobile/CalendarPageMobile";
 import { startOfWeek, addDays, startOfMonth, endOfMonth } from "date-fns";
 import { findFreeSlots } from "@/lib/scheduling";
 import { shortenSpbAddress } from "@/lib/address";
@@ -48,57 +49,102 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   for (let d = new Date(rangeStart); d < rangeEnd; d = addDays(d, 1)) days.push(toDateKey(d));
 
   // Свободные слоты считаем только для дня в режиме «день» — это дорого, не нужно
-  // обсчитывать все 30+ дней месяца.
+  // обсчитывать все 30+ дней месяца. Для мобайла отдельно считаем слоты для anchor.
   const visibleSlotDays = view === "day" ? [anchor] : [];
   const freeSlotsPerDay = await Promise.all(
     visibleSlotDays.map(async (d) => ({ date: toDateKey(d), slots: (await findFreeSlots(d)).map((s) => s.start.toISOString()) })),
   );
+  // Для мобильной версии всегда считаем слоты anchor-дня — мобильный view
+  // не зависит от view-параметра (там только «один день»).
+  const mobileSlots = (await findFreeSlots(anchor)).map((s) => s.start.toISOString());
+  const anchorKey = toDateKey(anchor);
+  const mobileTrips = requests
+    .filter((r) => r.scheduledAt && toDateKey(r.scheduledAt) === anchorKey)
+    .map((r) => ({
+      id: r.id,
+      number: r.number,
+      clientName: r.client.name,
+      serviceName: r.service?.name || "—",
+      address: shortenSpbAddress(r.address?.address) || "",
+      district: r.address?.district || null,
+      lat: r.address?.lat || null,
+      lng: r.address?.lng || null,
+      phone: r.client.phone,
+      scheduledAt: r.scheduledAt!.toISOString(),
+      duration: r.durationMin,
+      status: r.status,
+    }));
+  const mobileQueue = unscheduled.map((r) => ({
+    id: r.id,
+    number: r.number,
+    clientName: r.client.name,
+    serviceName: r.service?.name || "—",
+    address: shortenSpbAddress(r.address?.address) || "",
+    status: r.status,
+  }));
+  const mobileHoliday = holidays.find((h) => h.date.toISOString().slice(0, 10) === anchorKey);
+  const todayKey = toDateKey(new Date());
 
   return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">План выездов</h1>
-        <p className="mt-1 text-sm text-muted-fg">Кто куда едет, какие заявки без времени и где есть окно.</p>
+    <>
+      {/* Десктоп: полный календарь с Day/Week/Month и drag&drop. */}
+      <div className="hidden lg:block space-y-5">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">План выездов</h1>
+          <p className="mt-1 text-sm text-muted-fg">Кто куда едет, какие заявки без времени и где есть окно.</p>
+        </div>
+        <CalendarTimeline
+          days={days}
+          requests={requests.map((r) => ({
+            id: r.id,
+            number: r.number,
+            clientName: r.client.name,
+            serviceName: r.service?.name || "—",
+            address: shortenSpbAddress(r.address?.address) || "",
+            district: r.address?.district || null,
+            lat: r.address?.lat || null,
+            lng: r.address?.lng || null,
+            phone: r.client.phone,
+            scheduledAt: r.scheduledAt!.toISOString(),
+            duration: r.durationMin,
+            status: r.status,
+            masterId: r.assignedToId,
+            masterName: r.assignedTo?.name || null,
+          }))}
+          unscheduled={unscheduled.map((r) => ({
+            id: r.id,
+            number: r.number,
+            clientName: r.client.name,
+            serviceName: r.service?.name || "—",
+            address: shortenSpbAddress(r.address?.address) || "",
+            district: r.address?.district || null,
+            lat: r.address?.lat || null,
+            lng: r.address?.lng || null,
+            phone: r.client.phone,
+            duration: r.durationMin,
+            status: r.status,
+            masterId: r.assignedToId,
+            masterName: r.assignedTo?.name || null,
+          }))}
+          holidays={holidays.map((h) => ({ date: h.date.toISOString().slice(0, 10), reason: h.reason || "Выходной" }))}
+          freeSlots={freeSlotsPerDay}
+          anchor={anchorKey}
+          view={view}
+        />
       </div>
-      <CalendarTimeline
-        days={days}
-        requests={requests.map((r) => ({
-          id: r.id,
-          number: r.number,
-          clientName: r.client.name,
-          serviceName: r.service?.name || "—",
-          address: shortenSpbAddress(r.address?.address) || "",
-          district: r.address?.district || null,
-          lat: r.address?.lat || null,
-          lng: r.address?.lng || null,
-          phone: r.client.phone,
-          scheduledAt: r.scheduledAt!.toISOString(),
-          duration: r.durationMin,
-          status: r.status,
-          masterId: r.assignedToId,
-          masterName: r.assignedTo?.name || null,
-        }))}
-        unscheduled={unscheduled.map((r) => ({
-          id: r.id,
-          number: r.number,
-          clientName: r.client.name,
-          serviceName: r.service?.name || "—",
-          address: shortenSpbAddress(r.address?.address) || "",
-          district: r.address?.district || null,
-          lat: r.address?.lat || null,
-          lng: r.address?.lng || null,
-          phone: r.client.phone,
-          duration: r.durationMin,
-          status: r.status,
-          masterId: r.assignedToId,
-          masterName: r.assignedTo?.name || null,
-        }))}
-        holidays={holidays.map((h) => ({ date: h.date.toISOString().slice(0, 10), reason: h.reason || "Выходной" }))}
-        freeSlots={freeSlotsPerDay}
-        anchor={toDateKey(anchor)}
-        view={view}
-      />
-    </div>
+
+      {/* Мобайл: только что важно — выезды дня, очередь, окна. Без вкладок. */}
+      <div className="lg:hidden">
+        <CalendarPageMobile
+          anchorDayKey={anchorKey}
+          todayKey={todayKey}
+          trips={mobileTrips}
+          queue={mobileQueue}
+          freeSlots={mobileSlots}
+          holiday={mobileHoliday ? { date: anchorKey, reason: mobileHoliday.reason || "Выходной" } : undefined}
+        />
+      </div>
+    </>
   );
 }
 
