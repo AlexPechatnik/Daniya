@@ -119,19 +119,17 @@ export function RequestEditor({
 
   return (
     <div className="space-y-5">
-      <section className="rounded-3xl border border-border bg-card p-5 shadow-sm lg:p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-2xl font-semibold tracking-tight">Заявка #{request.number}</h2>
-              <StatusBadge status={form.status} size="md" />
+      {/* Hero-полоса под заголовком страницы: мета-инфа + основное действие.
+          Сам заголовок «Заявка #N» уже на странице, второй раз не повторяем. */}
+      <section className="rounded-3xl border border-border bg-card p-4 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-medium text-fg">
+              {form.address || <span className="text-muted-fg">Адрес пока не указан</span>}
             </div>
-            <div className="mt-2 max-w-3xl truncate text-sm text-muted-fg">
-              {form.address || "Адрес пока не указан"}
-            </div>
-            <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-fg">
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-fg">
               <span>Источник: {sourceLabel(request.source)}</span>
-              <span>·</span>
+              <span aria-hidden>·</span>
               <span>Создана {format(new Date(request.createdAt), "d MMMM, HH:mm", { locale: ru })}</span>
             </div>
           </div>
@@ -143,7 +141,7 @@ export function RequestEditor({
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr),340px]">
         <div className="space-y-5">
-          <FormSection icon={MapPin} title="Адрес и клиент" hint="Куда ехать и с кем связаться. Адрес ищется с подсказками как в картах.">
+          <FormSection icon={MapPin} tone="red" title="Адрес и клиент" hint="Куда ехать и с кем связаться. Адрес ищется с подсказками как в картах.">
             <div className="rounded-2xl border border-border bg-bg-2 p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
@@ -173,19 +171,26 @@ export function RequestEditor({
             </div>
           </FormSection>
 
-          <FormSection icon={Wrench} title="Услуга" hint="Выберите основной тип работы. Остальные детали можно оставить в комментарии.">
+          <FormSection icon={Wrench} tone="orange" title="Услуга" hint="Выберите основной тип работы. Остальные детали можно оставить в комментарии.">
             <ChoiceGrid
-              items={[{ value: "", label: "Не выбрана", hint: "Уточнить позже" }, ...services.map((service) => ({ value: service.id, label: service.name }))]}
+              items={[
+                { value: "", label: "Не выбрана", hint: "Уточнить позже" },
+                ...services.map((service) => ({
+                  value: service.id,
+                  label: service.name,
+                  category: (service as any).category as string | null | undefined,
+                })),
+              ]}
               value={form.serviceId}
               onChange={(serviceId) => setForm({ ...form, serviceId })}
             />
           </FormSection>
 
-          <FormSection icon={CalendarDays} title="Когда выполнить" hint="Быстрые варианты сверху, ручная дата и время ниже.">
+          <FormSection icon={CalendarDays} tone="purple" title="Когда выполнить" hint="Быстрые варианты сверху, ручная дата и время ниже.">
             <SchedulePicker value={form.scheduledAt} onChange={(scheduledAt) => setForm({ ...form, scheduledAt })} />
           </FormSection>
 
-          <FormSection icon={UserRound} title="Мастер" hint="Можно оставить без назначения, если заявка ещё в очереди.">
+          <FormSection icon={UserRound} tone="blue" title="Мастер" hint="Можно оставить без назначения, если заявка ещё в очереди.">
             <MasterGrid
               items={[{ value: "", label: "Не назначен", hint: "Оставить в очереди" }, ...masters.map((master) => ({ value: master.id, label: master.name, hint: master.role === "ADMIN" ? "Администратор" : "Мастер" }))]}
               value={form.assignedToId}
@@ -193,7 +198,7 @@ export function RequestEditor({
             />
           </FormSection>
 
-          <FormSection icon={Sparkles} title="Описание клиента и техника" hint="Комментарий отдельно, найденная техника отдельно. Так проще понять, что взять с собой.">
+          <FormSection icon={Sparkles} tone="teal" title="Описание клиента и техника" hint="Комментарий отдельно, найденная техника отдельно. Так проще понять, что взять с собой.">
             <div className="grid gap-3">
               <label className="block">
                 <div className="mb-2 text-sm font-medium">Комментарий клиента</div>
@@ -238,7 +243,7 @@ export function RequestEditor({
             </div>
           </FormSection>
 
-          <FormSection icon={CircleDollarSign} title="Стоимость и оплата" hint="Сумму можно указать после согласования или завершения работы.">
+          <FormSection icon={CircleDollarSign} tone="green" title="Стоимость и оплата" hint="Сумму можно указать после согласования или завершения работы.">
             <div className="grid gap-4 lg:grid-cols-[220px,1fr]">
               <label className="block">
                 <div className="mb-2 text-sm font-medium">Стоимость заявки</div>
@@ -292,30 +297,56 @@ export function RequestEditor({
         </div>
 
         <aside className="xl:sticky xl:top-20 xl:self-start">
-          <div className="rounded-3xl border border-border bg-card p-5 shadow-sm">
-            <div className="text-sm font-semibold">Сводка заявки</div>
-            <div className="mt-4 space-y-3 text-sm">
-              <SummaryLine label="Услуга" value={selectedService} />
-              <SummaryLine label="Адрес" value={form.address || "Не указан"} />
-              <SummaryLine label="Когда" value={selectedWhen} />
-              <SummaryLine label="Мастер" value={selectedMaster} />
-              <SummaryLine label="Оплата" value={selectedPayment} />
-              <SummaryLine label="Сумма" value={`${form.price || 0} ₽`} strong />
+          {/* Hero card сводки: сумма крупно, рядом — индикатор оплаты;
+              ниже — строки с цветными иконками; снизу — главные действия. */}
+          <div className="overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card to-bg-2/40 shadow-sm">
+            <div className="p-5">
+              <div className="text-xs uppercase tracking-wider text-muted-fg">Стоимость</div>
+              <div className="mt-1 flex items-baseline gap-2">
+                <span className="text-3xl font-semibold tabular-nums tracking-tight">
+                  {(form.price || 0).toLocaleString("ru-RU")}
+                </span>
+                <span className="text-xl text-muted-fg">₽</span>
+              </div>
+              <PaymentIndicator status={form.paymentStatus} label={selectedPayment} />
             </div>
-            <div className="mt-5 grid gap-2">
+
+            <div className="space-y-2.5 border-t border-border/60 p-5">
+              <SummaryRow icon={MapPin} tone="red" label="Адрес">
+                <span className="truncate">{form.address || <span className="text-muted-fg">не указан</span>}</span>
+                {mapHref && (
+                  <a
+                    href={mapHref}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="ml-2 shrink-0 text-xs text-primary hover:underline"
+                  >
+                    Карта →
+                  </a>
+                )}
+              </SummaryRow>
+              <SummaryRow icon={CalendarDays} tone="purple" label="Когда">
+                {form.scheduledAt
+                  ? <span className="truncate">{selectedWhen}</span>
+                  : <span className="truncate text-muted-fg">без времени</span>}
+              </SummaryRow>
+              <SummaryRow icon={UserRound} tone="blue" label="Мастер">
+                <span className="truncate">{selectedMaster}</span>
+              </SummaryRow>
+              <SummaryRow icon={Wrench} tone="orange" label="Услуга">
+                <span className="truncate">{selectedService}</span>
+              </SummaryRow>
+            </div>
+
+            <div className="grid gap-2 border-t border-border/60 p-5">
+              <button onClick={save} disabled={pending} className="btn-primary h-11 w-full">
+                <Save className="h-4 w-4" /> {pending ? "Сохраняю" : "Сохранить"}
+              </button>
               {request.client?.phone && (
                 <a href={`tel:${request.client.phone}`} className="btn-outline h-11 w-full">
                   Позвонить
                 </a>
               )}
-              {mapHref && (
-                <a href={mapHref} target="_blank" rel="noreferrer" className="btn-outline h-11 w-full">
-                  Маршрут
-                </a>
-              )}
-              <button onClick={save} disabled={pending} className="btn-primary h-11 w-full">
-                <Save className="h-4 w-4" /> {pending ? "Сохраняю" : "Сохранить"}
-              </button>
             </div>
           </div>
         </aside>
@@ -424,22 +455,40 @@ function SchedulePicker({ value, onChange }: { value: string; onChange: (value: 
   );
 }
 
+// Семантическая палитра для иконок секций: каждый раздел получает свой
+// цвет (как Reminders/Calendar в iOS — location красный, person синий и т.п.).
+const SECTION_TONES = {
+  red:    "bg-[#FEE2E2] text-[#DC2626]",
+  orange: "bg-[#FFEDD5] text-[#EA580C]",
+  amber:  "bg-[#FEF3C7] text-[#D97706]",
+  green:  "bg-[#DCFCE7] text-[#16A34A]",
+  teal:   "bg-[#CCFBF1] text-[#0D9488]",
+  blue:   "bg-[#DBEAFE] text-[#2563EB]",
+  indigo: "bg-[#E0E7FF] text-[#4F46E5]",
+  purple: "bg-[#F3E8FF] text-[#9333EA]",
+  pink:   "bg-[#FCE7F3] text-[#DB2777]",
+  gray:   "bg-muted text-muted-fg",
+} as const;
+type SectionTone = keyof typeof SECTION_TONES;
+
 function FormSection({
   icon: Icon,
   title,
   hint,
+  tone = "gray",
   children,
 }: {
   icon?: typeof Wrench;
   title: string;
   hint?: string;
+  tone?: SectionTone;
   children: React.ReactNode;
 }) {
   return (
     <section className="rounded-3xl border border-border bg-card p-5 shadow-sm">
       <div className="mb-4 flex gap-3">
         {Icon && (
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-muted text-muted-fg">
+          <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl ${SECTION_TONES[tone]}`}>
             <Icon className="h-4 w-4" />
           </div>
         )}
@@ -453,28 +502,51 @@ function FormSection({
   );
 }
 
+/** Цветная полоска слева на тайле — визуально группирует услуги по категории. */
+const CATEGORY_BAR: Record<string, string> = {
+  laser_refill: "bg-blue-500",
+  cartridge_replacement: "bg-indigo-500",
+  ciss_inkjet_service: "bg-purple-500",
+  printer_repair: "bg-orange-500",
+  visit_diagnostics: "bg-teal-500",
+  maintenance: "bg-slate-400",
+};
+
 function ChoiceGrid({
   items,
   value,
   onChange,
 }: {
-  items: { value: string; label: string; hint?: string }[];
+  items: { value: string; label: string; hint?: string; category?: string | null }[];
   value: string;
   onChange: (value: string) => void;
 }) {
+  // Сортируем по категории — однотипные услуги рядом, цветные полоски
+  // образуют визуальные «секции» внутри сетки.
+  const sortedItems = [...items].sort((a, b) => {
+    const ca = a.category || "z_other";
+    const cb = b.category || "z_other";
+    if (ca !== cb) return ca.localeCompare(cb);
+    return a.label.localeCompare(b.label, "ru");
+  });
   return (
     <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-      {items.map((item) => {
+      {sortedItems.map((item) => {
         const active = value === item.value;
+        const barClass = item.category ? CATEGORY_BAR[item.category] || "bg-muted" : "bg-muted";
         return (
           <button
             key={item.value || "empty"}
             type="button"
             onClick={() => onChange(item.value)}
-            className={`min-h-[76px] rounded-2xl border px-4 py-3 text-left transition ${
-              active ? "border-transparent bg-blue-50 shadow-inner" : "border-border bg-bg-2 hover:bg-muted"
+            className={`relative min-h-[76px] overflow-hidden rounded-2xl border pl-5 pr-4 py-3 text-left transition ${
+              active
+                ? "border-primary/40 bg-primary/[0.06] shadow-sm"
+                : "border-border bg-bg-2 hover:bg-muted hover:border-primary/20"
             }`}
           >
+            {/* Цветная полоска категории слева */}
+            <span className={`absolute left-0 top-0 bottom-0 w-1 ${barClass}`} aria-hidden />
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-sm font-medium">{item.label}</div>
@@ -578,11 +650,56 @@ function InfoLine({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SummaryLine({ label, value, strong = false }: { label: string; value: string; strong?: boolean }) {
+/**
+ * Строка сводки заявки с цветной иконкой слева, лейблом и значением.
+ * Каждая строка визуально несёт свой «семантический цвет» — Apple-style.
+ */
+function SummaryRow({
+  icon: Icon,
+  tone,
+  label,
+  children,
+}: {
+  icon: typeof Wrench;
+  tone: SectionTone;
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="flex items-start justify-between gap-3 border-b border-border pb-3 last:border-b-0 last:pb-0">
-      <span className="text-muted-fg">{label}</span>
-      <span className={`max-w-[190px] text-right ${strong ? "font-semibold tabular-nums" : "font-medium"}`}>{value}</span>
+    <div className="flex items-center gap-3 text-sm">
+      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${SECTION_TONES[tone]}`}>
+        <Icon className="h-4 w-4" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="text-[11px] uppercase tracking-wider text-muted-fg">{label}</div>
+        <div className="flex items-center font-medium">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Точечный индикатор статуса оплаты ●●● — три кружка как «прогресс».
+ *   UNPAID  → ○ ○ ○ серый
+ *   PARTIAL → ● ● ○ янтарный
+ *   PAID    → ● ● ● зелёный
+ */
+function PaymentIndicator({ status, label }: { status: string; label: string }) {
+  const filled = status === "PAID" ? 3 : status === "PARTIAL" ? 2 : 0;
+  const tone =
+    status === "PAID" ? "bg-emerald-500" : status === "PARTIAL" ? "bg-amber-500" : "bg-muted";
+  return (
+    <div className="mt-3 flex items-center gap-2">
+      <div className="flex items-center gap-1">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className={`h-2 w-2 rounded-full ${i < filled ? tone : "bg-muted"}`}
+            aria-hidden
+          />
+        ))}
+      </div>
+      <span className="text-xs text-muted-fg">{label}</span>
     </div>
   );
 }

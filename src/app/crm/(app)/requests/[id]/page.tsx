@@ -5,6 +5,7 @@ import { RequestEditor } from "@/components/crm/RequestEditor";
 import { RequestChat } from "@/components/crm/RequestChat";
 import { QuickActionButton } from "@/components/crm/QuickActionButton";
 import { StatusBadge } from "@/components/crm/StatusBadge";
+import { StatusPipeline } from "@/components/crm/StatusPipeline";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +55,8 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           showCancel={request.status !== "CANCELLED" && request.status !== "DONE"}
         />
       </div>
+
+      <StatusPipeline status={request.status} />
 
       <RequestEditor request={request as any} services={services} masters={masters} />
 

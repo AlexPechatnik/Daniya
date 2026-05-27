@@ -7,9 +7,13 @@ export function StatusBadge({ status, size = "md" }: { status: string; size?: "s
     md: "px-2.5 py-1 text-xs",
     lg: "px-3 py-1.5 text-sm",
   }[size];
+  // Tinted-flat бейдж в духе iOS: насыщенный текст + tint-фон + цветная точка.
+  // Без белой обводки внутри — это давало эффект «пастельной конфеты».
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border ${m.cls.bg} ${m.cls.border} ${m.cls.text} ${sizes} font-semibold shadow-[inset_0_1px_0_rgb(255_255_255/0.65)]`}>
-      <span className={`h-1.5 w-1.5 rounded-full ${m.cls.dot} shadow-sm`} />
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full ${m.cls.bg} ${m.cls.text} ${sizes} font-semibold`}
+    >
+      <span className={`h-1.5 w-1.5 rounded-full ${m.cls.dot}`} />
       {size === "sm" ? m.shortLabel : m.label}
     </span>
   );

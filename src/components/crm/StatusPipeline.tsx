@@ -1,53 +1,91 @@
 "use client";
-import { PIPELINE, STATUS_META, statusMeta, type RequestStatus } from "@/lib/status";
-import { Check } from "lucide-react";
+import { PIPELINE, PIPELINE_INDEX, STATUS_META, statusMeta } from "@/lib/status";
+import { Check, Slash } from "lucide-react";
 
+/**
+ * Прогресс заявки по этапам — multi-step bar в духе Apple Reminders / Shortcuts.
+ *
+ *   ✓── ✓── ●(pulse)── ○── ○── ○── ○
+ *  Новая Принята  ВПути  Место Работа Оплата Готова
+ *
+ * - Пройденные этапы: зелёный filled с галочкой.
+ * - Текущий: цвет статуса + soft-pulse ring.
+ * - Будущие: пустой кружок с пунктирной обводкой.
+ * - CANCELLED: отдельный «остановленный» state с диагональной линией.
+ */
 export function StatusPipeline({ status }: { status: string }) {
-  const current = statusMeta(status);
   const isCancelled = status === "CANCELLED";
-  const currentStep = current.step;
+  const currentIndex = isCancelled ? -1 : PIPELINE_INDEX[status] ?? 0;
+  const currentMeta = statusMeta(status);
 
   return (
-    <div className="card p-5">
-      <div className="flex items-center justify-between mb-4">
-        <div className="text-xs uppercase tracking-wider text-muted-fg">Этап</div>
-        {isCancelled && <span className={`text-xs font-medium ${current.cls.text}`}>Заявка отменена</span>}
+    <div className="rounded-2xl border border-border bg-card p-4">
+      <div className="mb-3 flex items-baseline justify-between gap-3">
+        <div className="text-xs font-medium uppercase tracking-wider text-muted-fg">Этап заявки</div>
+        <div className={`text-xs font-semibold ${currentMeta.cls.text}`}>
+          {isCancelled ? "Заявка отменена" : `${currentIndex + 1} из ${PIPELINE.length}`}
+        </div>
       </div>
-      <div className="flex items-center">
+
+      <ol className="flex items-start">
         {PIPELINE.map((s, i) => {
           const meta = STATUS_META[s];
-          const done = !isCancelled && i < currentStep;
-          const active = !isCancelled && i === currentStep;
-          const upcoming = isCancelled || i > currentStep;
+          const isPast = !isCancelled && i < currentIndex;
+          const isCurrent = !isCancelled && i === currentIndex;
+          const isFuture = isCancelled || i > currentIndex;
+          const isLast = i === PIPELINE.length - 1;
           return (
-            <div key={s} className="flex items-center flex-1 last:flex-none">
-              <div className="flex flex-col items-center gap-2 min-w-0">
-                <div
-                  className={`relative h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-mono transition
-                    ${done ? `${meta.cls.dot} text-white` : ""}
-                    ${active ? `${meta.cls.dot} text-white ring-4 ${meta.cls.ring}` : ""}
-                    ${upcoming ? "bg-muted border border-border text-muted-fg" : ""}`}
+            <li key={s} className="flex flex-1 items-start last:flex-none">
+              <div className="flex min-w-0 flex-col items-center">
+                <span
+                  className={`relative flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-semibold transition ${
+                    isPast
+                      ? "bg-emerald-500 text-white"
+                      : isCurrent
+                        ? `${meta.cls.dot} text-white shadow-md`
+                        : "border-2 border-dashed border-border bg-card text-muted-fg/60"
+                  }`}
+                  aria-current={isCurrent ? "step" : undefined}
                 >
-                  {done ? <Check className="h-3.5 w-3.5" /> : i + 1}
-                  {active && (
-                    <span className="absolute inset-0 rounded-full animate-ping opacity-60"
-                          style={{ background: meta.hex }} />
+                  {isCancelled && i === 0 ? (
+                    <Slash className="h-3.5 w-3.5" />
+                  ) : isPast ? (
+                    <Check className="h-3.5 w-3.5" />
+                  ) : (
+                    i + 1
+                  )}
+                  {isCurrent && (
+                    <span
+                      aria-hidden
+                      className="absolute inset-0 -m-1 rounded-full opacity-30 animate-ping"
+                      style={{ background: meta.hex }}
+                    />
+                  )}
+                </span>
+                <span
+                  className={`mt-2 max-w-[88px] truncate text-center text-[10px] sm:text-[11px] ${
+                    isCurrent
+                      ? `font-semibold ${meta.cls.text}`
+                      : isPast
+                        ? "text-fg/70"
+                        : "text-muted-fg"
+                  }`}
+                  title={meta.label}
+                >
+                  {meta.shortLabel}
+                </span>
+              </div>
+              {!isLast && (
+                <div className="mt-3 h-0.5 flex-1 overflow-hidden rounded-full bg-border">
+                  {(isPast || (isCurrent && i + 1 <= currentIndex)) && (
+                    <div className="h-full w-full bg-emerald-500/70" />
                   )}
                 </div>
-                <div className={`text-[10px] uppercase tracking-wider truncate max-w-[80px] text-center
-                  ${active ? meta.cls.text + " font-semibold" : "text-muted-fg"}`}>
-                  {meta.shortLabel}
-                </div>
-              </div>
-              {i < PIPELINE.length - 1 && (
-                <div className="flex-1 h-px mx-1 mb-6 bg-border relative overflow-hidden">
-                  {done && <div className={`absolute inset-0 ${meta.cls.dot}`} />}
-                </div>
               )}
-            </div>
+            </li>
           );
         })}
-      </div>
+      </ol>
     </div>
   );
 }

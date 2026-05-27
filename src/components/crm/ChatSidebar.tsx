@@ -209,7 +209,7 @@ function FloatingTrigger({
       aria-label={open ? "Закрыть чаты" : "Открыть чаты"}
       aria-expanded={open}
       aria-keyshortcuts="Control+/"
-      className={`fixed bottom-5 right-5 z-40 inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-card text-fg shadow-lg shadow-black/15 backdrop-blur transition-all hover:scale-105 hover:shadow-xl motion-reduce:transition-none motion-reduce:hover:scale-100 ${
+      className={`fixed bottom-5 right-5 z-40 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-fg shadow-lg shadow-primary/30 ring-1 ring-primary/20 transition-all hover:scale-105 hover:shadow-xl motion-reduce:transition-none motion-reduce:hover:scale-100 ${
         open ? "translate-x-[calc(-1*var(--chat-panel-w,400px))] sm:translate-x-[-400px]" : ""
       } ${bump ? "animate-chat-bump" : ""}`}
     >
