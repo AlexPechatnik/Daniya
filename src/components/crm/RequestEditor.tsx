@@ -118,6 +118,18 @@ export function RequestEditor({
     router.refresh();
   }
 
+  // Save-and-back event-handler — слушает кнопку из page-level MobileBottomBar.
+  // Ей удобно жить там (всегда видна снизу), а save-логика — здесь, в редакторе.
+  useEffect(() => {
+    async function onSaveAndBack() {
+      await save();
+      router.push("/crm/requests");
+    }
+    window.addEventListener("printcare:request:save-and-back", onSaveAndBack);
+    return () => window.removeEventListener("printcare:request:save-and-back", onSaveAndBack);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div className="space-y-5">
       {/* Hero-полоса под заголовком страницы: мета-инфа + основное действие.
@@ -134,11 +146,12 @@ export function RequestEditor({
               <span>Создана {format(new Date(request.createdAt), "d MMMM, HH:mm", { locale: ru })}</span>
             </div>
           </div>
+          {/* Save в hero-полосе — только на десктопе. На мобайле есть единая
+              кнопка снизу страницы (внизу RequestEditor), не дублируем. */}
           <button
             onClick={save}
             disabled={pending}
-            // На мобайле кнопка ниже, на ширину контейнера; на десктопе — справа.
-            className="btn-primary h-10 w-full px-5 sm:h-11 sm:w-auto"
+            className="btn-primary hidden h-11 px-5 sm:inline-flex"
           >
             <Save className="h-4 w-4" /> {pending ? "Сохраняю" : "Сохранить"}
           </button>
@@ -346,7 +359,9 @@ export function RequestEditor({
               </SummaryRow>
             </div>
 
-            <div className="grid gap-2 border-t border-border/60 p-5">
+            {/* В sidebar hero-card на мобайле Save и Позвонить не нужны — есть
+                единая кнопка снизу страницы. На десктопе оставляем. */}
+            <div className="hidden gap-2 border-t border-border/60 p-5 lg:grid">
               <button onClick={save} disabled={pending} className="btn-primary h-11 w-full">
                 <Save className="h-4 w-4" /> {pending ? "Сохраняю" : "Сохранить"}
               </button>
@@ -360,11 +375,9 @@ export function RequestEditor({
         </aside>
       </div>
 
-      <div className="sticky bottom-3 z-20 rounded-2xl border border-border bg-card/95 p-3 shadow-lg backdrop-blur xl:hidden">
-        <button onClick={save} disabled={pending} className="btn-primary h-12 w-full">
-          <Save className="h-4 w-4" /> {pending ? "Сохраняю" : "Сохранить заявку"}
-        </button>
-      </div>
+      {/* Sticky-bar убрана. На lg+ — кнопки в hero-полосе и sidebar.
+          На < lg — RequestPageMobile рендерит page-level MobileBottomBar,
+          который диспатчит 'printcare:request:save-and-back'. */}
     </div>
   );
 }

@@ -136,9 +136,19 @@ export function RequestPageMobile({
         )}
       </div>
 
-      {/* Sticky-bar снизу с главным действием */}
+      {/* Sticky-bar снизу: основная — «Сохранить и вернуться» (диспатчит
+          event для RequestEditor), вторичная — быстрая смена статуса. */}
       <MobileBottomBar>
-        <FullWidthQuickAction requestId={request.id} status={request.status} />
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent("printcare:request:save-and-back"))}
+            className="btn-primary h-12 flex-1 text-sm"
+          >
+            Сохранить и вернуться
+          </button>
+          <CompactQuickAction requestId={request.id} status={request.status} />
+        </div>
       </MobileBottomBar>
     </>
   );
@@ -169,11 +179,11 @@ function Row({
   );
 }
 
-/** QuickActionButton на всю ширину снизу, размер lg. */
-function FullWidthQuickAction({ requestId, status }: { requestId: string; status: string }) {
+/** Компактная версия QuickAction — кнопка фиксированной ширины справа от Save. */
+function CompactQuickAction({ requestId, status }: { requestId: string; status: string }) {
   return (
-    <div className="[&_>div]:w-full [&_button]:!w-full [&_button]:!h-12 [&_button]:!text-base">
-      <QuickActionButton requestId={requestId} status={status} size="lg" showCancel={false} />
+    <div className="[&_>div]:w-auto [&_button]:!h-12 [&_button]:!text-sm">
+      <QuickActionButton requestId={requestId} status={status} size="md" showCancel={false} />
     </div>
   );
 }
