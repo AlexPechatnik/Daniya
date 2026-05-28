@@ -120,6 +120,9 @@ function ServiceSheet({
 }) {
   const [mounted, setMounted] = useState(false);
   const [query, setQuery] = useState("");
+  // Swipe-to-dismiss: тянем handle вниз — шторка едет; > 100px — закрываем.
+  const [dragY, setDragY] = useState(0);
+  const dragStartY = useRef<number | null>(null);
   useEffect(() => setMounted(true), []);
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -162,14 +165,35 @@ function ServiceSheet({
       aria-modal="true"
       aria-label="Выбор услуги"
       onClick={onClose}
-      className="fixed inset-0 z-[110] flex items-end justify-center bg-black/55 backdrop-blur-sm"
+      // crm-light задаёт CSS-переменные темы. text-fg обязательно — иначе
+      // дети наследуют цвет от body (тёмная тема публичного сайта) и текст бледный.
+      className="crm-light fixed inset-0 z-[110] flex items-end justify-center bg-slate-900/40 text-fg backdrop-blur-sm"
     >
       <div
         onClick={(e) => e.stopPropagation()}
         className="flex max-h-[88vh] w-full flex-col rounded-t-3xl bg-card shadow-2xl ring-1 ring-border"
+        style={{
+          transform: dragY > 0 ? `translateY(${dragY}px)` : undefined,
+          transition: dragStartY.current == null ? "transform 200ms ease-out" : undefined,
+        }}
       >
-        {/* Drag handle */}
-        <div className="flex justify-center pt-2.5 pb-1">
+        {/* Drag handle: тащим вниз — закрываем; вверх — резинка. */}
+        <div
+          className="flex justify-center pt-2.5 pb-1 touch-none"
+          onTouchStart={(e) => {
+            dragStartY.current = e.touches[0].clientY;
+          }}
+          onTouchMove={(e) => {
+            if (dragStartY.current == null) return;
+            const delta = e.touches[0].clientY - dragStartY.current;
+            setDragY(delta > 0 ? delta : delta / 4);
+          }}
+          onTouchEnd={() => {
+            if (dragY > 100) onClose();
+            dragStartY.current = null;
+            setDragY(0);
+          }}
+        >
           <div className="h-1.5 w-12 rounded-full bg-muted-fg/30" />
         </div>
 
