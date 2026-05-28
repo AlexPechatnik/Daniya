@@ -21,6 +21,7 @@ import { addDays, format, isSameDay, setHours, setMinutes } from "date-fns";
 import { ru } from "date-fns/locale";
 import { AutocompleteInput } from "./AutocompleteInput";
 import { StatusBadge } from "./StatusBadge";
+import { ServicePicker } from "./ServicePicker";
 import { shortenSpbAddress } from "@/lib/address";
 
 const statuses = [
@@ -177,7 +178,7 @@ export function RequestEditor({
           </FormSection>
 
           <FormSection icon={Wrench} tone="orange" title="Услуга" hint="Выберите основной тип работы. Остальные детали можно оставить в комментарии.">
-            <ChoiceGrid
+            <ServicePicker
               items={[
                 { value: "", label: "Не выбрана", hint: "Уточнить позже" },
                 ...services.map((service) => ({
