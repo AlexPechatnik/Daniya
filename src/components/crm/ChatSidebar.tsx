@@ -260,8 +260,13 @@ function Panel({
       aria-modal="false"
       aria-label="Чаты с клиентами"
       aria-hidden={!open}
+      // pointer-events-none + invisible когда закрыта — iOS Safari иначе цепляет
+      // её за viewport (она fixed right-0 w-full + translate-x-full) и позволяет
+      // горизонтальный скролл на странице.
       className={`fixed inset-y-0 right-0 z-30 flex w-full flex-col border-l border-border bg-card/95 shadow-2xl shadow-black/20 backdrop-blur-md transition-transform duration-200 ease-out motion-reduce:transition-none sm:w-[400px] ${
-        open ? "translate-x-0" : "translate-x-full"
+        open
+          ? "translate-x-0"
+          : "pointer-events-none invisible translate-x-full"
       }`}
     >
       {selectedClientId ? (

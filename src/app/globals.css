@@ -23,10 +23,17 @@
   }
 
   * { @apply border-border; }
-  html { scroll-behavior: smooth; }
+  html {
+    scroll-behavior: smooth;
+    /* iOS Safari ловит фиксированные элементы за viewport (chat-панель в закрытом
+       состоянии) и позволяет горизонтальный скролл. clip — обрезает, но не
+       создаёт нового scroll-контейнера, чтобы не сломать sticky. */
+    overflow-x: clip;
+  }
 
   body {
     @apply bg-bg text-fg antialiased;
+    overflow-x: clip;
     font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
     background-image:
       radial-gradient(ellipse 100% 60% at 50% -20%, hsl(var(--primary) / 0.18), transparent 60%),
@@ -182,7 +189,9 @@
   .btn-glow:hover::before { opacity: 0.5; }
 
   .input {
-    @apply h-11 w-full rounded-xl border border-border bg-card/60 backdrop-blur px-4 text-sm text-fg placeholder:text-muted-fg/60 transition-all
+    /* min-w-0 обязателен — иначе input берёт intrinsic content size
+       и расширяет flex-родителя за viewport на мобайле. */
+    @apply h-11 w-full min-w-0 rounded-xl border border-border bg-card/60 backdrop-blur px-4 text-sm text-fg placeholder:text-muted-fg/60 transition-all
            focus:outline-none focus:border-primary/60 focus:bg-card focus:shadow-[0_0_0_4px_hsl(var(--primary)/0.12)];
   }
 
@@ -232,7 +241,7 @@
   }
   textarea.input { @apply h-auto py-3; }
   .clean-input {
-    @apply w-full rounded-xl border border-transparent bg-transparent px-0 text-sm text-fg placeholder:text-muted-fg/60 transition
+    @apply w-full min-w-0 rounded-xl border border-transparent bg-transparent px-0 text-sm text-fg placeholder:text-muted-fg/60 transition
            focus:outline-none focus:border-primary/50 focus:bg-card/55 focus:px-3 focus:shadow-[0_0_0_4px_hsl(var(--primary)/0.10)];
   }
   select.clean-input {

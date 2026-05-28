@@ -145,8 +145,10 @@ export function RequestEditor({
         </div>
       </section>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr),340px]">
-        <div className="space-y-5">
+      {/* На мобайле — явный grid-cols-1, иначе grid item размеряется content-intrinsic
+          и секции внутри выезжают за viewport. На xl возвращаем 2-колоночный layout. */}
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr),340px]">
+        <div className="space-y-5 min-w-0">
           <FormSection icon={MapPin} tone="red" title="Адрес и клиент" hint="Куда ехать и с кем связаться. Адрес ищется с подсказками как в картах.">
             <div className="rounded-2xl border border-border bg-bg-2 p-3 md:p-4">
               <div className="flex items-start justify-between gap-2">
