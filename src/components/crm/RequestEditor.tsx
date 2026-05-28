@@ -252,7 +252,7 @@ export function RequestEditor({
           </FormSection>
 
           <FormSection icon={CircleDollarSign} tone="green" title="Стоимость и оплата" hint="Сумму можно указать после согласования или завершения работы.">
-            <div className="grid gap-4 lg:grid-cols-[220px,1fr]">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[220px,1fr]">
               <label className="block">
                 <div className="mb-2 text-sm font-medium">Стоимость заявки</div>
                 <div className="relative">
@@ -446,10 +446,12 @@ function SchedulePicker({ value, onChange }: { value: string; onChange: (value: 
         ))}
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-2">
+      {/* Явный grid-cols-1 на мобайле — иначе native input[type=date/time]
+          с intrinsic min-width расширяет grid trace и выходит за viewport. */}
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <input
           type="date"
-          className="input h-11"
+          className="input h-11 w-full"
           value={value ? value.slice(0, 10) : ""}
           onChange={(e) => {
             if (!e.target.value) return onChange("");
@@ -457,7 +459,12 @@ function SchedulePicker({ value, onChange }: { value: string; onChange: (value: 
             onChange(`${e.target.value}T${time}`);
           }}
         />
-        <input type="time" className="input h-11" value={selectedTime} onChange={(e) => pickTime(e.target.value)} />
+        <input
+          type="time"
+          className="input h-11 w-full"
+          value={selectedTime}
+          onChange={(e) => pickTime(e.target.value)}
+        />
       </div>
     </div>
   );
@@ -539,7 +546,7 @@ function ChoiceGrid({
     return a.label.localeCompare(b.label, "ru");
   });
   return (
-    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
       {sortedItems.map((item) => {
         const active = value === item.value;
         const barClass = item.category ? CATEGORY_BAR[item.category] || "bg-muted" : "bg-muted";
@@ -580,7 +587,7 @@ function MasterGrid({
   onChange: (value: string) => void;
 }) {
   return (
-    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
       {items.map((item) => {
         const active = value === item.value;
         return (

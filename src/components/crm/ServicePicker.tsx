@@ -288,7 +288,7 @@ function DesktopGrid({
     return a.label.localeCompare(b.label, "ru");
   });
   return (
-    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
       {sorted.map((item) => {
         const active = value === item.value;
         const bar = item.category ? CATEGORY_BAR[item.category] || "bg-muted" : "bg-muted";
