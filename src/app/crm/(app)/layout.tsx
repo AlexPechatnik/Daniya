@@ -19,6 +19,7 @@ import { QuickAddTrigger } from "@/components/crm/QuickAddTrigger";
 import { ChatSidebar, ChatSidebarProvider } from "@/components/crm/ChatSidebar";
 import { CrmTopBar } from "@/components/crm/CrmTopBar";
 import { CrmHeaderLogo } from "@/components/crm/CrmHeaderLogo";
+import { NewRequestNotifier } from "@/components/crm/NewRequestNotifier";
 import { prisma } from "@/lib/db";
 
 export default async function CrmLayout({ children }: { children: React.ReactNode }) {
@@ -29,14 +30,20 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
   ]);
 
   const isAdmin = user.role === "ADMIN";
-  // Считаем непрочитанные сообщения для бейджа в навигации
-  const unreadInbox = await prisma.message.count({
-    where: { direction: "in", unread: true },
-  });
+  // Считаем непрочитанные сообщения и новые клиентские заявки — для бейджей.
+  const [unreadInbox, newRequestsCount] = await Promise.all([
+    prisma.message.count({ where: { direction: "in", unread: true } }),
+    prisma.request.count({
+      where: {
+        status: "NEW",
+        source: { in: ["TELEGRAM", "MAX", "WEB"] },
+      },
+    }),
+  ]);
 
   const adminNav = [
     { href: "/crm", icon: LayoutDashboard, label: "Рабочий стол" },
-    { href: "/crm/requests", icon: ListChecks, label: "Заявки" },
+    { href: "/crm/requests", icon: ListChecks, label: "Заявки", badge: newRequestsCount || null },
     { href: "/crm/inbox", icon: Inbox, label: "Чаты", badge: unreadInbox || null },
     { href: "/crm/calendar", icon: Calendar, label: "План выездов" },
     { href: "/crm/clients", icon: Users, label: "Клиенты" },
@@ -149,6 +156,9 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
 
       {/* Чаты — слайд-панель справа + floating-кнопка с бейджем */}
       <ChatSidebar />
+
+      {/* Уведомления о новых клиентских заявках — toast + звон + browser-notif */}
+      <NewRequestNotifier />
     </div>
     </ChatSidebarProvider>
   );
