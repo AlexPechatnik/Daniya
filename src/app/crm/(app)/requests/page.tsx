@@ -7,6 +7,7 @@ import { shortenSpbAddress } from "@/lib/address";
 import { StatusBadge } from "@/components/crm/StatusBadge";
 import { QuickActionButton } from "@/components/crm/QuickActionButton";
 import { EmptyState } from "@/components/crm/EmptyState";
+import { RequestDrawer } from "@/components/crm/RequestDrawer";
 
 export const dynamic = "force-dynamic";
 
@@ -21,10 +22,33 @@ const filters = [
   { id: "all", label: "Все" },
 ];
 
-export default async function RequestsPage({ searchParams }: { searchParams: Promise<{ queue?: string; status?: string }> }) {
-  const { queue, status } = await searchParams;
+type RequestsSearchParams = { queue?: string; status?: string; open?: string };
+
+export default async function RequestsPage({ searchParams }: { searchParams: Promise<RequestsSearchParams> }) {
+  const { queue, status, open } = await searchParams;
   const activeFilter = status ? "all" : normalizeQueue(queue);
   const where = status ? { status } : whereForQueue(activeFilter);
+
+  // Drawer-режим: если в URL `?open=<id>`, грузим заявку и справа рендерим
+  // полную форму редактирования. Список остаётся виден слева.
+  const openRequest = open
+    ? await prisma.request.findUnique({
+        where: { id: open },
+        include: {
+          client: { include: { addresses: true, printers: true, channels: true } },
+          address: true,
+          assignedTo: true,
+          service: true,
+        },
+      })
+    : null;
+
+  const [services, masters] = openRequest
+    ? await Promise.all([
+        prisma.service.findMany({ orderBy: { name: "asc" } }),
+        prisma.user.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
+      ])
+    : [[], []];
 
   const requests = await prisma.request.findMany({
     where,
@@ -33,12 +57,17 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
     take: activeFilter === "all" ? 250 : 120,
   });
 
+  // Базовый querystring текущего фильтра (без `open`) — для close-href drawer'а
+  // и для ссылок на строки списка.
+  const baseQuery = activeFilter === "attention" ? "" : `?queue=${activeFilter}`;
+  const closeHref = `/crm/requests${baseQuery}`;
+  const rowHref = (id: string) => `${closeHref}${baseQuery ? "&" : "?"}open=${id}`;
+
   return (
-    <div className="mx-auto max-w-[1280px] space-y-4 lg:space-y-5">
+    <div className={`mx-auto max-w-[1280px] space-y-4 lg:space-y-5 ${openRequest ? "lg:pr-[540px]" : ""}`}>
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Заявки</h1>
-          {/* Подзаголовок только для десктопа — на мобайле забирает место */}
           <p className="mt-1 hidden text-sm text-muted-fg md:block">
             Рабочая очередь сервиса: от новой заявки до оплаты и закрытия.
           </p>
@@ -46,32 +75,38 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
         <Link href="/crm" className="btn-outline hidden h-10 px-4 md:inline-flex">Рабочий стол</Link>
       </header>
 
-      {/* Фильтры — горизонтальный скролл. Внешний div ОБЯЗАН быть не-flex
-          и иметь overflow-x-auto, иначе flex-container расширяет всё дерево
-          вверх до ширины всех чипов и ломает мобильную раскладку. */}
-      <div className="-mx-4 overflow-x-auto pb-1 md:mx-0 [&::-webkit-scrollbar]:hidden">
-        <div className="flex w-max gap-2 px-4 md:px-0">
-          {filters.map((filter) => (
-            <Link
-              key={filter.id}
-              href={`/crm/requests${filter.id === "attention" ? "" : `?queue=${filter.id}`}`}
-              className={`shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition ${
-                activeFilter === filter.id
-                  ? "border-primary bg-primary text-primary-fg shadow-sm"
-                  : "border-border bg-card text-muted-fg hover:bg-muted hover:text-fg"
-              }`}
-            >
-              {filter.label}
-            </Link>
-          ))}
+      {/* Sticky-фильтры: чтобы при длинном списке быстро переключаться без
+          скролла к верху. top-14 = высота header'а в CRM-layout. */}
+      <div className="sticky top-14 z-10 -mx-4 overflow-x-auto bg-bg/85 px-4 py-2 backdrop-blur-md md:mx-0 md:rounded-2xl md:px-2 md:py-1.5 [&::-webkit-scrollbar]:hidden">
+        <div className="flex w-max gap-2">
+          {filters.map((filter) => {
+            const href = `/crm/requests${filter.id === "attention" ? "" : `?queue=${filter.id}`}`;
+            const isActive = activeFilter === filter.id;
+            return (
+              <Link
+                key={filter.id}
+                href={href}
+                className={`shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition ${
+                  isActive
+                    ? "border-primary bg-primary text-primary-fg shadow-sm"
+                    : "border-border bg-card text-muted-fg hover:bg-muted hover:text-fg"
+                }`}
+              >
+                {filter.label}
+              </Link>
+            );
+          })}
         </div>
       </div>
 
+      {/* Мобайл: карточки → отдельная страница (drawer на узких экранах
+          даёт хуже UX, чем нативный переход с back-кнопкой). */}
       <div className="space-y-2.5 md:hidden">
         {requests.map((request) => <RequestCard key={request.id} request={request} />)}
         {requests.length === 0 && <Empty />}
       </div>
 
+      {/* Десктоп: таблица + drawer. Строки кликабельны → ?open=<id>. */}
       <div className="hidden overflow-hidden rounded-2xl border border-border bg-card shadow-sm md:block">
         <table className="w-full text-sm">
           <thead className="border-b border-border bg-muted/20 text-xs uppercase tracking-wider text-muted-fg">
@@ -86,43 +121,74 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {requests.map((request) => (
-              <tr key={request.id} className="group transition-colors hover:bg-primary/[0.04]">
-                <td className="px-4 py-3">
-                  <Link href={`/crm/requests/${request.id}`} className="font-medium transition group-hover:text-primary">
-                    #{request.number} · {request.service?.name || "Без услуги"}
-                  </Link>
-                  <div className="text-xs text-muted-fg">
-                    {request.scheduledAt
-                      ? request.scheduledAt.toLocaleString("ru-RU", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })
-                      : "без времени"}
-                  </div>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="font-medium">{request.client.name}</div>
-                  <a href={`tel:${request.client.phone}`} className="text-xs text-muted-fg hover:text-fg">{request.client.phone}</a>
-                </td>
-                <td className="max-w-[260px] px-4 py-3 text-muted-fg">
-                  <div className="truncate">{shortenSpbAddress(request.address?.address) || "адрес не указан"}</div>
-                  {request.address?.district && <div className="text-xs">{request.address.district}</div>}
-                </td>
-                <td className="px-4 py-3">{request.assignedTo?.name || <span className="text-muted-fg">не назначен</span>}</td>
-                <td className="px-4 py-3"><StatusBadge status={request.status} size="sm" /></td>
-                <td className="px-4 py-3 text-right">
-                  <div className="font-medium tabular-nums">{formatRub(request.price)}</div>
-                  <div className="text-xs text-muted-fg">{paymentLabel(request.paymentStatus)}</div>
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <QuickActionButton requestId={request.id} status={request.status} size="sm" showCancel={request.status === "NEW"} />
-                </td>
-              </tr>
-            ))}
+            {requests.map((request) => {
+              const isOpen = openRequest?.id === request.id;
+              return (
+                <tr
+                  key={request.id}
+                  className={`group cursor-pointer transition-colors ${
+                    isOpen
+                      ? "bg-primary/[0.08] ring-1 ring-inset ring-primary/30"
+                      : "hover:bg-primary/[0.04]"
+                  }`}
+                >
+                  <td className="px-4 py-3">
+                    <Link href={rowHref(request.id)} scroll={false} className="block font-medium transition group-hover:text-primary">
+                      #{request.number} · {request.service?.name || "Без услуги"}
+                    </Link>
+                    <div className="text-xs text-muted-fg">
+                      {request.scheduledAt
+                        ? request.scheduledAt.toLocaleString("ru-RU", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })
+                        : "без времени"}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <Link href={rowHref(request.id)} scroll={false} className="block">
+                      <div className="font-medium">{request.client.name}</div>
+                    </Link>
+                    <a href={`tel:${request.client.phone}`} className="text-xs text-muted-fg hover:text-fg">{request.client.phone}</a>
+                  </td>
+                  <td className="max-w-[260px] px-4 py-3 text-muted-fg">
+                    <Link href={rowHref(request.id)} scroll={false} className="block">
+                      <div className="truncate">{shortenSpbAddress(request.address?.address) || "адрес не указан"}</div>
+                      {request.address?.district && <div className="text-xs">{request.address.district}</div>}
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3">
+                    <Link href={rowHref(request.id)} scroll={false} className="block">
+                      {request.assignedTo?.name || <span className="text-muted-fg">не назначен</span>}
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3">
+                    <Link href={rowHref(request.id)} scroll={false} className="block"><StatusBadge status={request.status} size="sm" /></Link>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <Link href={rowHref(request.id)} scroll={false} className="block">
+                      <div className="font-medium tabular-nums">{formatRub(request.price)}</div>
+                      <div className="text-xs text-muted-fg">{paymentLabel(request.paymentStatus)}</div>
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <QuickActionButton requestId={request.id} status={request.status} size="sm" showCancel={request.status === "NEW"} />
+                  </td>
+                </tr>
+              );
+            })}
             {requests.length === 0 && (
               <tr><td colSpan={7}><Empty /></td></tr>
             )}
           </tbody>
         </table>
       </div>
+
+      {openRequest && (
+        <RequestDrawer
+          request={openRequest}
+          services={services}
+          masters={masters}
+          closeHref={closeHref}
+        />
+      )}
     </div>
   );
 }
@@ -135,7 +201,6 @@ function RequestCard({ request }: { request: any }) {
 
   return (
     <article className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition active:scale-[0.99]">
-      {/* Вся верхняя зона — тап-цель → карточка заявки */}
       <Link
         href={`/crm/requests/${request.id}`}
         className="block px-4 py-4 active:bg-muted/40"
@@ -177,7 +242,6 @@ function RequestCard({ request }: { request: any }) {
         </div>
       </Link>
 
-      {/* Быстрые действия — НЕ внутри Link, чтобы клики по ним не открывали карточку */}
       <div className="flex items-center justify-between gap-2 border-t border-border bg-bg-2/40 px-3 py-2">
         <a
           href={`tel:${request.client.phone}`}
