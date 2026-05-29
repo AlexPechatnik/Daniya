@@ -90,7 +90,7 @@ export function RequestDrawer({
           size="md"
           showCancel={request.status !== "CANCELLED" && request.status !== "DONE"}
         />
-        <RequestEditor request={request} services={services} masters={masters} />
+        <RequestEditor request={request} services={services} masters={masters} compact />
       </div>
     </aside>
   );
