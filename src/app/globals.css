@@ -241,6 +241,33 @@
   }
   textarea.input { @apply h-auto py-3; }
 
+  /* iOS Safari зумит viewport, если у поля ввода font-size < 16px при фокусе.
+     Это ломает sticky-шапку, бьёт layout карточек и выглядит как «приложение
+     ещё не доделали». Поднимаем шрифт до 16px на мобайле для всех полей ввода;
+     на md+ возвращаем дизайн-системные 14px (там нет авто-зума, мышь). */
+  @media (max-width: 767px) {
+    input.input,
+    input.clean-input,
+    textarea.input,
+    textarea.clean-input,
+    select.input,
+    select.clean-input,
+    input[type="text"],
+    input[type="search"],
+    input[type="tel"],
+    input[type="email"],
+    input[type="url"],
+    input[type="number"],
+    input[type="password"],
+    input[type="date"],
+    input[type="time"],
+    input[type="datetime-local"],
+    textarea,
+    select {
+      font-size: 16px;
+    }
+  }
+
   /* iOS Safari у input[type=date|time] имеет native min-content ширину,
      которая игнорирует width:100% и расширяет grid-трек за viewport.
      appearance:none снимает native layout, max-width гарантирует, что
