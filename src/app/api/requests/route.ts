@@ -33,6 +33,40 @@ export async function POST(req: NextRequest) {
     addressId = addr.id;
   }
 
+  // Предварительная стоимость:
+  // 1) если в printerInfo узнаётся конкретный картридж (бренд/модель) — берём
+  //    цену для пары (service, cartridge);
+  // 2) иначе — базовую цену услуги (Price с cartridgeId = null).
+  // Мастер может потом скорректировать вручную, но «по умолчанию ноль»
+  // съедало время и заставляло каждый раз думать о прайсе.
+  let price: number | null = null;
+  if (body.serviceId) {
+    const printerInfo = String(body.printerInfo || "").trim();
+    if (printerInfo) {
+      const cart = await prisma.cartridge.findFirst({
+        where: {
+          OR: [
+            { model: { contains: printerInfo } },
+            { compatible: { contains: printerInfo } },
+          ],
+        },
+        select: { id: true },
+      });
+      if (cart) {
+        const exact = await prisma.price.findFirst({
+          where: { serviceId: body.serviceId, cartridgeId: cart.id },
+        });
+        if (exact) price = exact.amount;
+      }
+    }
+    if (price == null) {
+      const base = await prisma.price.findFirst({
+        where: { serviceId: body.serviceId, cartridgeId: null },
+      });
+      if (base) price = base.amount;
+    }
+  }
+
   const last = await prisma.request.findFirst({ orderBy: { number: "desc" }, select: { number: true } });
   const request = await prisma.request.create({
     data: {
@@ -43,6 +77,7 @@ export async function POST(req: NextRequest) {
       assignedToId: body.assignedToId || null,
       scheduledAt: body.scheduledAt ? new Date(body.scheduledAt) : null,
       printerInfo: body.printerInfo || null,
+      price,
       comment: body.comment || null,
       status: body.scheduledAt ? "SCHEDULED" : "NEW",
       source: "PHONE",
