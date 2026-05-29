@@ -72,7 +72,7 @@ export function CrmTopBar({ userName, userRole }: { userName: string; userRole?:
         <span className="hidden font-medium text-fg lg:inline">{sectionTitle(pathname)}</span>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="ml-auto flex items-center gap-2">
         {/* Mobile-only: «+» (новая заявка) и чат с бейджем непрочитанных.
             На десктопе эти действия живут в правом блоке шапки (кнопка
             «Новая заявка») и floating-кнопке чата — не дублируем. */}

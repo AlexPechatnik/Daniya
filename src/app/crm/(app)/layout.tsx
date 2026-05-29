@@ -18,6 +18,7 @@ import {
 import { QuickAddTrigger } from "@/components/crm/QuickAddTrigger";
 import { ChatSidebar, ChatSidebarProvider } from "@/components/crm/ChatSidebar";
 import { CrmTopBar } from "@/components/crm/CrmTopBar";
+import { CrmHeaderLogo } from "@/components/crm/CrmHeaderLogo";
 import { prisma } from "@/lib/db";
 
 export default async function CrmLayout({ children }: { children: React.ReactNode }) {
@@ -106,7 +107,10 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
       <div className="flex flex-col min-h-screen min-w-0">
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-border bg-card/85 px-4 backdrop-blur lg:px-6">
           <div className="flex items-center gap-3">
-            <div className="lg:hidden"><Logo compact /></div>
+            {/* Лого в CRM-шапке — не уводит на лендинг, а переключает
+                админ↔мастер (см. CrmHeaderLogo). На десктопе lg+ лого уже
+                в боковом сайдбаре, тут показываем только на узких. */}
+            <div className="lg:hidden"><CrmHeaderLogo userRole={user.role} /></div>
             <CrmTopBar userName={user.name} userRole={user.role} />
           </div>
           {isAdmin && <QuickAddTrigger services={services} masters={masters} variant="header" />}

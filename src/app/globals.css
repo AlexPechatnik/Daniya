@@ -264,7 +264,9 @@
     input[type="datetime-local"],
     textarea,
     select {
-      font-size: 16px;
+      /* !important — иначе Tailwind-utility text-sm (14px) из @layer utilities
+         перебивает это правило, и iOS снова зумит. */
+      font-size: 16px !important;
     }
   }
 
