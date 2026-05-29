@@ -31,6 +31,7 @@ import { ru } from "date-fns/locale";
 import { districtMeta } from "@/lib/districts";
 import { StatusBadge } from "./StatusBadge";
 import { EmptyState } from "./EmptyState";
+import { CalendarDayAxis } from "./CalendarDayAxis";
 
 type View = "day" | "week" | "month";
 
@@ -160,6 +161,7 @@ export function CalendarTimeline({
       {view === "day" && (
         <DayPlanner
           dayKey={activeDayKey}
+          todayKey={todayKey}
           requests={requestsByDay.get(activeDayKey) || []}
           queue={unscheduled}
           slots={freeSlots.find((f) => f.date === activeDayKey)?.slots || []}
@@ -352,9 +354,10 @@ function DayStrip({
 // ─── DAY PLANNER ────────────────────────────────────────────────────────
 
 function DayPlanner({
-  dayKey, requests, queue, slots, holiday,
+  dayKey, todayKey, requests, queue, slots, holiday,
 }: {
   dayKey: string;
+  todayKey: string;
   requests: ReqLite[];
   queue: QueueReqLite[];
   slots: string[];
@@ -377,21 +380,21 @@ function DayPlanner({
           </div>
         )}
 
-        <section className="overflow-hidden rounded-2xl border border-border bg-card/45">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
-            <h2 className="font-semibold">Поездки</h2>
-            <DistrictChips districts={districts} />
+        {/* Полоска с районами как отдельная подсказка — она была частью списка
+            «Поездки», но теперь сам список переехал во временную шкалу, поэтому
+            выносим контекст районов выше. */}
+        {districts.length > 0 && (
+          <div className="rounded-2xl border border-border bg-card/45 px-4 py-3">
+            <div className="text-xs uppercase tracking-wider text-muted-fg">Районы дня</div>
+            <div className="mt-1.5"><DistrictChips districts={districts} /></div>
           </div>
-          {requests.length > 0 ? (
-            <div className="divide-y divide-border">
-              {requests.map((request, index) => (
-                <TripCard key={request.id} request={request} index={index + 1} />
-              ))}
-            </div>
-          ) : (
-            <EmptyPlan />
-          )}
-        </section>
+        )}
+
+        <CalendarDayAxis
+          dayKey={dayKey}
+          todayKey={todayKey}
+          requests={requests}
+        />
       </div>
 
       {/* Сайдбар: сначала Очередь (важно), затем Окна (вспомогательно). */}
