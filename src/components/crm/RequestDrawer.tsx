@@ -48,7 +48,7 @@ export function RequestDrawer({
       // fixed справа от шапки до низа viewport. shadow-2xl делит панель
       // от списка визуально. На <lg перекроет всю ширину — на этих
       // экранах drawer не вызывается, нажатия идут на /crm/requests/[id].
-      className="fixed right-0 top-14 bottom-0 z-20 hidden w-[520px] flex-col overflow-hidden border-l border-border bg-card shadow-2xl shadow-slate-900/15 lg:flex"
+      className="fixed right-0 top-14 bottom-0 z-20 hidden w-[520px] flex-col overflow-hidden border-l border-border bg-card shadow-2xl shadow-slate-900/15 lg:flex animate-slide-in-right"
     >
       <header className="flex items-center justify-between gap-3 border-b border-border px-5 py-3.5">
         <div className="min-w-0">

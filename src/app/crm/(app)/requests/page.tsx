@@ -64,7 +64,15 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
   const rowHref = (id: string) => `${closeHref}${baseQuery ? "&" : "?"}open=${id}`;
 
   return (
-    <div className={`mx-auto max-w-[1280px] space-y-4 lg:space-y-5 ${openRequest ? "lg:pr-[540px]" : ""}`}>
+    {/* Когда drawer открыт — `lg:pr-[540px]` оставляет место под него, но
+        max-w-1280 при этом плющил контент в левую половину. Снимаем max-w
+        в drawer-режиме: таблица занимает всю оставшуюся ширину.
+        transition-[max-width,padding] делает изменение плавным, без прыжка. */}
+    <div
+      className={`mx-auto space-y-4 transition-[max-width,padding-right] duration-200 ease-out lg:space-y-5 ${
+        openRequest ? "lg:pr-[540px]" : "max-w-[1280px]"
+      }`}
+    >
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Заявки</h1>

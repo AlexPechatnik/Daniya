@@ -389,4 +389,14 @@
   @media (prefers-reduced-motion: reduce) {
     .animate-chat-bump { animation: none; }
   }
+
+  /* Slide-in справа — для drawer'а заявок на десктопе */
+  @keyframes slide-in-right {
+    from { transform: translateX(24px); opacity: 0; }
+    to   { transform: translateX(0); opacity: 1; }
+  }
+  .animate-slide-in-right { animation: slide-in-right 220ms ease-out; }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-slide-in-right { animation: none; }
+  }
 }
