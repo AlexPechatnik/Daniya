@@ -153,7 +153,7 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
               assignedTo: r.assignedTo ? { name: r.assignedTo.name } : null,
               address: r.address ? { address: r.address.address, district: r.address.district } : null,
             }))}
-            rowHrefFor={rowHref}
+            baseQuery={baseQuery}
           />
         </div>
       )}

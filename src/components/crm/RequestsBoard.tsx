@@ -49,11 +49,17 @@ const COLUMNS: { key: string; title: string; statuses: string[]; dropStatus: str
 
 export function RequestsBoard({
   requests,
-  rowHrefFor,
+  baseQuery,
 }: {
   requests: RequestRow[];
-  rowHrefFor: (id: string) => string;
+  /** querystring текущего фильтра без `open` (например `?queue=new&view=board`). */
+  baseQuery: string;
 }) {
+  // Серверный компонент не может передать сюда функцию (Functions cannot be
+  // passed to Client Components), поэтому строим href из строки прямо здесь.
+  const rowHrefFor = (id: string) =>
+    `/crm/requests${baseQuery}${baseQuery ? "&" : "?"}open=${id}`;
+
   const router = useRouter();
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
