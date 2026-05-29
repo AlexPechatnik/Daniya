@@ -240,6 +240,19 @@
     color: hsl(215 16% 42%);
   }
   textarea.input { @apply h-auto py-3; }
+
+  /* iOS Safari у input[type=date|time] имеет native min-content ширину,
+     которая игнорирует width:100% и расширяет grid-трек за viewport.
+     appearance:none снимает native layout, max-width гарантирует, что
+     поле остаётся внутри карточки даже если контейнер сжат. */
+  input.input[type="date"],
+  input.input[type="time"],
+  input.input[type="datetime-local"] {
+    -webkit-appearance: none;
+    appearance: none;
+    max-width: 100%;
+    text-align: left;
+  }
   .clean-input {
     @apply w-full min-w-0 rounded-xl border border-transparent bg-transparent px-0 text-sm text-fg placeholder:text-muted-fg/60 transition
            focus:outline-none focus:border-primary/50 focus:bg-card/55 focus:px-3 focus:shadow-[0_0_0_4px_hsl(var(--primary)/0.10)];
