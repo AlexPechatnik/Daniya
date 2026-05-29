@@ -5,7 +5,6 @@ import { company } from "../company";
 import { format, addDays, setHours, setMinutes } from "date-fns";
 import { ru } from "date-fns/locale";
 import { notifyAdminsNewRequest, notifyAdminsNewMessage } from "./notify";
-import { proposeNextSlots, formatSlotLabel } from "../scheduling";
 import { enrichAddress } from "../districts";
 import { shortenSpbAddress } from "../address";
 
@@ -640,7 +639,11 @@ async function cartCustomFromSearch(ctx: BotContext) {
   });
 }
 
-// Переход к выбору даты — реальные свободные слоты из календаря
+// Переход к выбору даты — упрощённый выбор полудня вместо точных слотов.
+// Идея: бот не предлагает конкретное время, а спрашивает «когда удобнее
+// принять мастера — первая или вторая половина дня». Конкретику админ
+// согласовывает с клиентом по телефону / в чате CRM. Это снижает
+// когнитивную нагрузку и не блокирует слоты в календаре заранее.
 async function cartCheckout(ctx: BotContext) {
   const data = ctx.state?.data || { items: [] };
   if (!data.items?.length) {
@@ -649,59 +652,69 @@ async function cartCheckout(ctx: BotContext) {
     });
   }
 
-  // Запрашиваем 6 ближайших реально свободных слотов с учётом календаря и отсечки
-  const slots = await proposeNextSlots(6);
-  data.proposedSlots = slots.map((s) => s.toISOString());
   await ctx.setState("new_request", "when", data);
 
-  const buttons: any[] = slots.map((slot, i) => [
-    { text: `🕐 ${formatSlotLabel(slot)}`, callbackData: `when:slot:${i}` },
-  ]);
-
-  // Если слотов нет — fallback на «обсудим»
-  if (buttons.length === 0) {
-    buttons.push([{ text: "🗓 На ближайшие дни — обсудим", callbackData: "when:any" }]);
-  } else {
-    buttons.push([{ text: "🗓 Не подходит — обсудим", callbackData: "when:any" }]);
+  // Сегодняшние варианты прячем, если рабочий день уже на исходе.
+  const now = new Date();
+  const hour = now.getHours();
+  const buttons: any[] = [];
+  if (hour < 12) {
+    buttons.push([{ text: "🌅 Сегодня · первая половина дня", callbackData: "when:half:today_am" }]);
   }
+  if (hour < 17) {
+    buttons.push([{ text: "🌇 Сегодня · вторая половина дня", callbackData: "when:half:today_pm" }]);
+  }
+  buttons.push([{ text: "🌅 Завтра · первая половина дня", callbackData: "when:half:tomorrow_am" }]);
+  buttons.push([{ text: "🌇 Завтра · вторая половина дня", callbackData: "when:half:tomorrow_pm" }]);
+  buttons.push([{ text: "📅 На этой неделе — обсудим", callbackData: "when:any" }]);
   buttons.push([{ text: "⬅️ Назад к корзине", callbackData: "cart:view" }]);
 
   await ctx.send(
-    `<b>Шаг 3 из 4</b> — когда вам удобно?\n\n` +
+    `<b>Шаг 3 из 4</b> — когда удобнее принять мастера?\n\n` +
       `🛒 В заявке: ${data.items.length} позиц${endingMatch(data.items.length, "ия", "ии", "ий")}` +
       (cartTotal(data.items) > 0 ? `, ~${formatRub(cartTotal(data.items))}` : "") +
-      (slots.length > 0
-        ? `\n\nВот свободные окна — выберите удобное:`
-        : `\n\n<i>Свободных слотов на ближайшие дни нет — обсудим с мастером.</i>`),
+      `\n\n<i>Выберите общий промежуток — точное время мастер согласует по телефону или в чате.</i>`,
     { inlineKeyboard: buttons },
   );
 }
 
+const HALF_DAY_LABELS: Record<string, string> = {
+  today_am: "сегодня, первая половина дня (примерно 10:00–14:00)",
+  today_pm: "сегодня, вторая половина дня (примерно 14:00–19:00)",
+  tomorrow_am: "завтра, первая половина дня (примерно 10:00–14:00)",
+  tomorrow_pm: "завтра, вторая половина дня (примерно 14:00–19:00)",
+};
+
 async function newRequestWhenPicked(ctx: BotContext, when: string) {
   const data = ctx.state?.data || { items: [] };
 
+  // По умолчанию точное время не фиксируем — мастер согласует отдельно.
+  // В data.whenPreferenceText пишем человекочитаемую формулировку, которая
+  // потом попадёт в комментарий к заявке.
   if (when === "any") {
     data.scheduledAt = null;
     data.whenChoice = "any";
+    data.whenPreferenceText = "клиент готов обсудить дату на этой неделе";
+  } else if (when.startsWith("half:")) {
+    const half = when.slice(5);
+    data.scheduledAt = null;
+    data.whenChoice = "half";
+    data.whenPreferenceText = HALF_DAY_LABELS[half] || "уточнить с мастером";
   } else if (when.startsWith("slot:")) {
-    const idx = parseInt(when.slice(5), 10);
-    const isoList: string[] = Array.isArray(data.proposedSlots) ? data.proposedSlots : [];
-    const iso = isoList[idx];
-    if (iso) {
-      data.scheduledAt = iso;
-      data.whenChoice = "slot";
-    } else {
-      // Слот устарел (state потерялся) — fallback на «обсудим»
-      data.scheduledAt = null;
-      data.whenChoice = "any";
-    }
+    // Legacy: пользователь нажал на старую кнопку из ранее отправленного
+    // сообщения. Слот мог уже устареть — отправляем в «обсудим».
+    data.scheduledAt = null;
+    data.whenChoice = "any";
+    data.whenPreferenceText = "уточнить с мастером";
   } else if (when === "today") {
-    // Совместимость со старыми сообщениями
-    data.scheduledAt = setMinutes(setHours(new Date(), 16), 0).toISOString();
+    data.scheduledAt = null;
+    data.whenPreferenceText = "сегодня — уточнить с мастером";
   } else if (when === "tomorrow") {
-    data.scheduledAt = setMinutes(setHours(addDays(new Date(), 1), 10), 0).toISOString();
+    data.scheduledAt = null;
+    data.whenPreferenceText = "завтра — уточнить с мастером";
   } else {
     data.scheduledAt = null;
+    data.whenPreferenceText = undefined;
   }
 
   await ctx.setState("new_request", "address", data);
@@ -808,6 +821,7 @@ async function finalizeRequest(ctx: BotContext, data: any) {
   const commentParts: string[] = [];
   if (detailLines.length) commentParts.push("Состав:\n" + detailLines.join("\n"));
   if (total) commentParts.push(`Итого ориентировочно: ${formatRub(total)}`);
+  if (data.whenPreferenceText) commentParts.push(`Удобное время: ${data.whenPreferenceText}`);
   if (data.whenChoice === "week") commentParts.push("Клиент готов обсудить дату");
 
   // Номер заявки
@@ -838,8 +852,10 @@ async function finalizeRequest(ctx: BotContext, data: any) {
       (request.address ? `Адрес: ${shortenSpbAddress(request.address.address) || request.address.address}\n` : "") +
       (request.scheduledAt
         ? `Время: ${format(request.scheduledAt, "d MMMM, HH:mm", { locale: ru })}\n`
-        : "Время: согласуем\n") +
-      `\nМастер свяжется в ближайшее время.`,
+        : data.whenPreferenceText
+          ? `Удобное время: ${data.whenPreferenceText}\n`
+          : "Время: согласуем\n") +
+      `\nМастер свяжется в ближайшее время, чтобы подтвердить точное время визита.`,
     {
       inlineKeyboard: [
         [{ text: "📋 Все мои заявки", callbackData: "my_requests" }],
