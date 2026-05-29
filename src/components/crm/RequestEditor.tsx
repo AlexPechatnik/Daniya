@@ -565,7 +565,9 @@ function ChoiceGrid({
     return a.label.localeCompare(b.label, "ru");
   });
   return (
-    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+    {/* xl:grid-cols-3 убрали: на drawer 520px xl-viewport-условие срабатывало,
+        но контейнер был узким — карточки плющило, текст резался. */}
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
       {sortedItems.map((item) => {
         const active = value === item.value;
         const barClass = item.category ? CATEGORY_BAR[item.category] || "bg-muted" : "bg-muted";
@@ -606,7 +608,9 @@ function MasterGrid({
   onChange: (value: string) => void;
 }) {
   return (
-    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+    {/* xl:grid-cols-3 убрали: на drawer 520px xl-viewport-условие срабатывало,
+        но контейнер был узким — карточки плющило, текст резался. */}
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
       {items.map((item) => {
         const active = value === item.value;
         return (
