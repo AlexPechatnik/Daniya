@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Search, X, Phone, FileSearch, UserCog, LayoutDashboard, LogOut } from "lucide-react";
+import { Search, X, Phone, FileSearch, UserCog, LayoutDashboard, LogOut, Plus, MessageCircle } from "lucide-react";
+import { useChatSidebar } from "./ChatSidebar";
 
 /**
  * Топ-бар CRM: динамический заголовок раздела + ⌘K-поиск + аватар админа.
@@ -72,6 +73,12 @@ export function CrmTopBar({ userName, userRole }: { userName: string; userRole?:
       </div>
 
       <div className="flex items-center gap-2">
+        {/* Mobile-only: «+» (новая заявка) и чат с бейджем непрочитанных.
+            На десктопе эти действия живут в правом блоке шапки (кнопка
+            «Новая заявка») и floating-кнопке чата — не дублируем. */}
+        {isAdmin && <MobileQuickAdd />}
+        <MobileChatToggle />
+
         {/* ⌘K — поиск по клиентам/заявкам */}
         <button
           type="button"
@@ -163,6 +170,47 @@ export function CrmTopBar({ userName, userRole }: { userName: string; userRole?:
 
       {searchOpen && <GlobalSearchPortal onClose={() => setSearchOpen(false)} />}
     </>
+  );
+}
+
+/**
+ * Mobile «+» — диспатчит событие `printcare:quickadd`, которое уже
+ * слушает <QuickAddTrigger /> в layout (он же владеет services/masters
+ * и рендерит саму модалку). Так не таскаем props через шапку.
+ */
+function MobileQuickAdd() {
+  return (
+    <button
+      type="button"
+      onClick={() => window.dispatchEvent(new CustomEvent("printcare:quickadd", { detail: {} }))}
+      aria-label="Новая заявка"
+      className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-fg shadow-sm transition active:scale-95 md:hidden"
+    >
+      <Plus className="h-4 w-4" />
+    </button>
+  );
+}
+
+/**
+ * Mobile-кнопка чата с бейджем непрочитанных. Использует тот же контекст,
+ * что и floating-кнопка на десктопе, — состояние общее.
+ */
+function MobileChatToggle() {
+  const { toggle, unreadTotal } = useChatSidebar();
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      aria-label={unreadTotal > 0 ? `Чаты (${unreadTotal} непрочитанных)` : "Чаты"}
+      className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-bg-2/60 text-muted-fg transition hover:border-primary/40 hover:text-fg md:hidden"
+    >
+      <MessageCircle className="h-4 w-4" />
+      {unreadTotal > 0 && (
+        <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-none text-white shadow-sm">
+          {unreadTotal > 99 ? "99+" : unreadTotal}
+        </span>
+      )}
+    </button>
   );
 }
 

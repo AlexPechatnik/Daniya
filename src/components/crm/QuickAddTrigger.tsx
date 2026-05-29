@@ -53,17 +53,9 @@ export function QuickAddTrigger({
           <Plus className="h-4 w-4" />
           Новая заявка
         </button>
-      ) : (
-        <button
-          onClick={openManually}
-          aria-label="Новая заявка"
-          className="md:hidden fixed right-5 z-40 h-14 w-14 rounded-2xl btn-primary btn-glow !p-0 shadow-2xl shadow-primary/40 active:scale-95 transition-transform"
-          // Стек снизу-вверх: bottom-nav → чат-FAB (~84px) → +FAB (~152px)
-          style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 9.5rem)" }}
-        >
-          <Plus className="h-6 w-6" />
-        </button>
-      )}
+      ) : null /* variant="fab" больше ничего не рендерит:
+          на мобайле «+» переехал в CrmTopBar (см. MobileQuickAdd),
+          модалку всё равно открывает этот же компонент через event-bus. */}
       {open && (
         <QuickAddModal
           onClose={() => setOpen(false)}

@@ -211,8 +211,8 @@ function FloatingTrigger({
       aria-label={open ? "Закрыть чаты" : "Открыть чаты"}
       aria-expanded={open}
       aria-keyshortcuts="Control+/"
-      // Mobile: 84px (выше bottom-nav и safe-area). Desktop: 20px (обычный отступ).
-      className={`fixed bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] right-5 z-40 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-fg shadow-lg shadow-primary/30 ring-1 ring-primary/20 transition-all hover:scale-105 hover:shadow-xl motion-reduce:transition-none motion-reduce:hover:scale-100 lg:bottom-5 ${
+      // Только десктоп: на мобайле кнопка чата живёт в CrmTopBar.
+      className={`hidden lg:inline-flex fixed bottom-5 right-5 z-40 h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-fg shadow-lg shadow-primary/30 ring-1 ring-primary/20 transition-all hover:scale-105 hover:shadow-xl motion-reduce:transition-none motion-reduce:hover:scale-100 ${
         open ? "translate-x-[calc(-1*var(--chat-panel-w,400px))] sm:translate-x-[-400px]" : ""
       } ${bump ? "animate-chat-bump" : ""}`}
     >

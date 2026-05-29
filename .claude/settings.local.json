@@ -68,7 +68,8 @@
       "Bash(curl -sS -m 8 -o /dev/null -w \"HTTP=%{http_code} time=%{time_total}\\\\n\" https://service.kopik-system.online/)",
       "Bash(curl -sS -m 8 -o /dev/null -w \"HTTP=%{http_code} time=%{time_total}\\\\n\" https://kopik-system.online/)",
       "Bash(curl -sS -m 8 -o /dev/null -w \"HTTP=%{http_code} time=%{time_total}\\\\n\" http://132.243.113.243/)",
-      "Bash(ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 root@132.243.113.243 \"/var/www/printer-service/scripts/deploy.sh\")"
+      "Bash(ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 root@132.243.113.243 \"/var/www/printer-service/scripts/deploy.sh\")",
+      "Bash(ssh -o StrictHostKeyChecking=no root@132.243.113.243 \"/var/www/printer-service/scripts/deploy.sh\")"
     ]
   }
 }
