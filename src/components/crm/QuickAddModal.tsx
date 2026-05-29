@@ -202,7 +202,10 @@ export function QuickAddModal({
 
   return createPortal(
     <div
-      className="crm-light fixed inset-0 z-[1000] flex items-end bg-slate-900/30 backdrop-blur-md md:items-start md:justify-center md:pt-16 animate-fade-in"
+      // text-fg обязателен: crm-light переопределяет CSS-переменные темы,
+      // но color наследуется от body (тёмная тема публичного сайта), и текст
+      // получается едва видимым на белом фоне модалки.
+      className="crm-light fixed inset-0 z-[1000] flex items-end bg-slate-900/30 text-fg backdrop-blur-md md:items-start md:justify-center md:pt-16 animate-fade-in"
       onClick={onClose}
     >
       <form

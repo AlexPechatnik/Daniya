@@ -235,7 +235,9 @@ function GlobalSearch({ onClose }: { onClose: () => void }) {
       role="dialog"
       aria-modal="true"
       aria-label="Поиск по CRM"
-      className="fixed inset-0 z-[100] flex items-start justify-center bg-black/55 px-4 pt-[12vh] backdrop-blur-sm"
+      // crm-light + text-fg: переменные темы + явный color, иначе текст
+      // наследует тёмную тему body и выглядит едва видимым.
+      className="crm-light fixed inset-0 z-[100] flex items-start justify-center bg-black/55 px-4 pt-[12vh] text-fg backdrop-blur-sm"
       onClick={onClose}
     >
       <div
