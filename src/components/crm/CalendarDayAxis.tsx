@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { format, parseISO } from "date-fns";
 import { Clock, MapPin, AlertTriangle } from "lucide-react";
 
@@ -48,8 +49,26 @@ export function CalendarDayAxis({
   todayKey: string;
   requests: Trip[];
 }) {
+  const router = useRouter();
   const railRef = useRef<HTMLDivElement>(null);
   const [nowOffset, setNowOffset] = useState<number | null>(null);
+
+  // Drag-state: id двигаемого визита, offset курсора внутри блока (px) и
+  // текущая предложенная позиция (минут от START_HOUR) — для подсветки.
+  const [dragId, setDragId] = useState<string | null>(null);
+  const dragGrabOffsetRef = useRef<number>(0);
+  const [dragMin, setDragMin] = useState<number | null>(null);
+
+  // Оптимистичный оверрайд: пока запрос на сервер не вернулся, локально
+  // показываем новое время. Сбрасываем после router.refresh().
+  const [pendingMove, setPendingMove] = useState<Map<string, string>>(new Map());
+
+  // Применяем pendingMove к исходным requests, чтобы визуально блок уже стоял
+  // в новой позиции.
+  const effectiveRequests = useMemo(
+    () => requests.map((r) => pendingMove.has(r.id) ? { ...r, scheduledAt: pendingMove.get(r.id)! } : r),
+    [requests, pendingMove],
+  );
 
   // Линия «сейчас» — только если этот день сегодня. Обновляем раз в минуту.
   useEffect(() => {
@@ -71,24 +90,83 @@ export function CalendarDayAxis({
     return () => clearInterval(t);
   }, [dayKey, todayKey]);
 
-  // Считаем кластеры пересекающихся визитов — каждому даём позицию-колонку
-  // внутри своего кластера, чтобы блоки не накладывались поверх друг друга.
-  const placed = layoutOverlaps(requests);
+  const placed = layoutOverlaps(effectiveRequests);
+
+  function yToMin(y: number, snap = 15): number {
+    const m = Math.round((y / HOUR_PX) * 60 / snap) * snap;
+    return Math.max(0, Math.min(HOURS * 60 - snap, m));
+  }
+
+  function minToIso(min: number): string {
+    const h = Math.floor(min / 60) + START_HOUR;
+    const m = min % 60;
+    return `${dayKey}T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`;
+  }
 
   function handleRailClick(e: React.MouseEvent<HTMLDivElement>) {
     if (!railRef.current) return;
     const target = e.target as HTMLElement;
-    // Игнорируем клик по блоку — они кликабельные сами
     if (target.closest("[data-trip-block]")) return;
     const rect = railRef.current.getBoundingClientRect();
     const y = e.clientY - rect.top;
-    const minutes = Math.round((y / HOUR_PX) * 60 / 30) * 30; // snap к 30 мин
-    const totalMin = START_HOUR * 60 + minutes;
-    const h = Math.floor(totalMin / 60);
-    const m = totalMin % 60;
-    if (h < START_HOUR || h >= END_HOUR) return;
-    const dt = `${dayKey}T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`;
-    window.dispatchEvent(new CustomEvent("printcare:quickadd", { detail: { scheduledAt: dt } }));
+    const min = yToMin(y, 30);
+    window.dispatchEvent(new CustomEvent("printcare:quickadd", { detail: { scheduledAt: minToIso(min) } }));
+  }
+
+  // ── Drag handlers на уровне рельса ──
+  // Используем onDragOver чтобы апдейтить превью, onDrop — фиксируем.
+  function handleRailDragOver(e: React.DragEvent<HTMLDivElement>) {
+    if (!dragId || !railRef.current) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    const rect = railRef.current.getBoundingClientRect();
+    const y = e.clientY - rect.top - dragGrabOffsetRef.current;
+    setDragMin(yToMin(y, 15));
+  }
+
+  async function handleRailDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    const id = dragId;
+    const min = dragMin;
+    setDragId(null);
+    setDragMin(null);
+    if (!id || min == null) return;
+    const newIso = minToIso(min);
+    // Оптимистично двигаем блок
+    setPendingMove((prev) => {
+      const next = new Map(prev);
+      next.set(id, newIso);
+      return next;
+    });
+    try {
+      const res = await fetch("/api/requests", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id, scheduledAt: newIso }),
+      });
+      if (!res.ok) throw new Error("patch failed");
+      router.refresh();
+      // pendingMove очищаем чуть позже — даём время серверным props приехать
+      setTimeout(() => {
+        setPendingMove((prev) => {
+          const next = new Map(prev);
+          next.delete(id);
+          return next;
+        });
+      }, 300);
+    } catch {
+      // откат
+      setPendingMove((prev) => {
+        const next = new Map(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  }
+
+  function beginDrag(tripId: string, grabOffsetWithinBlock: number) {
+    setDragId(tripId);
+    dragGrabOffsetRef.current = grabOffsetWithinBlock;
   }
 
   return (
@@ -118,7 +196,9 @@ export function CalendarDayAxis({
         <div
           ref={railRef}
           onClick={handleRailClick}
-          className="relative flex-1 cursor-crosshair"
+          onDragOver={handleRailDragOver}
+          onDrop={handleRailDrop}
+          className={`relative flex-1 ${dragId ? "cursor-grabbing" : "cursor-crosshair"}`}
           style={{ height: TOTAL_PX }}
         >
           {/* Часовые и получасовые линии */}
@@ -149,9 +229,33 @@ export function CalendarDayAxis({
             </div>
           )}
 
+          {/* Превью новой позиции при drag */}
+          {dragId && dragMin != null && (() => {
+            const dragged = placed.find((p) => p.trip.id === dragId);
+            const previewHeight = dragged?.height ?? (60 / 60) * HOUR_PX;
+            const top = (dragMin / 60) * HOUR_PX;
+            return (
+              <div
+                className="pointer-events-none absolute z-30 rounded-lg border-2 border-dashed border-primary bg-primary/15 px-2.5 py-1"
+                style={{ top, left: 4, right: 4, height: previewHeight }}
+              >
+                <div className="font-mono text-[10px] text-primary">
+                  {String(Math.floor(dragMin / 60) + START_HOUR).padStart(2, "0")}:
+                  {String(dragMin % 60).padStart(2, "0")} ← перенести сюда
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Блоки визитов */}
           {placed.map((p) => (
-            <TripBlock key={p.trip.id} placement={p} />
+            <TripBlock
+              key={p.trip.id}
+              placement={p}
+              isDragging={dragId === p.trip.id}
+              onBeginDrag={(grabOffset) => beginDrag(p.trip.id, grabOffset)}
+              onCancelDrag={() => { setDragId(null); setDragMin(null); }}
+            />
           ))}
 
           {/* Hint поверх пустой шкалы, если совсем ничего нет */}
@@ -168,19 +272,47 @@ export function CalendarDayAxis({
 
 /* ─── вёрстка блока визита ─────────────────────────────────────────── */
 
-function TripBlock({ placement }: { placement: Placement }) {
+function TripBlock({
+  placement,
+  isDragging,
+  onBeginDrag,
+  onCancelDrag,
+}: {
+  placement: Placement;
+  isDragging: boolean;
+  onBeginDrag: (grabOffsetWithinBlock: number) => void;
+  onCancelDrag: () => void;
+}) {
   const { trip, top, height, col, cols, hasConflict } = placement;
   const start = parseISO(trip.scheduledAt);
-  // Каждый блок занимает свою колонку внутри кластера пересечений.
-  // Узких 1-2 колонок хватает на типичный сценарий «два визита в одно время».
   const widthPct = 100 / cols;
   const leftPct = col * widthPct;
+
+  // Если drag был, подавляем последующий click (Link), чтобы не перейти
+  // в карточку при простом перетаскивании.
+  const draggedRef = useRef(false);
 
   return (
     <Link
       data-trip-block
       href={`/crm/requests/${trip.id}`}
-      className={`absolute z-10 overflow-hidden rounded-lg border px-2.5 py-1.5 text-xs shadow-sm transition hover:shadow-md ${
+      draggable
+      onDragStart={(e) => {
+        draggedRef.current = true;
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        const offsetWithin = e.clientY - rect.top;
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", trip.id);
+        onBeginDrag(offsetWithin);
+      }}
+      onDragEnd={() => {
+        onCancelDrag();
+        // Сбрасываем флаг чуть позже, чтобы click после drag не сработал
+        setTimeout(() => { draggedRef.current = false; }, 0);
+      }}
+      className={`absolute z-10 overflow-hidden rounded-lg border px-2.5 py-1.5 text-xs shadow-sm transition cursor-grab active:cursor-grabbing hover:shadow-md ${
+        isDragging ? "opacity-40" : ""
+      } ${
         hasConflict
           ? "border-red-500/60 bg-red-50 hover:border-red-500"
           : statusToTone(trip.status)
@@ -191,7 +323,12 @@ function TripBlock({ placement }: { placement: Placement }) {
         left: `calc(${leftPct}% + 4px)`,
         width: `calc(${widthPct}% - 8px)`,
       }}
-      onClick={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (draggedRef.current) {
+          e.preventDefault();
+        }
+      }}
     >
       <div className="flex items-center justify-between gap-1 font-mono text-[10px] text-fg/70">
         <span className="inline-flex items-center gap-1">
