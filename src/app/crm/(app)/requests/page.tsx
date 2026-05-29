@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { subDays } from "date-fns";
-import { Phone, MapPin, Clock, UserRound, Inbox as InboxIcon, ChevronRight } from "lucide-react";
+import { Phone, MapPin, Clock, UserRound, Inbox as InboxIcon, ChevronRight, LayoutGrid, List } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { formatRub } from "@/lib/utils";
 import { shortenSpbAddress } from "@/lib/address";
@@ -8,6 +8,7 @@ import { StatusBadge } from "@/components/crm/StatusBadge";
 import { QuickActionButton } from "@/components/crm/QuickActionButton";
 import { EmptyState } from "@/components/crm/EmptyState";
 import { RequestDrawer } from "@/components/crm/RequestDrawer";
+import { RequestsBoard } from "@/components/crm/RequestsBoard";
 
 export const dynamic = "force-dynamic";
 
@@ -22,12 +23,15 @@ const filters = [
   { id: "all", label: "Все" },
 ];
 
-type RequestsSearchParams = { queue?: string; status?: string; open?: string };
+type RequestsSearchParams = { queue?: string; status?: string; open?: string; view?: string };
 
 export default async function RequestsPage({ searchParams }: { searchParams: Promise<RequestsSearchParams> }) {
-  const { queue, status, open } = await searchParams;
+  const { queue, status, open, view } = await searchParams;
   const activeFilter = status ? "all" : normalizeQueue(queue);
   const where = status ? { status } : whereForQueue(activeFilter);
+  // Канбан-режим. На мобайле всегда показываем карточки — узкие колонки
+  // бессмысленны, board виден только на md+.
+  const isBoardView = view === "board";
 
   // Drawer-режим: если в URL `?open=<id>`, грузим заявку и справа рендерим
   // полную форму редактирования. Список остаётся виден слева.
@@ -57,11 +61,17 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
     take: activeFilter === "all" ? 250 : 120,
   });
 
-  // Базовый querystring текущего фильтра (без `open`) — для close-href drawer'а
-  // и для ссылок на строки списка.
-  const baseQuery = activeFilter === "attention" ? "" : `?queue=${activeFilter}`;
+  // Базовый querystring текущего фильтра + view (без `open`) — для close-href
+  // drawer'а и для ссылок на строки списка.
+  const baseParts: string[] = [];
+  if (activeFilter !== "attention") baseParts.push(`queue=${activeFilter}`);
+  if (isBoardView) baseParts.push("view=board");
+  const baseQuery = baseParts.length ? `?${baseParts.join("&")}` : "";
   const closeHref = `/crm/requests${baseQuery}`;
   const rowHref = (id: string) => `${closeHref}${baseQuery ? "&" : "?"}open=${id}`;
+  // Ссылки переключателя представлений сохраняют queue, сбрасывают `open`.
+  const tableHref = activeFilter === "attention" ? "/crm/requests" : `/crm/requests?queue=${activeFilter}`;
+  const boardHref = activeFilter === "attention" ? "/crm/requests?view=board" : `/crm/requests?queue=${activeFilter}&view=board`;
 
   return (
     <div className={`mx-auto max-w-[1280px] space-y-4 lg:space-y-5 ${openRequest ? "lg:pr-[540px]" : ""}`}>
@@ -72,7 +82,28 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
             Рабочая очередь сервиса: от новой заявки до оплаты и закрытия.
           </p>
         </div>
-        <Link href="/crm" className="btn-outline hidden h-10 px-4 md:inline-flex">Рабочий стол</Link>
+        <div className="hidden items-center gap-2 md:flex">
+          {/* Переключатель Таблица / Доска. На мобайле скрыт — там карточки. */}
+          <div className="inline-flex items-center rounded-full border border-border bg-card p-0.5 text-sm">
+            <Link
+              href={tableHref}
+              className={`inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 transition ${
+                !isBoardView ? "bg-primary text-primary-fg shadow-sm" : "text-muted-fg hover:text-fg"
+              }`}
+            >
+              <List className="h-4 w-4" /> Таблица
+            </Link>
+            <Link
+              href={boardHref}
+              className={`inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 transition ${
+                isBoardView ? "bg-primary text-primary-fg shadow-sm" : "text-muted-fg hover:text-fg"
+              }`}
+            >
+              <LayoutGrid className="h-4 w-4" /> Доска
+            </Link>
+          </div>
+          <Link href="/crm" className="btn-outline h-10 px-4">Рабочий стол</Link>
+        </div>
       </header>
 
       {/* Sticky-фильтры: чтобы при длинном списке быстро переключаться без
@@ -106,8 +137,29 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
         {requests.length === 0 && <Empty />}
       </div>
 
-      {/* Десктоп: таблица + drawer. Строки кликабельны → ?open=<id>. */}
-      <div className="hidden overflow-hidden rounded-2xl border border-border bg-card shadow-sm md:block">
+      {/* Десктоп, режим «Доска»: канбан по статусам с drag-and-drop. */}
+      {isBoardView && (
+        <div className="hidden md:block">
+          <RequestsBoard
+            requests={requests.map((r) => ({
+              id: r.id,
+              number: r.number,
+              status: r.status,
+              price: r.price,
+              paymentStatus: r.paymentStatus,
+              scheduledAt: r.scheduledAt ? r.scheduledAt.toISOString() : null,
+              client: { name: r.client.name, phone: r.client.phone },
+              service: r.service ? { name: r.service.name } : null,
+              assignedTo: r.assignedTo ? { name: r.assignedTo.name } : null,
+              address: r.address ? { address: r.address.address, district: r.address.district } : null,
+            }))}
+            rowHrefFor={rowHref}
+          />
+        </div>
+      )}
+
+      {/* Десктоп, режим «Таблица»: плотная SSR-таблица + drawer. */}
+      <div className={`overflow-hidden rounded-2xl border border-border bg-card shadow-sm ${isBoardView ? "hidden" : "hidden md:block"}`}>
         <table className="w-full text-sm">
           <thead className="border-b border-border bg-muted/20 text-xs uppercase tracking-wider text-muted-fg">
             <tr>
