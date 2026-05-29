@@ -123,8 +123,13 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
           {isAdmin && <QuickAddTrigger services={services} masters={masters} variant="header" />}
         </header>
 
+        {/* Раньше каппали max-w-1440 — это было ок для большинства страниц,
+            но мешало страницам с правым drawer (заявки): drawer фиксирован
+            справа в viewport, а контент висел в каппе по центру, между ними
+            оставалась мёртвая зона. Теперь cap не на уровне layout —
+            страница ставит свой cap сама, когда он нужен. */}
         <main className="flex-1 overflow-auto px-4 py-4 pb-24 lg:px-6 lg:py-6 lg:pb-6">
-          <div className="mx-auto w-full max-w-[1440px]">
+          <div className="w-full">
             {children}
           </div>
         </main>

@@ -70,7 +70,7 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
   return (
     <div
       className={`mx-auto space-y-4 transition-[max-width,padding-right] duration-200 ease-out lg:space-y-5 ${
-        openRequest ? "lg:pr-[540px]" : "max-w-[1280px]"
+        openRequest ? "lg:pr-[540px]" : "max-w-[1440px]"
       }`}
     >
       <header className="flex flex-wrap items-end justify-between gap-3">
