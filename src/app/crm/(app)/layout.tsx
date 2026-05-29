@@ -122,11 +122,20 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
           </div>
         </main>
 
-        {/* Нижняя навигация для мобильного */}
-        <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-border bg-card/95 backdrop-blur-xl pb-[env(safe-area-inset-bottom)]">
+        {/* Нижняя навигация для мобильного.
+            safe-area-padding едет на каждую ссылку (а не на <nav>) — чтобы
+            зона тапа доходила до низа экрана (палец чаще промахивается вниз).
+            min-h-[58px] = Apple HIG минимум 44pt + воздух. touch-manipulation
+            убирает 300ms-задержку iOS на double-tap zoom. active:bg-muted —
+            тактильный feedback, чтобы пользователь видел, что попал. */}
+        <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-border bg-card/95 backdrop-blur-xl">
           <div className="grid grid-cols-5">
             {mobileNav.map((n) => (
-              <Link key={n.href} href={n.href} className="flex flex-col items-center gap-1 py-2.5 text-[10px] text-muted-fg hover:text-fg">
+              <Link
+                key={n.href}
+                href={n.href}
+                className="flex min-h-[58px] touch-manipulation flex-col items-center justify-center gap-1 px-1 pt-2.5 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] text-[10px] text-muted-fg transition active:bg-muted/40 active:text-fg hover:text-fg"
+              >
                 <n.icon className="h-5 w-5" />
                 {n.label}
               </Link>
