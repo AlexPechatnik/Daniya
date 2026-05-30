@@ -73,9 +73,13 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
         не давала прокручивать страницу вправо и не показывала тёмный фон body.
         bg-bg — чтобы за пределами карточек был светлый фон CRM, а не тёмный градиент body. */}
     <div className="crm-light min-h-screen grid lg:grid-cols-[240px,1fr] overflow-x-clip bg-bg text-fg">
-      <aside className="hidden lg:flex border-r border-border bg-card flex-col">
+      {/* sticky top-0 h-screen — сайдбар жёстко привязан к окну, при скролле
+          основного контента не уезжает; «Администратор / Выйти» всегда внизу
+          viewport, не теряется на длинных страницах. Внутри: nav скроллится
+          сам, если пунктов больше, чем влезает. */}
+      <aside className="hidden lg:flex sticky top-0 h-screen border-r border-border bg-card flex-col">
         <div className="px-5 py-4 border-b border-border"><Logo /></div>
-        <nav className="p-3 space-y-1">
+        <nav className="flex-1 overflow-y-auto p-3 space-y-1">
           {isAdmin ? (
             adminNav.map((n) => (
               <Link key={n.href} href={n.href} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm hover:bg-muted transition">
