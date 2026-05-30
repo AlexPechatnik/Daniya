@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { createContext, useContext, useMemo, useState } from "react";
 import {
   Calendar as CalendarIcon,
   ChevronDown,
@@ -35,6 +35,22 @@ import { CalendarDayAxis } from "./CalendarDayAxis";
 
 type View = "day" | "week" | "month";
 
+/** Контекст для href'ов карточек заявок: либо drawer на этой же странице
+ *  (calendar/?...&open=id), либо переход на /crm/requests/[id]. Лежит в
+ *  верхнем CalendarTimeline и читается всеми вложенными карточками,
+ *  чтобы не прокидывать tripHref через 4 уровня пропов. */
+const TripHrefContext = createContext<{
+  tripHref: (id: string) => string;
+  openRequestId: string | null;
+}>({
+  tripHref: (id) => `/crm/requests/${id}`,
+  openRequestId: null,
+});
+
+function useTripHref() {
+  return useContext(TripHrefContext);
+}
+
 interface ReqLite {
   id: string;
   number: number;
@@ -63,6 +79,8 @@ export function CalendarTimeline({
   freeSlots = [],
   anchor,
   view: initialView = "day",
+  openRequestId = null,
+  baseQuery = "",
 }: {
   days: string[];
   requests: ReqLite[];
@@ -71,7 +89,14 @@ export function CalendarTimeline({
   freeSlots?: FreeSlotsLite[];
   anchor: string;
   view?: View;
+  /** Id заявки, открытой в drawer'е (для подсветки активного блока). */
+  openRequestId?: string | null;
+  /** Querystring текущего вида календаря без `open` — нужен для построения
+   *  href'ов «открыть в drawer» вместо ухода на /crm/requests/[id]. */
+  baseQuery?: string;
 }) {
+  // Хелпер: ссылка на заявку остаётся на /crm/calendar, добавляет ?open=<id>.
+  const tripHref = (id: string) => `/crm/calendar${baseQuery}${baseQuery ? "&" : "?"}open=${id}`;
   const router = useRouter();
   const sp = useSearchParams();
   const view = ((sp.get("view") as View) || initialView);
@@ -132,6 +157,7 @@ export function CalendarTimeline({
   }
 
   return (
+    <TripHrefContext.Provider value={{ tripHref, openRequestId }}>
     <div className="space-y-4">
       <Header
         view={view}
@@ -193,6 +219,7 @@ export function CalendarTimeline({
         />
       )}
     </div>
+    </TripHrefContext.Provider>
   );
 }
 
@@ -363,6 +390,7 @@ function DayPlanner({
   slots: string[];
   holiday?: HolidayLite;
 }) {
+  const { tripHref, openRequestId } = useTripHref();
   const districts = districtCounts(requests);
 
   return (
@@ -394,6 +422,8 @@ function DayPlanner({
           dayKey={dayKey}
           todayKey={todayKey}
           requests={requests}
+          tripHref={tripHref}
+          openRequestId={openRequestId}
         />
       </div>
 
@@ -508,6 +538,7 @@ function DropZoneDay({
   onSchedule: (requestId: string, dayKey: string) => void;
 }) {
   const [hover, setHover] = useState(false);
+  const { tripHref, openRequestId } = useTripHref();
 
   function onDrop(e: React.DragEvent) {
     e.preventDefault();
@@ -553,17 +584,23 @@ function DropZoneDay({
       {holiday && <div className="mt-2 text-xs font-medium text-warning">{holiday.reason}</div>}
 
       <div className="mt-3 space-y-2">
-        {requests.slice(0, 4).map((r) => (
+        {requests.slice(0, 4).map((r) => {
+          const active = openRequestId === r.id;
+          return (
           <Link
             key={r.id}
-            href={`/crm/requests/${r.id}`}
-            className="block rounded-xl border border-border bg-bg/40 px-2.5 py-2 transition hover:bg-muted/40"
+            href={tripHref(r.id)}
+            scroll={false}
+            className={`block rounded-xl border bg-bg/40 px-2.5 py-2 transition hover:bg-muted/40 ${
+              active ? "border-primary bg-primary/[0.08]" : "border-border"
+            }`}
           >
             <div className="font-mono text-xs text-primary">{format(parseISO(r.scheduledAt), "HH:mm")}</div>
             <div className="mt-0.5 truncate text-sm font-medium">#{r.number} · {r.clientName}</div>
             <div className="truncate text-xs text-muted-fg">{r.district || r.serviceName}</div>
           </Link>
-        ))}
+          );
+        })}
         {requests.length > 4 && <div className="text-xs text-muted-fg">ещё {requests.length - 4}</div>}
         {requests.length === 0 && (
           <div className="rounded-xl border border-dashed border-border px-2 py-5 text-center text-[11px] text-muted-fg">
@@ -721,6 +758,7 @@ function QueuePanel({ queue }: { queue: QueueReqLite[] }) {
 
 function QueueCard({ request, draggable }: { request: QueueReqLite; draggable: boolean }) {
   const district = request.district ? districtMeta(request.district) : null;
+  const { tripHref } = useTripHref();
   return (
     <div
       draggable={draggable}
@@ -735,7 +773,7 @@ function QueueCard({ request, draggable }: { request: QueueReqLite; draggable: b
       {draggable && (
         <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-muted-fg/50 transition group-hover:text-muted-fg" />
       )}
-      <Link href={`/crm/requests/${request.id}`} className="min-w-0 flex-1">
+      <Link href={tripHref(request.id)} scroll={false} className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-mono text-xs text-muted-fg">#{request.number}</span>
           <StatusBadge status={request.status} size="sm" />

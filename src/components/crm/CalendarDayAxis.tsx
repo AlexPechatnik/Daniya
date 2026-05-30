@@ -44,10 +44,16 @@ export function CalendarDayAxis({
   dayKey,
   todayKey,
   requests,
+  tripHref = (id) => `/crm/requests/${id}`,
+  openRequestId = null,
 }: {
   dayKey: string;
   todayKey: string;
   requests: Trip[];
+  /** Куда ведёт клик по блоку. По умолчанию — на отдельную страницу
+   *  заявки, но calendar/page.tsx подменяет на drawer (?open=<id>). */
+  tripHref?: (id: string) => string;
+  openRequestId?: string | null;
 }) {
   const router = useRouter();
   const railRef = useRef<HTMLDivElement>(null);
@@ -253,6 +259,8 @@ export function CalendarDayAxis({
               key={p.trip.id}
               placement={p}
               isDragging={dragId === p.trip.id}
+              isActive={openRequestId === p.trip.id}
+              href={tripHref(p.trip.id)}
               onBeginDrag={(grabOffset) => beginDrag(p.trip.id, grabOffset)}
               onCancelDrag={() => { setDragId(null); setDragMin(null); }}
             />
@@ -275,11 +283,15 @@ export function CalendarDayAxis({
 function TripBlock({
   placement,
   isDragging,
+  isActive,
+  href,
   onBeginDrag,
   onCancelDrag,
 }: {
   placement: Placement;
   isDragging: boolean;
+  isActive: boolean;
+  href: string;
   onBeginDrag: (grabOffsetWithinBlock: number) => void;
   onCancelDrag: () => void;
 }) {
@@ -295,7 +307,8 @@ function TripBlock({
   return (
     <Link
       data-trip-block
-      href={`/crm/requests/${trip.id}`}
+      href={href}
+      scroll={false}
       draggable
       onDragStart={(e) => {
         draggedRef.current = true;
@@ -312,7 +325,7 @@ function TripBlock({
       }}
       className={`absolute z-10 overflow-hidden rounded-lg border px-2.5 py-1.5 text-xs shadow-sm transition cursor-grab active:cursor-grabbing hover:shadow-md ${
         isDragging ? "opacity-40" : ""
-      } ${
+      } ${isActive ? "ring-2 ring-primary ring-offset-1" : ""} ${
         hasConflict
           ? "border-red-500/60 bg-red-50 hover:border-red-500"
           : statusToTone(trip.status)

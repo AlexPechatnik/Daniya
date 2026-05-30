@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { CalendarTimeline } from "@/components/crm/CalendarTimeline";
 import { CalendarPageMobile } from "@/components/crm/mobile/CalendarPageMobile";
+import { RequestDrawer } from "@/components/crm/RequestDrawer";
 import { startOfWeek, addDays, startOfMonth, endOfMonth } from "date-fns";
 import { findFreeSlots } from "@/lib/scheduling";
 import { shortenSpbAddress } from "@/lib/address";
@@ -9,8 +10,8 @@ export const dynamic = "force-dynamic";
 
 type View = "day" | "week" | "month";
 
-export default async function CalendarPage({ searchParams }: { searchParams: Promise<{ from?: string; view?: string }> }) {
-  const { from, view: viewRaw } = await searchParams;
+export default async function CalendarPage({ searchParams }: { searchParams: Promise<{ from?: string; view?: string; open?: string }> }) {
+  const { from, view: viewRaw, open } = await searchParams;
   const view: View = (viewRaw === "week" || viewRaw === "month") ? (viewRaw as View) : "day";
   const anchor = from ? parseLocalDay(from) : new Date();
 
@@ -85,10 +86,39 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const mobileHoliday = holidays.find((h) => h.date.toISOString().slice(0, 10) === anchorKey);
   const todayKey = toDateKey(new Date());
 
+  // Drawer-режим: если в URL `?open=<id>`, грузим полную заявку и рендерим
+  // справа RequestDrawer (тот же компонент, что и на странице заявок).
+  // Так клик по визиту на календаре не уводит со страницы.
+  const openRequest = open
+    ? await prisma.request.findUnique({
+        where: { id: open },
+        include: {
+          client: { include: { addresses: true, printers: true, channels: true } },
+          address: true,
+          assignedTo: true,
+          service: true,
+        },
+      })
+    : null;
+  const [drawerServices, drawerMasters] = openRequest
+    ? await Promise.all([
+        prisma.service.findMany({ orderBy: { name: "asc" } }),
+        prisma.user.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
+      ])
+    : [[], []];
+
+  // Базовый querystring текущего вида календаря (без `open`) — для close-href
+  // drawer'а и для ссылок на блоки.
+  const baseParts: string[] = [];
+  if (view !== "day") baseParts.push(`view=${view}`);
+  if (from) baseParts.push(`from=${from}`);
+  const baseQuery = baseParts.length ? `?${baseParts.join("&")}` : "";
+  const calendarCloseHref = `/crm/calendar${baseQuery}`;
+
   return (
     <>
       {/* Десктоп: полный календарь с Day/Week/Month и drag&drop. */}
-      <div className="hidden lg:block space-y-5">
+      <div className={`hidden lg:block space-y-5 ${openRequest ? "lg:pr-[540px]" : ""}`}>
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">План выездов</h1>
           <p className="mt-1 text-sm text-muted-fg">Кто куда едет, какие заявки без времени и где есть окно.</p>
@@ -130,8 +160,19 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
           freeSlots={freeSlotsPerDay}
           anchor={anchorKey}
           view={view}
+          openRequestId={openRequest?.id || null}
+          baseQuery={baseQuery}
         />
       </div>
+
+      {openRequest && (
+        <RequestDrawer
+          request={openRequest}
+          services={drawerServices}
+          masters={drawerMasters}
+          closeHref={calendarCloseHref}
+        />
+      )}
 
       {/* Мобайл: только что важно — выезды дня, очередь, окна. Без вкладок. */}
       <div className="lg:hidden">
